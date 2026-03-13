@@ -1,0 +1,561 @@
+/* Cash Ticket Management - Minimalist Professional Design */
+
+/* Main Container */
+.cash-ticket-management {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  padding: 24px;
+}
+
+.cash-ticket-management .container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header Section */
+.page-header {
+  margin-bottom: 32px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.header-text .page-title {
+  margin: 0 !important;
+  color: #1a1a1a;
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.header-text .page-subtitle {
+  color: #64748b;
+  font-size: 16px;
+  margin-top: 8px;
+  display: block;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Controls Section */
+.controls-section {
+  margin-bottom: 32px;
+}
+
+.controls-card {
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.controls-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.view-controls .view-toggle {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.view-controls .view-toggle .ant-radio-button-wrapper {
+  border-radius: 0;
+  border: none;
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.view-controls .view-toggle .ant-radio-button-wrapper-checked {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.view-controls .view-toggle .ant-radio-button-wrapper:hover:not(.ant-radio-button-wrapper-checked) {
+  background: #e2e8f0;
+  color: #1a1a1a;
+}
+
+.date-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.date-picker {
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  height: 40px;
+  transition: all 0.2s ease;
+}
+
+.date-picker:hover {
+  border-color: #2563eb;
+}
+
+.date-picker:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+/* Ticket Types Section */
+.ticket-types-section {
+  margin-bottom: 32px;
+}
+
+.ticket-types-card {
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.section-title {
+  color: #1a1a1a;
+  font-weight: 600;
+  margin-bottom: 24px !important;
+}
+
+.empty-alert {
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.ticket-types-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.ticket-type-card {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: #ffffff;
+}
+
+.ticket-type-card:hover {
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+  transform: translateY(-2px);
+}
+
+.ticket-type-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px;
+}
+
+.ticket-type-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #f0f9ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  font-size: 18px;
+}
+
+.ticket-type-info {
+  flex: 1;
+}
+
+.ticket-type-name {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.ticket-type-amount {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Table Section */
+.table-section {
+  margin-bottom: 32px;
+}
+
+.table-card {
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.table-header {
+  margin-bottom: 24px;
+}
+
+.table-alert {
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  margin-bottom: 16px;
+}
+
+.ticket-tabs .ant-tabs-tab {
+  border-radius: 8px;
+  margin-right: 4px;
+  padding: 8px 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.ticket-tabs .ant-tabs-tab-active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.ticket-tabs .ant-tabs-tab-active .tab-label {
+  color: #ffffff;
+}
+
+.tab-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+}
+
+.data-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.data-table .ant-table-thead > tr > th {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  color: #1a1a1a;
+  font-weight: 600;
+  padding: 16px;
+}
+
+.data-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 16px;
+}
+
+.data-table .ant-table-tbody > tr:hover > td {
+  background: #f8fafc;
+}
+
+/* Table Cell Styles */
+.date-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.date-weekday {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.amount-active {
+  color: #2563eb;
+  font-size: 13px;
+}
+
+.amount-inactive {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.total-amount {
+  color: #16a34a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Button Styles */
+.btn-primary {
+  background: #ffffff;
+  border-color: transparent;
+  color: #000000;
+  border-radius: 8px;
+  font-weight: 500;
+  height: 40px;
+  padding: 0 16px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: #f8fafc;
+  color: #000000;
+  border: 1px solid #e2e8f0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-danger {
+  background: #ffffff;
+  border-color: transparent;
+  color: #000000;
+  border-radius: 8px;
+  font-weight: 500;
+  height: 40px;
+  padding: 0 16px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+}
+
+.btn-danger:hover {
+  background: #f8fafc;
+  color: #000000;
+  border: 1px solid #e2e8f0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-edit {
+  background: #ffffff;
+  border-color: transparent;
+  color: #000000;
+  border-radius: 6px;
+  font-size: 12px;
+  height: 32px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-edit:hover {
+  background: #f8fafc;
+  color: #000000;
+  border: 1px solid #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.btn-disabled {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  border-radius: 6px;
+  font-size: 12px;
+  height: 32px;
+  font-weight: 500;
+}
+
+/* Modal Styles */
+.type-modal .ant-modal-content {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.type-modal .ant-modal-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 24px;
+}
+
+.type-modal .ant-modal-body {
+  padding: 24px;
+}
+
+.type-form .ant-form-item-label > label {
+  color: #374151;
+  font-weight: 500;
+}
+
+.type-form .ant-input,
+.type-form .ant-input-number,
+.type-form .ant-select-selector {
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.type-form .ant-input:hover,
+.type-form .ant-input-number:hover,
+.type-form .ant-select-selector:hover {
+  border-color: #2563eb;
+}
+
+.type-form .ant-input:focus,
+.type-form .ant-input-number:focus,
+.type-form .ant-select-focused .ant-select-selector {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.payment-modal .ant-modal-content {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.payment-modal .ant-modal-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 24px;
+}
+
+.payment-modal .ant-modal-body {
+  padding: 24px;
+}
+
+.payment-form .ant-form-item-label > label {
+  color: #374151;
+  font-weight: 500;
+}
+
+.payment-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.payment-item {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.payment-item .ant-input-number {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  align-items: center;
+}
+
+.form-actions .ant-btn {
+  border-radius: 8px;
+  height: 40px;
+  padding: 0 20px;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .cash-ticket-management {
+    padding: 16px;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .header-actions {
+    justify-content: stretch;
+  }
+  
+  .header-actions .ant-btn {
+    flex: 1;
+  }
+  
+  .controls-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .date-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .date-picker {
+    width: 100%;
+  }
+  
+  .ticket-types-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions .ant-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-text .page-title {
+    font-size: 1.5rem;
+  }
+  
+  .ticket-type-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+  
+  .ticket-type-icon {
+    margin: 0 auto;
+  }
+}
+
+/* Loading and Animation States */
+.cash-ticket-management * {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Focus States for Accessibility */
+.btn-primary:focus,
+.btn-danger:focus,
+.btn-edit:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.btn-danger:focus {
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+}
+
+/* Print Styles */
+@media print {
+  .cash-ticket-management {
+    background: #ffffff;
+    padding: 0;
+  }
+  
+  .header-actions,
+  .controls-section,
+  .data-table .ant-table-tbody > tr > td:last-child {
+    display: none;
+  }
+  
+  .data-table {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+}

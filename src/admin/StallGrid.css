@@ -11,12 +11,20 @@
 }
 
 .stall-card:hover {
-  transform: scale(1.1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  border-color: #1890ff !important;
 }
 
 .stall-card.selected {
-  border: 2px solid #2563eb;
+  border: 3px solid #1890ff;
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(24, 144, 255, 0.3);
+}
+
+.stall-card.selected:hover {
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 12px 30px rgba(24, 144, 255, 0.4);
 }
 
 .stall-tool-icon {

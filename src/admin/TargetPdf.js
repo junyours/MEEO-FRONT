@@ -2,22 +2,76 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import html2canvas from "html2canvas";
 
-// Helper: format number with 2 decimals and replace 0 with "-"
+// Government Header Function
+const addGovernmentHeader = (doc, pageWidth, margin = 20) => {
+  let yPosition = 10;
+  
+  // Government Header with Logos matching the design
+  try {
+    // Add Municipality logo on the left (circular logo with blue, red, yellow, black elements)
+    doc.addImage('/logo_Opol.png', 'PNG', margin, yPosition, 30, 30);
+    
+    // Add MEE logo on the right (predominantly red and yellow circular logo)
+    doc.addImage('/logo_meeo.png', 'PNG', pageWidth - margin - 30, yPosition, 30, 30);
+  } catch (error) {
+    console.log('Logos not found:', error);
+  }
+  
+  yPosition += 15;
+  
+  // Centered Government Header - matching exact requirements
+  doc.setFont('calibri', 'bold');
+  doc.setFontSize(12.3);
+  doc.text('Province of Misamis Oriental', pageWidth / 2, yPosition, { align: 'center' });
+  
+  yPosition += 6;
+  doc.setFontSize(12.3);
+  doc.text('Municipality of Opol', pageWidth / 2, yPosition, { align: 'center' });
+  
+  yPosition += 6;
+  doc.setFontSize(12.5);
+  doc.text('OFFICE OF THE MUNICIPAL ECONOMIC ENTERPRISE', pageWidth / 2, yPosition, { align: 'center' });
+  
+  // Add double lines below OFFICE OF THE MUNICIPAL ECONOMIC ENTERPRISE
+  yPosition += 5;
+  doc.setLineWidth(0.5);
+  doc.line(margin + 30, yPosition, pageWidth - margin - 30, yPosition);
+  yPosition += 2;
+  doc.line(margin + 30, yPosition, pageWidth - margin - 30, yPosition);
+  doc.setLineWidth(0); // Reset to default line width
+  
+  yPosition += 12;
+  
+  return yPosition; // Return the next y position for content
+};
+
+// Helper: format number with 2 decimals and comma separators, replace 0 with "-"
 const formatNumber = (num) => {
   const value = Number(num) || 0;
-  return value === 0 ? "-" : value.toFixed(2);
+  return value === 0 ? "-" : value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 };
 
 // -------------------- TARGET REPORT PDF --------------------
 export const generateTargetReportPDF = async (year, tableData, pieChartRef, overallChartRef) => {
-  const doc = new jsPDF("p", "pt", "a4");
-  doc.setFont("helvetica", "normal");
-  let yOffset = 30;
-
-  // Title
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'a3'
+  });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 20;
+  
+  // Add government header
+  let yOffset = addGovernmentHeader(doc, pageWidth, margin);
+  
+  // Add title after header
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text(`Target Report - ${year}`, 40, yOffset);
-  yOffset += 20;
+  doc.text(`Target Report - ${year}`, pageWidth / 2, yOffset, { align: 'center' });
+  yOffset += 25;
 
   // Function to render a chart div
   const renderChart = async (chartRef) => {
@@ -47,7 +101,7 @@ export const generateTargetReportPDF = async (year, tableData, pieChartRef, over
 
   // -------------------- TABLE DATA --------------------
   const months = [
-    "Jan", "Feb", "Marc", "Apr", "May", "Jun",
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
   ];
 

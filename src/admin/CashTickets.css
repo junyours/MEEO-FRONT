@@ -1,0 +1,38 @@
+.calendar-cell {
+  height: 80px;
+  padding: 4px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  position: relative;
+}
+
+.calendar-cell.today {
+  border-color: #1B4F72;
+  background: rgba(27, 79, 114, 0.1);
+}
+
+.calendar-cell.future {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.calendar-date {
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.calendar-indicator {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.calendar-total {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  font-size: 10px;
+  color: #27AE60;
+  font-weight: 600;
+}

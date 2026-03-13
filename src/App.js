@@ -10,6 +10,8 @@ import InchargeDashboard from './incharge_collector/Dashboard';
 import MainDashboard from './main_collector/Dashboard';
 import Homepage from './Auth/Homepage';
 
+// New Market Management Components
+
 // import Dashboard from './components/Dashboard';
 
 function App() {
@@ -62,10 +64,7 @@ function App() {
             }
           />
 
-            
-           
-            
-        
+   
         </Routes>
       </Router>
     </div>

@@ -25,6 +25,7 @@ import autoTable from "jspdf-autotable";
 import html2canvas from "html2canvas";
 import api from "../Api";
 import LoadingOverlay from "./Loading";
+import templateBg from "../assets/template.jpg";
 
 const { Title, Text } = Typography;
 const { confirm } = Modal;
@@ -163,6 +164,20 @@ const MarketRegistration = () => {
     setValidationError("");
   };
 
+  const getOrdinal = (day) => {
+  if (day > 3 && day < 21) return "th"; // 11th–13th
+  switch (day % 10) {
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
+  }
+};
+
   const showConfirm = () => {
     confirm({
       title: "Confirm Registration",
@@ -206,10 +221,23 @@ const MarketRegistration = () => {
     if (!input) return;
     const canvas = await html2canvas(input, { scale: 3 });
     const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const imgWidth = 190;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+   const pdf = new jsPDF("p", "mm", [216, 330]); // Long bond paper size (8.5 x 13 inches)
+const pageWidth = pdf.internal.pageSize.getWidth();
+const pageHeight = pdf.internal.pageSize.getHeight();
+
+const margin = 10;
+const imgWidth = pageWidth - margin * 2;
+const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+pdf.addImage(
+  imgData,
+  "PNG",
+  margin,
+  margin,
+  imgWidth,
+  imgHeight
+);
+
     pdf.save(`Certification_${selectedApp.business_name}.pdf`);
   };
 
@@ -342,94 +370,113 @@ const MarketRegistration = () => {
       business_name: selectedApp.business_name,
       stalls: selectedApp.stalls,
       section: selectedApp.section,
-      registration: {
-        date_issued: isViewMode
-          ? new Date(selectedApp.registration.date_issued)
-          : new Date(),
-        expiry_date: isViewMode
-          ? new Date(selectedApp.registration.expiry_date)
-          : new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
-      },
+ registration: {
+  date_issued: isViewMode
+    ? new Date(selectedApp.registration.date_issued)
+    : new Date(),
+},
+
     };
     const options = { year: "numeric", month: "long", day: "numeric" };
 
     return (
-      <div
-        ref={certificateRef}
-        style={{
-          backgroundColor: "#fff",
-          padding: "50px 60px",
-          border: "3px solid #1B4F72",
-          borderRadius: "12px",
-          boxShadow: "0 5px 25px rgba(0,0,0,0.1)",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <img
-          src={logo}
-          alt="Watermark"
-          style={{
-            position: "absolute",
-            opacity: 0.08,
-            width: "80%",
-            left: "10%",
-            top: "30%",
-            zIndex: 0,
-          }}
-        />
+<div
+  ref={certificateRef}
+  style={{
+    width: "216mm",          // 8.5 inches
+    minHeight: "330mm",      // 13 inches (long bond paper)
+    margin: "0 auto",
+    backgroundImage: `url(${templateBg})`,
+    backgroundSize: "cover",
+    backgroundPosition: "top center",
+    backgroundRepeat: "no-repeat",
+    padding: "80px 70px 40px 80px", // slightly less bottom padding so slogan/BAGO are visible
+    position: "relative",
+    overflow: "hidden",
+    boxSizing: "border-box",
+  }}
+>
 
-        <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
-          <img src={logo} alt="Logo" width={100} />
-          <Title level={3} style={{ marginTop: 10, color: "#1B4F72" }}>
-            MUNICIPALITY OF OPOL
-          </Title>
-          <Text style={{ fontSize: 14 }}>
-            <i>MUNICIPAL ECONOMIC ENTERPRISE OFFICE</i>
-          </Text>
-          <Divider style={{ borderColor: "#1B4F72", margin: "10px auto" }} />
-          <Title level={4} style={{ color: "#1B4F72", letterSpacing: 1 }}>
-            CERTIFICATE OF MARKET REGISTRATION
-          </Title>
-        </div>
+  {/* Header text */}
+  <div style={{ textAlign: "center", marginTop: 20, zIndex: 1, position: "relative" }}>
+    <div style={{ fontSize: 14, fontFamily: "arial", fontWeight: "bold", lineHeight: 1.3 }}>
+      Republic of the Philippines
+    </div>
+    <div style={{ fontSize: 14, fontFamily: "arial", fontWeight: "bold", lineHeight: 1.3 }}>
+      Province of Misamis Oriental
+    </div>
+    <div style={{ fontSize: 14, fontFamily: "arial", fontWeight: "bold", lineHeight: 1.3 }}>
+      Municipality of Opol
+    </div>
+    <div style={{ fontSize: 14, fontFamily: "arial", fontWeight: "bold", lineHeight: 1.3, margin: "5px 0" }}>
+      --o0o--
+    </div>
+    <div style={{ fontSize: 16, fontFamily: "Georgia, serif", fontWeight: "bold", marginTop: 10 }}>
+      Office of the Municipal Economic Enterprise
+    </div>
+    <div style={{ fontSize: 18, fontFamily: "arial", fontWeight: "bold", marginTop: 40 }}>
+      CERTIFICATION
+    </div>
+  </div>
 
-        <div
-          style={{
-            textAlign: "justify",
-            fontSize: 15,
-            lineHeight: 1.8,
-            marginTop: 20,
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
-          <p>
-            This is to certify that <b>{reg.vendor?.fullname}</b> of business
-            name <b>{reg.business_name}</b>, residing at Zone{" "}
-            <b>{reg.vendor?.address}</b>, is a legitimate stall holder #
-            <b>{reg.stalls.join(", ")}</b> located at the{" "}
-            <b>{reg.section?.name}</b> Section of the Opol Public Market. As per
-            records, he/she has no outstanding obligations with this office.
-          </p>
+  {/* Certificate body */}
+  <div
+  style={{
+    textAlign: "justify",
+    fontSize: 15,
+    lineHeight: 2,              // cleaner reading & print spacing
+    marginTop: 40,
+    paddingLeft: 20,
+    paddingRight: 20,
+    position: "relative",
+    zIndex: 1,
+  }}
+>
+  <p style={{ textIndent: 40, marginBottom: 24 }}>
+    {reg.section?.area?.name?.toLowerCase() === "open space" ? (
+      <>
+        This is to certify that <b>Mr./Mrs.</b>{" "}
+        <span style={{ textDecoration: "underline" }}>
+          {reg.vendor?.fullname}
+        </span>, of legal age, a resident of Zone{" "}
+        <span style={{ textDecoration: "underline" }}>
+          {reg.vendor?.address}
+        </span>{" "}
+        Opol, Misamis Oriental, rented an{" "}
+        <b>{reg.section?.area?.name}</b> ({reg.section?.name}) owned by the
+        Municipal Government of Opol, Misamis Oriental. As per office record,
+        she/he has no outstanding obligation in this office.
+      </>
+    ) : (
+      <>
+        THIS IS TO CERTIFY that <b>Mr./Mrs.</b>{" "}
+        <span style={{ textDecoration: "underline" }}>
+          <b>{reg.vendor?.fullname}</b>
+        </span>, of legal age, resident of Zone{" "}
+        {reg.vendor?.address} Opol, Misamis Oriental, Stall Holder –{" "}
+        <b>{reg.section?.name}</b> at Opol Public Market. As per office record,
+        she/he has no outstanding obligation in this office.
+      </>
+    )}
+  </p>
 
-          <p style={{ marginTop: 20 }}>
-            Issued this{" "}
-            <b>
-              {new Date(reg.registration.date_issued).toLocaleDateString(
-                "en-US",
-                options
-              )}
-            </b>{" "}
-            and valid until{" "}
-            <b>
-              {new Date(reg.registration.expiry_date).toLocaleDateString(
-                "en-US",
-                options
-              )}
-            </b>{" "}
-            for Business Permit purposes.
-          </p>
-        </div>
+  <p style={{ textIndent: 40 }}>
+    This  issued on{" "}
+    <b style={{ textDecoration: "underline" }}>
+      {new Date(reg.registration.date_issued).getDate()}
+      <sup>{getOrdinal(new Date(reg.registration.date_issued).getDate())}</sup>
+    </b>{" "}
+    day of{" "}
+    <b style={{ textDecoration: "underline" }}>
+      {new Date(reg.registration.date_issued).toLocaleDateString("en-US", {
+        month: "long",
+      })}
+    </b>{" "}
+    <b>{new Date(reg.registration.date_issued).getFullYear()}</b>{" "}
+    for Business Permit purposes.
+  </p>
+</div>
+
 
         <div
           style={{
@@ -504,6 +551,7 @@ const MarketRegistration = () => {
             <div style={{ fontSize: 13 }}>MEEO-designate</div>
           </div>
         </div>
+
       </div>
     );
   };

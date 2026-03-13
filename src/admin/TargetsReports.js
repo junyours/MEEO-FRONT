@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import api from "../Api";
 import {
   Card,
@@ -14,17 +14,30 @@ import {
   Tag,
   DatePicker,
   Divider,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Switch,
+  Popconfirm,ConfigProvider 
 } from "antd";
 import {
   EditOutlined,
   SaveOutlined,
   CloseOutlined,
   PrinterOutlined,
+  PlusOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip as ReTooltip,
   Legend,
   ResponsiveContainer,
@@ -36,56 +49,185 @@ import { generateTargetReportPDF } from "./TargetPdf";
 const { Text, Title } = Typography;
 const { RangePicker } = DatePicker;
 
-const months = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+// Unique class names for this screen
+const CSS_CLASSES = {
+  container: 'tr-container',
+  header: 'tr-header',
+  content: 'tr-content',
+  card: 'tr-card',
+  table: 'tr-table',
+  button: 'tr-button',
+  buttonPrimary: 'tr-button-primary',
+  buttonGhost: 'tr-button-ghost',
+  modal: 'tr-modal',
+  form: 'tr-form',
+  chart: 'tr-chart',
+  progress: 'tr-progress',
+  tag: 'tr-tag',
+  input: 'tr-input',
+  title: 'tr-title',
+  subtitle: 'tr-subtitle',
+  kpi: 'tr-kpi',
+  kpiValue: 'tr-kpi-value',
+  kpiLabel: 'tr-kpi-label',
+  loading: 'tr-loading'
+};
+
+// Minimalist color palette
+const COLORS = {
+  primary: '#2563eb',
+  success: '#10b981',
+  warning: '#f59e0b',
+  danger: '#ef4444',
+  neutral: {
+    50: '#f8fafc',
+    100: '#f1f5f9',
+    200: '#e2e8f0',
+    300: '#cbd5e1',
+    400: '#94a3b8',
+    500: '#64748b',
+    600: '#475569',
+    700: '#334155',
+    800: '#1e293b',
+    900: '#0f172a'
+  },
+  white: '#ffffff',
+  border: '#e2e8f0'
+};
+
+// Department colors with minimalist palette
+const DEPARTMENT_COLORS = [
+  COLORS.primary, 
+  COLORS.success, 
+  COLORS.warning, 
+  COLORS.neutral[600]
 ];
 
-const DEPARTMENT_COLORS = ["#4CAF50", "#FF9800", "#2196F3", "#F44336"];
-
-const primaryColor = "#1B4F72";
-const primaryButtonStyle = {
-  background: `linear-gradient(135deg, ${primaryColor}, #2471A3)`,
-  borderColor: "transparent",
-  color: "#fff",
-  fontWeight: 600,
-  borderRadius: 999,
-  boxShadow: "0 4px 10px rgba(0,0,0,0.12)",
+const getDepartmentColor = (departmentName, index) => {
+  const name = departmentName.toLowerCase();
+  if (name.includes('wharf')) {
+    return COLORS.neutral[700];
+  }
+  return DEPARTMENT_COLORS[index % DEPARTMENT_COLORS.length];
 };
 
-const ghostButtonStyle = {
-  borderRadius: 999,
-  fontWeight: 500,
+// Minimalist button styles
+const buttonStyles = {
+  primary: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+    color: COLORS.white,
+    borderRadius: '6px',
+    fontWeight: 500,
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    border: 'none',
+    height: '36px'
+  },
+  ghost: {
+    color: COLORS.neutral[600],
+    backgroundColor: 'transparent',
+    borderColor: COLORS.border,
+    borderRadius: '6px',
+    fontWeight: 500
+  }
 };
+
+const months = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
 
 const TargetsReports = () => {
   const [reports, setReports] = useState({});
   const [loading, setLoading] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
+  const [editingCell, setEditingCell] = useState(null);
   const [targetValues, setTargetValues] = useState({});
   const [yearRange, setYearRange] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [form] = Form.useForm();
   const reportRefs = useRef({});
   const chartRefs = useRef({});
   const progressRefs = useRef({});
   const currentYear = dayjs().year();
 
+  // Optimized change handlers to prevent focus loss
+  const handleAnnualChange = useCallback((module, value) => {
+    const cleanValue = value.replace(/[^\d]/g, '');
+    setTargetValues(prev => ({
+      ...prev,
+      [module]: cleanValue ? Number(cleanValue) : null,
+    }));
+  }, []);
+
+  const handleMonthlyChange = useCallback((cellKey, value) => {
+    const cleanValue = value.replace(/[^\d]/g, '');
+    setTargetValues(prev => ({
+      ...prev,
+      [cellKey]: cleanValue ? Number(cleanValue) : null,
+    }));
+  }, []);
+
   const fetchReports = async (startYear, endYear) => {
     setLoading(true);
     try {
       const res = await api.get(
-        `/targets?start_year=${startYear}&end_year=${endYear}`
+        `/department-collection?start_year=${startYear}&end_year=${endYear}`
       );
-      setReports(res.data.data || {});
+      const data = res.data;
+      
+      console.log('API Response:', data); // Debug log
+      
+      // Transform the data to match expected format for each year
+      const transformedReports = {};
+      
+      if (data.departments && Array.isArray(data.departments)) {
+        console.log('Departments found:', data.departments.length); // Debug log
+        
+        // Group departments by year
+        const departmentsByYear = {};
+        
+        data.departments.forEach(dept => {
+          const year = dept.year;
+          if (!departmentsByYear[year]) {
+            departmentsByYear[year] = [];
+          }
+          
+          console.log(`Department ${dept.name} (${year}): Target=${dept.target?.annual_target}, Collection=${dept.collection?.total_collection}`); // Debug log
+          
+          departmentsByYear[year].push({
+            id: dept.id,
+            module: dept.name,
+            annual_target: dept.target?.annual_target || 0,
+            total_collection: dept.collection?.total_collection || 0,
+            progress: dept.performance?.progress_percentage || 0,
+            monthly: dept.collection?.monthly_collections ? {
+              1: dept.collection.monthly_collections.january || 0,
+              2: dept.collection.monthly_collections.february || 0,
+              3: dept.collection.monthly_collections.march || 0,
+              4: dept.collection.monthly_collections.april || 0,
+              5: dept.collection.monthly_collections.may || 0,
+              6: dept.collection.monthly_collections.june || 0,
+              7: dept.collection.monthly_collections.july || 0,
+              8: dept.collection.monthly_collections.august || 0,
+              9: dept.collection.monthly_collections.september || 0,
+              10: dept.collection.monthly_collections.october || 0,
+              11: dept.collection.monthly_collections.november || 0,
+              12: dept.collection.monthly_collections.december || 0,
+            } : {},
+            monthly_targets: dept.target?.monthly_targets || {},
+          });
+        });
+        
+        // Set the transformed reports
+        Object.assign(transformedReports, departmentsByYear);
+      } else {
+        console.log('No departments found in response'); // Debug log
+      }
+      
+      console.log('Transformed Reports:', transformedReports); // Debug log
+      setReports(transformedReports);
     } catch (error) {
       console.error(error);
       message.error("Failed to fetch reports");
@@ -93,9 +235,20 @@ const TargetsReports = () => {
     setLoading(false);
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const res = await api.get('/department-collection/departments');
+      setDepartments(res.data.departments || []);
+    } catch (error) {
+      console.error(error);
+      message.error("Failed to fetch departments");
+    }
+  };
+
   useEffect(() => {
     setYearRange([currentYear, currentYear]);
     fetchReports(currentYear, currentYear);
+    fetchDepartments();
   }, []);
 
   const handleYearChange = (dates) => {
@@ -110,13 +263,13 @@ const TargetsReports = () => {
   const handleSaveRow = async (row, year) => {
     try {
       const payload = {
-        module: row.module,
-        annual_target: Number(targetValues[row.module]),
+        department_id: row.id,
+        annual_target: Number(targetValues[row.module] || row.annual_target),
         year: year,
+        monthly_targets: row.monthly_targets || {},
       };
 
-      if (row.id) await api.put(`/targets/${row.id}`, payload);
-      else await api.post("/targets", payload);
+      await api.post("/department-collection/targets", payload);
 
       message.success("Target updated successfully!");
       setEditingRow(null);
@@ -127,10 +280,52 @@ const TargetsReports = () => {
     }
   };
 
+  const handleSaveMonthlyCollection = async (row, year, month, monthIndex) => {
+    try {
+      const monthNames = ['january', 'february', 'march', 'april', 'may', 'june',
+                         'july', 'august', 'september', 'october', 'november', 'december'];
+      
+      const payload = {
+        year: year,
+        month: monthNames[monthIndex - 1],
+        amount: Number(targetValues[`${row.module}-${monthIndex}`] || 0),
+      };
+
+      await api.put(`/department-collection/departments/${row.id}/collections`, payload);
+
+      message.success(`${month} collection updated successfully!`);
+      setEditingCell(null);
+      fetchReports(yearRange[0], yearRange[1]);
+    } catch (err) {
+      console.error(err);
+      message.error("Error saving monthly collection");
+    }
+  };
+
+  const handleCreateDepartment = async (values) => {
+    try {
+      await api.post('/department-collection/departments', {
+        name: values.name,
+        code: values.code,
+        description: values.description,
+        is_active: values.is_active !== undefined ? values.is_active : true,
+      });
+
+      message.success('Department created successfully!');
+      setIsModalVisible(false);
+      form.resetFields();
+      fetchDepartments();
+      fetchReports(yearRange[0], yearRange[1]);
+    } catch (err) {
+      console.error(err);
+      message.error('Error creating department');
+    }
+  };
+
   const getProgressColor = (percent) => {
-    if (percent < 50) return "#F44336";
-    if (percent < 90) return "#FF9800";
-    return "#4CAF50";
+    if (percent < 50) return COLORS.danger;
+    if (percent < 90) return COLORS.warning;
+    return COLORS.success;
   };
 
   const handlePrint = async (year, reportData) => {
@@ -140,64 +335,72 @@ const TargetsReports = () => {
   };
 
   return (
-    <div
-      style={{
-        padding: 24,
-        minHeight: "100vh",
-        background: "linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 60%)",
-      }}
-    >
+    <div className={CSS_CLASSES.container} style={{
+      padding: '24px',
+      minHeight: '100vh',
+      backgroundColor: COLORS.neutral[50],
+    }}>
       {loading && <LoadingOverlay message="Loading target reports..." />}
 
-      <div
-        style={{
-          maxWidth: 1400,
-          margin: "0 auto",
-        }}
-      >
-        {/* Page Header */}
-        <Card
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Minimalist Header */}
+        <Card 
+          className={CSS_CLASSES.header}
           bordered={false}
           style={{
-            marginBottom: 24,
-            borderRadius: 18,
-            boxShadow: "0 10px 25px rgba(15, 23, 42, 0.08)",
-            background:
-              "radial-gradient(circle at top left, #D6EAF8 0, transparent 60%), #FFFFFF",
+            marginBottom: '24px',
+            borderRadius: '8px',
+            border: `1px solid ${COLORS.border}`,
+            backgroundColor: COLORS.white,
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
           }}
         >
           <Row justify="space-between" align="middle" gutter={[16, 16]}>
             <Col>
               <div>
-                <Title
-                  level={3}
+                <Title 
+                  level={3} 
+                  className={CSS_CLASSES.title}
                   style={{
                     margin: 0,
-                    color: "#102A43",
-                    letterSpacing: 0.4,
+                    color: COLORS.neutral[900],
+                    fontWeight: 600,
+                    fontSize: '20px',
                   }}
                 >
                   Targets & Collection Overview
                 </Title>
-                <Text type="secondary">
+                <Text 
+                  className={CSS_CLASSES.subtitle}
+                  type="secondary"
+                  style={{
+                    fontSize: '14px',
+                    color: COLORS.neutral[500],
+                  }}
+                >
                   Monitor economic enterprise targets and collection performance
-                  per year.
                 </Text>
               </div>
             </Col>
             <Col>
               <Space size="middle" align="center">
                 <div>
-                  <Text strong style={{ display: "block", marginBottom: 4 }}>
+                  <Text strong style={{ 
+                    display: "block", 
+                    marginBottom: 4,
+                    fontSize: '14px',
+                    color: COLORS.neutral[700]
+                  }}>
                     Year Range
                   </Text>
                   <RangePicker
                     picker="year"
                     onChange={handleYearChange}
                     style={{
-                      minWidth: 260,
-                      borderRadius: 999,
-                      padding: "4px 10px",
+                      minWidth: '240px',
+                      borderRadius: '6px',
+                      border: `1px solid ${COLORS.border}`,
+                      height: '36px'
                     }}
                     value={
                       yearRange.length === 2
@@ -212,6 +415,15 @@ const TargetsReports = () => {
                     }
                   />
                 </div>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  className={CSS_CLASSES.buttonPrimary}
+                  style={buttonStyles.primary}
+                  onClick={() => setIsModalVisible(true)}
+                >
+                  Add Department
+                </Button>
               </Space>
             </Col>
           </Row>
@@ -224,30 +436,35 @@ const TargetsReports = () => {
             (_, i) => yearRange[0] + i
           ).map((year) => {
             const reportData = reports[year] || [];
-            const hasCollection = reportData.some(
-              (r) => Number(r.total_collection) > 0
-            );
-
-            if (!hasCollection) {
+            
+            // Always show the report if there's data, even if totals are zero
+            if (reportData.length === 0) {
               return (
                 <Card
                   key={year}
+                  className={CSS_CLASSES.card}
                   style={{
-                    marginBottom: 24,
-                    borderRadius: 16,
-                    border: "1px dashed #D6DBDF",
-                    background: "#FAFBFD",
+                    marginBottom: '24px',
+                    borderRadius: '8px',
+                    border: `1px solid ${COLORS.border}`,
+                    backgroundColor: COLORS.white,
                   }}
                   bordered={false}
                 >
-                  <Row justify="space-between" align="middle">
+                  <Row justify="center" align="middle" style={{ padding: '40px 0' }}>
                     <Col>
-                      <Title level={4} style={{ marginBottom: 4 }}>
-                        Target Report for {year}
-                      </Title>
-                      <Text type="secondary">
-                        No collection has been made for this year.
-                      </Text>
+                      <div style={{ textAlign: 'center' }}>
+                        <Title level={4} style={{ 
+                          marginBottom: 8,
+                          color: COLORS.neutral[700],
+                          fontWeight: 500
+                        }}>
+                          Target Report for {year}
+                        </Title>
+                        <Text type="secondary" style={{ color: COLORS.neutral[500] }}>
+                          No departments found. Try adding departments or check the year range.
+                        </Text>
+                      </div>
                     </Col>
                   </Row>
                 </Card>
@@ -285,16 +502,18 @@ const TargetsReports = () => {
                 dataIndex: "module",
                 key: "module",
                 fixed: "left",
-                render: (text, _, index) => (
+                render: (text, row, index) => (
                   <Tag
-                    color={DEPARTMENT_COLORS[index % DEPARTMENT_COLORS.length]}
+                    className={CSS_CLASSES.tag}
+                    color={getDepartmentColor(row.module, index)}
                     style={{
-                      borderRadius: 999,
-                      fontWeight: 600,
+                      borderRadius: '4px',
+                      fontWeight: 500,
                       color: "white",
-                      padding: "2px 12px",
+                      padding: "4px 8px",
                       textTransform: "capitalize",
-                      fontSize: 13,
+                      fontSize: '13px',
+                      border: 'none',
                     }}
                   >
                     {text}
@@ -314,36 +533,27 @@ const TargetsReports = () => {
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          minWidth: 260,
-                          gap: 8,
+                          minWidth: '200px',
+                          gap: '8px',
                         }}
                       >
-                        <input
-                          type="number"
-                          value={targetValues[row.module]}
-                          onChange={(e) =>
-                            setTargetValues({
-                              ...targetValues,
-                              [row.module]: e.target.value,
-                            })
-                          }
+                        <Input
+                          key={`annual-${row.module}`}
+                          ref={(el) => {
+                            if (el && editingRow === row.module) {
+                              el.focus();
+                            }
+                          }}
+                          type="text"
+                          value={targetValues[row.module] ? `₱ ${Number(targetValues[row.module]).toLocaleString()}` : ''}
+                          onChange={(e) => handleAnnualChange(row.module, e.target.value)}
+                          className={CSS_CLASSES.input}
                           style={{
                             width: "100%",
-                            padding: "6px 10px",
-                            borderRadius: 999,
-                            border: "1px solid #d9d9d9",
-                            fontSize: 14,
-                            outline: "none",
-                            transition: "border-color 0.2s, box-shadow 0.2s",
-                          }}
-                          onFocus={(e) => {
-                            e.target.style.borderColor = primaryColor;
-                            e.target.style.boxShadow =
-                              "0 0 0 2px rgba(25, 118, 210, 0.16)";
-                          }}
-                          onBlur={(e) => {
-                            e.target.style.borderColor = "#d9d9d9";
-                            e.target.style.boxShadow = "none";
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            border: `1px solid ${COLORS.border}`,
+                            height: '32px'
                           }}
                         />
 
@@ -351,7 +561,11 @@ const TargetsReports = () => {
                           <Button
                             shape="circle"
                             icon={<SaveOutlined />}
-                            style={{ ...primaryButtonStyle, paddingInline: 10 }}
+                            style={{
+                              ...buttonStyles.primary,
+                              width: '32px',
+                              height: '32px'
+                            }}
                             onClick={() => handleSaveRow(row, year)}
                           />
                         </Tooltip>
@@ -361,6 +575,11 @@ const TargetsReports = () => {
                             icon={<CloseOutlined />}
                             type="text"
                             danger
+                            style={{ 
+                              width: '32px',
+                              height: '32px',
+                              border: `1px solid ${COLORS.danger}`
+                            }}
                             onClick={() => setEditingRow(null)}
                           />
                         </Tooltip>
@@ -377,6 +596,8 @@ const TargetsReports = () => {
                           textAlign: "right",
                           display: "block",
                           fontVariantNumeric: "tabular-nums",
+                          fontSize: '14px',
+                          color: COLORS.neutral[800]
                         }}
                       >
                         ₱
@@ -390,14 +611,18 @@ const TargetsReports = () => {
                           <Button
                             type="text"
                             icon={<EditOutlined />}
+                            className={CSS_CLASSES.buttonGhost}
                             style={{
-                              ...ghostButtonStyle,
-                              color: primaryColor,
+                              ...buttonStyles.ghost,
+                              height: '24px',
+                              width: '24px',
+                              padding: 0
                             }}
                             onClick={() => {
-                              setTargetValues({
-                                [row.module]: row.annual_target ?? 0,
-                              });
+                              setTargetValues(prev => ({
+                                ...prev,
+                                [row.module]: Number(row.annual_target) || 0,
+                              }));
                               setEditingRow(row.module);
                             }}
                           />
@@ -409,29 +634,137 @@ const TargetsReports = () => {
               },
               ...months.map((m, i) => ({
                 title: m,
-                key: m,
+                key: `collection_${m}`,
                 align: "right",
-                render: (_, row) => (
-                  <Text
-                    style={{
-                      whiteSpace: "nowrap",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    ₱
-                    {Number(row.monthly?.[i + 1] || 0).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </Text>
-                ),
+                width: 100,
+                render: (_, row) => {
+                  const cellKey = `${row.module}-${i + 1}`;
+                  const isEditable = year >= currentYear;
+                  const monthlyCollection = row.monthly?.[i + 1] || 0;
+
+                  if (editingCell === cellKey) {
+                    return (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          minWidth: '80px',
+                          gap: '4px',
+                          justifyContent: 'flex-end'
+                        }}
+                      >
+                        <Input
+                          key={`monthly-${cellKey}`}
+                          ref={(el) => {
+                            if (el && editingCell === cellKey) {
+                              el.focus();
+                            }
+                          }}
+                          type="text"
+                          value={targetValues[cellKey] ? `₱ ${Number(targetValues[cellKey]).toLocaleString()}` : ''}
+                          onChange={(e) => handleMonthlyChange(cellKey, e.target.value)}
+                          className={CSS_CLASSES.input}
+                          style={{
+                            width: '60px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            textAlign: 'right',
+                            border: `1px solid ${COLORS.border}`,
+                            height: '24px'
+                          }}
+                        />
+
+                        <Tooltip title="Save">
+                          <Button
+                            size="small"
+                            icon={<SaveOutlined />}
+                            style={{
+                              ...buttonStyles.primary,
+                              width: '24px',
+                              height: '24px',
+                              fontSize: '10px'
+                            }}
+                            onClick={() => handleSaveMonthlyCollection(row, year, m, i + 1)}
+                          />
+                        </Tooltip>
+                        <Tooltip title="Cancel">
+                          <Button
+                            size="small"
+                            icon={<CloseOutlined />}
+                            type="text"
+                            danger
+                            style={{ 
+                              width: '24px',
+                              height: '24px',
+                              fontSize: '10px',
+                              border: `1px solid ${COLORS.danger}`
+                            }}
+                            onClick={() => setEditingCell(null)}
+                          />
+                        </Tooltip>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'flex-end', 
+                      gap: '4px' 
+                    }}>
+                      <Text
+                        style={{
+                          whiteSpace: "nowrap",
+                          fontVariantNumeric: "tabular-nums",
+                          fontSize: '12px',
+                          color: COLORS.neutral[700]
+                        }}
+                      >
+                        ₱
+                        {Number(monthlyCollection).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </Text>
+
+                      {isEditable && (
+                        <Tooltip title="Edit Monthly Collection">
+                          <Button
+                            type="text"
+                            icon={<EditOutlined />}
+                            className={CSS_CLASSES.buttonGhost}
+                            style={{
+                              ...buttonStyles.ghost,
+                              height: '20px',
+                              width: '20px',
+                              fontSize: '10px',
+                              padding: 0
+                            }}
+                            onClick={() => {
+                              setTargetValues(prev => ({
+                                ...prev,
+                                [cellKey]: Number(monthlyCollection) || 0,
+                              }));
+                              setEditingCell(cellKey);
+                            }}
+                          />
+                        </Tooltip>
+                      )}
+                    </div>
+                  );
+                },
               })),
               {
                 title: "Total Collection",
                 key: "total_collection",
                 align: "right",
                 render: (_, row) => (
-                  <Text strong style={{ fontVariantNumeric: "tabular-nums" }}>
+                  <Text strong style={{ 
+                    fontVariantNumeric: "tabular-nums",
+                    fontSize: '14px',
+                    color: COLORS.neutral[800]
+                  }}>
                     ₱
                     {Number(row.total_collection || 0).toLocaleString(undefined, {
                       minimumFractionDigits: 2,
@@ -442,7 +775,7 @@ const TargetsReports = () => {
               {
                 title: "Progress",
                 key: "progress",
-                width: 200,
+                width: 160,
                 render: (_, row) => {
                   const percent = Number(row.progress?.toFixed(2)) || 0;
                   return (
@@ -450,15 +783,16 @@ const TargetsReports = () => {
                       style={{
                         position: "relative",
                         width: "100%",
-                        minWidth: 140,
+                        minWidth: '120px',
                       }}
                     >
                       <Progress
                         percent={percent}
                         strokeColor={getProgressColor(percent)}
-                        trailColor="#f0f2f5"
+                        trailColor={COLORS.neutral[200]}
                         showInfo={false}
-                        style={{ height: 12, borderRadius: 999 }}
+                        className={CSS_CLASSES.progress}
+                        style={{ height: '6px', borderRadius: '3px' }}
                       />
                       <span
                         style={{
@@ -466,9 +800,10 @@ const TargetsReports = () => {
                           top: 0,
                           left: "50%",
                           transform: "translateX(-50%)",
-                          color: "#102A43",
-                          fontWeight: 600,
-                          fontSize: 12,
+                          color: COLORS.neutral[700],
+                          fontWeight: 500,
+                          fontSize: '11px',
+                          lineHeight: '6px'
                         }}
                       >
                         {percent.toFixed(2)}%
@@ -479,8 +814,8 @@ const TargetsReports = () => {
               },
             ];
 
-            // summary monthly totals
-            const monthlyTotals = months.map((_, idx) => {
+            // summary monthly totals for collections
+            const monthlyCollectionTotals = months.map((_, idx) => {
               const monthIndex = idx + 1; // monthly is 1-based
               return reportData.reduce((sum, row) => {
                 const value = Number(row.monthly?.[monthIndex] || 0);
@@ -492,13 +827,16 @@ const TargetsReports = () => {
               <div
                 key={year}
                 ref={(el) => (reportRefs.current[year] = el)}
-                style={{ marginBottom: 32 }}
+                style={{ marginBottom: '32px' }}
               >
                 <Card
+                  className={CSS_CLASSES.card}
                   bordered={false}
                   style={{
-                    borderRadius: 18,
-                    boxShadow: "0 8px 20px rgba(15, 23, 42, 0.06)",
+                    borderRadius: '8px',
+                    border: `1px solid ${COLORS.border}`,
+                    backgroundColor: COLORS.white,
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
                   }}
                   title={
                     <Row justify="space-between" align="middle">
@@ -506,22 +844,33 @@ const TargetsReports = () => {
                         <div>
                           <Title
                             level={4}
+                            className={CSS_CLASSES.title}
                             style={{
                               margin: 0,
-                              color: "#102A43",
+                              color: COLORS.neutral[900],
+                              fontWeight: 600,
+                              fontSize: '18px',
                             }}
                           >
                             Target Report for {year}
                           </Title>
-                          <Text type="secondary">
-                            Performance breakdown and yearly summary.
+                          <Text 
+                            className={CSS_CLASSES.subtitle}
+                            type="secondary"
+                            style={{
+                              fontSize: '13px',
+                              color: COLORS.neutral[500],
+                            }}
+                          >
+                            Performance breakdown and yearly summary
                           </Text>
                         </div>
                       </Col>
                       <Col>
                         <Button
                           icon={<PrinterOutlined />}
-                          style={primaryButtonStyle}
+                          className={CSS_CLASSES.buttonPrimary}
+                          style={buttonStyles.primary}
                           onClick={() => handlePrint(year, reportData)}
                         >
                           Export PDF
@@ -530,325 +879,562 @@ const TargetsReports = () => {
                     </Row>
                   }
                 >
-                  <Row gutter={[18, 18]}>
+                  <Row gutter={[16, 16]}>
                     <Col xs={24} md={12}>
                       <Card
+                        className={CSS_CLASSES.card}
                         size="small"
                         bordered={false}
                         title={
-                          <span style={{ fontWeight: 600, color: "#34495E" }}>
+                          <span style={{ 
+                            fontWeight: 600, 
+                            color: COLORS.neutral[700],
+                            fontSize: '14px'
+                          }}>
                             Progress per Department
                           </span>
                         }
                         style={{
                           height: "100%",
-                          borderRadius: 16,
-                          background: "#FBFCFE",
+                          borderRadius: '8px',
+                          border: `1px solid ${COLORS.border}`,
+                          backgroundColor: COLORS.neutral[50],
                         }}
                       >
-                        <div ref={(el) => (chartRefs.current[year] = el)}>
-                          <ResponsiveContainer width="100%" height={300}>
+                        <div ref={(el) => (chartRefs.current[year] = el)} className={CSS_CLASSES.chart}>
+                          <ResponsiveContainer width="100%" height={280}>
                             <PieChart>
                               <Pie
                                 data={pieData}
                                 dataKey="value"
                                 nameKey="name"
-                                outerRadius={110}
+                                outerRadius={90}
                                 label={(entry) =>
-                                  `${entry.name}: ${entry.value.toFixed(2)}%`
+                                  `${entry.name}: ${entry.value.toFixed(1)}%`
                                 }
+                                style={{ fontSize: '11px' }}
                               >
                                 {pieData.map((entry, index) => (
                                   <Cell
                                     key={`cell-${index}`}
-                                    fill={
-                                      DEPARTMENT_COLORS[
-                                        index % DEPARTMENT_COLORS.length
-                                      ]
-                                    }
+                                    fill={getDepartmentColor(entry.name, index)}
                                   />
                                 ))}
                               </Pie>
                               <ReTooltip />
-                              <Legend />
+                              <Legend 
+                                wrapperStyle={{ fontSize: '12px' }}
+                                iconType="circle"
+                              />
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
                       </Card>
                     </Col>
 
+                  
+
                     <Col xs={24} md={12}>
-  <Card
-    size="small"
-    bordered={false}
-    title={
-      <span style={{ fontWeight: 600, color: "#34495E" }}>
-        Overall Progress
-      </span>
-    }
-    style={{
-      height: "100%",
-      borderRadius: 16,
-      background:
-        "radial-gradient(circle at top right, #EAF2F8 0, transparent 55%), #FBFCFE",
-      textAlign: "center",
-      paddingBottom: 8,
-    }}
-  >
-    {/* Circle Progress */}
-    <div
-      ref={(el) => (progressRefs.current[year] = el)}
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: 16,
-        marginTop: 8,
-      }}
-    >
-      <Progress
-        type="circle"
-        percent={Number(overallProgress)}
-        strokeColor={getProgressColor(Number(overallProgress))}
-        trailColor="#ECF0F1"
-        size={230}
-        format={(percent) => (
-          <div style={{ textAlign: "center" }}>
-            <div
-              style={{
-                fontSize: 26,
-                fontWeight: 700,
-                color: "#102A43",
-                lineHeight: 1.1,
-              }}
-            >
-              {percent?.toFixed(2)}%
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                color: "#7F8C8D",
-                marginTop: 4,
-                textTransform: "uppercase",
-                letterSpacing: 1.1,
-              }}
-            >
-              Overall Achievement
-            </div>
-          </div>
-        )}
-      />
-    </div>
+                      <Card
+                        className={CSS_CLASSES.card}
+                        size="small"
+                        bordered={false}
+                        title={
+                          <span style={{ 
+                            fontWeight: 600, 
+                            color: COLORS.neutral[700],
+                            fontSize: '14px'
+                          }}>
+                            Overall Progress
+                          </span>
+                        }
+                        style={{
+                          height: "100%",
+                          borderRadius: '8px',
+                          border: `1px solid ${COLORS.border}`,
+                          backgroundColor: COLORS.neutral[50],
+                          textAlign: "center",
+                          paddingBottom: '16px',
+                        }}
+                      >
+                        <div
+                          ref={(el) => (progressRefs.current[year] = el)}
+                          className={CSS_CLASSES.progress}
+                          style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            marginBottom: '16px',
+                            marginTop: '8px',
+                          }}
+                        >
+                          <Progress
+                            type="circle"
+                            percent={Number(overallProgress)}
+                            strokeColor={getProgressColor(Number(overallProgress))}
+                            trailColor={COLORS.neutral[200]}
+                            size={180}
+                            format={(percent) => (
+                              <div style={{ textAlign: "center" }}>
+                                <div
+                                  className={CSS_CLASSES.kpiValue}
+                                  style={{
+                                    fontSize: '22px',
+                                    fontWeight: 700,
+                                    color: COLORS.neutral[900],
+                                    lineHeight: 1.1,
+                                  }}
+                                >
+                                  {percent?.toFixed(2)}%
+                                </div>
+                                <div
+                                  className={CSS_CLASSES.kpiLabel}
+                                  style={{
+                                    fontSize: '11px',
+                                    color: COLORS.neutral[500],
+                                    marginTop: '4px',
+                                    textTransform: "uppercase",
+                                    letterSpacing: '0.5px',
+                                  }}
+                                >
+                                  Overall Achievement
+                                </div>
+                              </div>
+                            )}
+                          />
+                        </div>
 
-    {/* KPI Row */}
-    <div
-      style={{
-        marginTop: 10,
-        padding: 14,
-        borderRadius: 14,
-        backgroundColor: "#FFFFFF",
-        boxShadow: "0 6px 16px rgba(15, 23, 42, 0.06)",
-      }}
-    >
-      <Row gutter={16}>
-        <Col span={12}>
-          <div
-            style={{
-              borderRight: "1px solid #ECF0F1",
-              paddingRight: 10,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 12,
-                textTransform: "uppercase",
-                letterSpacing: 1,
-                color: "#7F8C8D",
-              }}
-            >
-              Total Target
-            </Text>
-            <div style={{ marginTop: 4 }}>
-              <Text
-                style={{
-                  display: "block",
-                  fontSize: 18,
-                  fontWeight: 700,
-                  color: "#1B4F72",
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                ₱
-                {totalTarget.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                })}
-              </Text>
-            </div>
-          </div>
-        </Col>
+                        <div
+                          className={CSS_CLASSES.kpi}
+                          style={{
+                            marginTop: '12px',
+                            padding: '16px',
+                            borderRadius: '8px',
+                            backgroundColor: COLORS.white,
+                            border: `1px solid ${COLORS.border}`,
+                          }}
+                        >
+                          <Row gutter={16}>
+                            <Col span={12}>
+                              <div
+                                style={{
+                                  borderRight: `1px solid ${COLORS.border}`,
+                                  paddingRight: '12px',
+                                }}
+                              >
+                                <Text
+                                  className={CSS_CLASSES.kpiLabel}
+                                  style={{
+                                    fontSize: '11px',
+                                    textTransform: "uppercase",
+                                    letterSpacing: '0.5px',
+                                    color: COLORS.neutral[500],
+                                  }}
+                                >
+                                  Total Target
+                                </Text>
+                                <div style={{ marginTop: '4px' }}>
+                                  <Text
+                                    className={CSS_CLASSES.kpiValue}
+                                    style={{
+                                      display: "block",
+                                      fontSize: '16px',
+                                      fontWeight: 700,
+                                      color: COLORS.primary,
+                                      fontVariantNumeric: "tabular-nums",
+                                    }}
+                                  >
+                                    ₱
+                                    {totalTarget.toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                    })}
+                                  </Text>
+                                </div>
+                              </div>
+                            </Col>
 
-        <Col span={12}>
-          <div style={{ paddingLeft: 10 }}>
-            <Text
-              style={{
-                fontSize: 12,
-                textTransform: "uppercase",
-                letterSpacing: 1,
-                color: "#7F8C8D",
-              }}
-            >
-              Total Collection
-            </Text>
-            <div style={{ marginTop: 4 }}>
-              <Text
-                style={{
-                  display: "block",
-                  fontSize: 18,
-                  fontWeight: 700,
-                  color: "#117864",
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                ₱
-                {totalCollection.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                })}
-              </Text>
+                            <Col span={12}>
+                              <div style={{ paddingLeft: '12px' }}>
+                                <Text
+                                  className={CSS_CLASSES.kpiLabel}
+                                  style={{
+                                    fontSize: '11px',
+                                    textTransform: "uppercase",
+                                    letterSpacing: '0.5px',
+                                    color: COLORS.neutral[500],
+                                  }}
+                                >
+                                  Total Collection
+                                </Text>
+                                <div style={{ marginTop: '4px' }}>
+                                  <Text
+                                    className={CSS_CLASSES.kpiValue}
+                                    style={{
+                                      display: "block",
+                                      fontSize: '16px',
+                                      fontWeight: 700,
+                                      color: COLORS.success,
+                                      fontVariantNumeric: "tabular-nums",
+                                    }}
+                                  >
+                                    ₱
+                                    {totalCollection.toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                    })}
+                                  </Text>
 
-              {/* Optional small indicator under collection */}
-              <Text
-                style={{
-                  fontSize: 11,
-                  color: "#95A5A6",
-                  marginTop: 2,
-                  display: "inline-block",
-                }}
-              >
-                {totalTarget > 0
-                  ? `${overallProgress}% of total target`
-                  : "No target set"}
-              </Text>
-            </div>
-          </div>
-        </Col>
-      </Row>
-    </div>
-  </Card>
-</Col>
-
+                                  <Text
+                                    style={{
+                                      fontSize: '10px',
+                                      color: COLORS.neutral[500],
+                                      marginTop: '2px',
+                                      display: "inline-block",
+                                    }}
+                                  >
+                                    {totalTarget > 0
+                                      ? `${overallProgress}% of total target`
+                                      : "No target set"}
+                                  </Text>
+                                </div>
+                              </div>
+                            </Col>
+                          </Row>
+                        </div>
+                      </Card>
+                    </Col>
                   </Row>
 
+                  {/* Monthly Collection Trends - Full Width */}
                   <Card
+                    className={CSS_CLASSES.card}
                     bordered={false}
                     style={{
-                      marginTop: 24,
-                      borderRadius: 16,
-                      background: "#FBFCFE",
+                      marginTop: '20px',
+                      borderRadius: '8px',
+                      border: `1px solid ${COLORS.border}`,
+                      backgroundColor: COLORS.neutral[50],
                     }}
                     title={
-                      <span style={{ fontWeight: 600, color: "#34495E" }}>
+                      <span style={{ 
+                        fontWeight: 600, 
+                        color: COLORS.neutral[700],
+                        fontSize: '14px'
+                      }}>
+                        Monthly Collection Trends - Economic Enterprises Performance
+                      </span>
+                    }
+                  >
+                    <div className={CSS_CLASSES.chart}>
+                      <ResponsiveContainer width="100%" height={350}>
+                        <LineChart
+                          data={months.map((month, index) => {
+                            const monthData = { month };
+                            reportData.forEach((dept) => {
+                              monthData[dept.module] = dept.monthly?.[index + 1] || 0;
+                            });
+                            return monthData;
+                          })}
+                          margin={{ top: 20, right: 30, left: 30, bottom: 20 }}
+                        >
+                          <CartesianGrid 
+                            strokeDasharray="3 3" 
+                            stroke={COLORS.neutral[200]}
+                            verticalFill={[COLORS.white, COLORS.neutral[50]]}
+                            fillOpacity={0.5}
+                          />
+                          <XAxis 
+                            dataKey="month" 
+                            tick={{ fontSize: 12, fontWeight: 500, fill: COLORS.neutral[600] }}
+                            stroke={COLORS.neutral[400]}
+                            tickLine={{ stroke: COLORS.neutral[400] }}
+                            axisLine={{ stroke: COLORS.neutral[400], strokeWidth: 1 }}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12, fontWeight: 500, fill: COLORS.neutral[600] }}
+                            stroke={COLORS.neutral[400]}
+                            tickLine={{ stroke: COLORS.neutral[400] }}
+                            axisLine={{ stroke: COLORS.neutral[400], strokeWidth: 1 }}
+                            tickFormatter={(value) => `₱${(value / 1000).toFixed(0)}k`}
+                            label={{ 
+                              value: 'Collection Amount (₱)', 
+                              angle: -90, 
+                              position: 'insideLeft',
+                              style: { fontSize: 12, fontWeight: 600, color: COLORS.neutral[600] }
+                            }}
+                          />
+                          <ReTooltip 
+                            formatter={(value, name) => [
+                              `₱${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+                              name
+                            ]}
+                            contentStyle={{
+                              backgroundColor: COLORS.white,
+                              border: `1px solid ${COLORS.border}`,
+                              borderRadius: '6px',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                              padding: '8px'
+                            }}
+                            labelStyle={{ 
+                              fontWeight: 600, 
+                              color: COLORS.neutral[700],
+                              marginBottom: '4px'
+                            }}
+                          />
+                          <Legend 
+                            wrapperStyle={{ 
+                              fontSize: '12px',
+                              fontWeight: 500,
+                              paddingTop: '16px'
+                            }}
+                            iconType="line"
+                            iconSize={12}
+                          />
+                          {reportData.map((dept, index) => (
+                            <Line
+                              key={dept.module}
+                              type="monotone"
+                              dataKey={dept.module}
+                              stroke={getDepartmentColor(dept.module, index)}
+                              strokeWidth={2}
+                              dot={{ 
+                                fill: getDepartmentColor(dept.module, index), 
+                                r: 3,
+                                strokeWidth: 1,
+                                stroke: COLORS.white
+                              }}
+                              activeDot={{ 
+                                r: 5,
+                                stroke: getDepartmentColor(dept.module, index),
+                                strokeWidth: 1,
+                                fill: COLORS.white
+                              }}
+                              connectNulls={false}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
+
+                  <Card
+                    className={CSS_CLASSES.card}
+                    bordered={false}
+                    style={{
+                      marginTop: '20px',
+                      borderRadius: '8px',
+                      border: `1px solid ${COLORS.border}`,
+                      backgroundColor: COLORS.neutral[50],
+                    }}
+                    title={
+                      <span style={{ 
+                        fontWeight: 600, 
+                        color: COLORS.neutral[700],
+                        fontSize: '14px'
+                      }}>
                         Detailed Targets Table for {year}
                       </span>
                     }
                   >
-                    <Table
-                      columns={columns}
-                      dataSource={reportData}
-                      rowKey="module"
-                      pagination={false}
-                      scroll={{ x: "max-content" }}
-                      size="middle"
-                      summary={() => (
-                        <Table.Summary.Row
-                          style={{
-                            background: "#F2F4F7",
-                            fontWeight: 600,
-                            fontSize: 14,
-                          }}
-                        >
-                          <Table.Summary.Cell index={0}>
-                            <Text strong style={{ color: "#154360" }}>
-                              TOTAL
-                            </Text>
-                          </Table.Summary.Cell>
-
-                          {/* Annual Target Total */}
-                          <Table.Summary.Cell index={1} align="right">
-                            ₱
-                            {totalTarget.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                            })}
-                          </Table.Summary.Cell>
-
-                          {/* Monthly totals */}
-                          {months.map((_, idx) => (
-                            <Table.Summary.Cell
-                              key={idx + 2}
-                              index={idx + 2}
-                              align="right"
-                            >
-                              ₱
-                              {monthlyTotals[idx].toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                            </Table.Summary.Cell>
-                          ))}
-
-                          {/* Total Collection */}
-                          <Table.Summary.Cell
-                            index={months.length + 2}
-                            align="right"
-                          >
-                            ₱
-                            {totalCollection.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                            })}
-                          </Table.Summary.Cell>
-
-                          {/* Overall Progress */}
-                          <Table.Summary.Cell index={months.length + 3}>
-                            <div
-                              style={{
-                                position: "relative",
-                                width: "100%",
-                                minWidth: 140,
-                              }}
-                            >
-                              <Progress
-                                percent={Number(overallProgress)}
-                                strokeColor={getProgressColor(
-                                  Number(overallProgress)
-                                )}
-                                trailColor="#e5e7eb"
-                                showInfo={false}
-                                style={{ height: 12, borderRadius: 999 }}
-                              />
-                              <span
-                                style={{
-                                  position: "absolute",
-                                  top: 0,
-                                  left: "50%",
-                                  transform: "translateX(-50%)",
-                                  color: "#102A43",
-                                  fontWeight: "bold",
-                                  fontSize: 12,
-                                  lineHeight: "20px",
-                                }}
-                              >
-                                {overallProgress}%
-                              </span>
-                            </div>
-                          </Table.Summary.Cell>
-                        </Table.Summary.Row>
-                      )}
-                    />
+                 <ConfigProvider
+  theme={{
+    components: {
+      Table: {
+        headerBg: COLORS.white,
+        headerColor: COLORS.neutral[800],
+        borderColor: COLORS.border,
+      },
+    },
+  }}
+>
+  <Table
+    className={CSS_CLASSES.table}
+    columns={columns}
+    dataSource={reportData}
+    rowKey="module"
+    pagination={false}
+    scroll={{ x: "max-content" }}
+    size="middle"
+    style={{
+      borderRadius: '8px',
+      overflow: "hidden",
+      border: `1px solid ${COLORS.border}`,
+    }}
+  />
+</ConfigProvider>
                   </Card>
                 </Card>
               </div>
             );
           })}
       </div>
+
+      {/* Department Creation Modal */}
+      <Modal
+        className={CSS_CLASSES.modal}
+        title={
+          <div style={{ 
+            textAlign: 'center', 
+            fontSize: '16px', 
+            fontWeight: 600,
+            color: COLORS.neutral[800]
+          }}>
+            Create New Department
+          </div>
+        }
+        open={isModalVisible}
+        onCancel={() => {
+          setIsModalVisible(false);
+          form.resetFields();
+        }}
+        footer={null}
+        width={480}
+        style={{ borderRadius: '8px' }}
+        bodyStyle={{
+          padding: '24px'
+        }}
+      >
+        <Form
+          className={CSS_CLASSES.form}
+          form={form}
+          layout="vertical"
+          onFinish={handleCreateDepartment}
+          style={{ marginTop: '16px' }}
+        >
+          <Form.Item
+            name="name"
+            label={
+              <span style={{ 
+                fontWeight: 500, 
+                color: COLORS.neutral[700],
+                fontSize: '14px'
+              }}>
+                Department Name
+              </span>
+            }
+            rules={[
+              { required: true, message: 'Please enter department name' },
+              { max: 255, message: 'Name too long' }
+            ]}
+          >
+            <Input
+              className={CSS_CLASSES.input}
+              placeholder="e.g., Market Operations"
+              style={{ 
+                borderRadius: '6px',
+                border: `1px solid ${COLORS.border}`,
+                height: '36px'
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="code"
+            label={
+              <span style={{ 
+                fontWeight: 500, 
+                color: COLORS.neutral[700],
+                fontSize: '14px'
+              }}>
+                Department Code
+              </span>
+            }
+            rules={[
+              { required: true, message: 'Please enter department code' },
+              { max: 50, message: 'Code too long' }
+            ]}
+          >
+            <Input
+              className={CSS_CLASSES.input}
+              placeholder="e.g., MKT OPS"
+              style={{ 
+                borderRadius: '6px',
+                border: `1px solid ${COLORS.border}`,
+                height: '36px'
+              }}
+              uppercase
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="description"
+            label={
+              <span style={{ 
+                fontWeight: 500, 
+                color: COLORS.neutral[700],
+                fontSize: '14px'
+              }}>
+                Description
+              </span>
+            }
+            rules={[
+              { max: 500, message: 'Description too long' }
+            ]}
+          >
+            <Input.TextArea
+              className={CSS_CLASSES.input}
+              placeholder="Brief description of the department..."
+              rows={3}
+              style={{ 
+                borderRadius: '6px',
+                border: `1px solid ${COLORS.border}`
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="is_active"
+            label={
+              <span style={{ 
+                fontWeight: 500, 
+                color: COLORS.neutral[700],
+                fontSize: '14px'
+              }}>
+                Active Status
+              </span>
+            }
+            valuePropName="checked"
+            initialValue={true}
+          >
+            <Switch 
+              checkedChildren="Active" 
+              unCheckedChildren="Inactive"
+              style={{ backgroundColor: COLORS.primary }}
+            />
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0, marginTop: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+              <Button
+                onClick={() => {
+                  setIsModalVisible(false);
+                  form.resetFields();
+                }}
+                style={{ 
+                  borderRadius: '6px', 
+                  width: '120px',
+                  height: '36px',
+                  border: `1px solid ${COLORS.border}`,
+                  color: COLORS.neutral[600]
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                style={{ 
+                  ...buttonStyles.primary, 
+                  borderRadius: '6px', 
+                  width: '140px',
+                  height: '36px',
+                }}
+              >
+                Create Department
+              </Button>
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

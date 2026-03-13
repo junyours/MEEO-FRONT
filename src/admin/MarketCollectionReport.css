@@ -1,0 +1,215 @@
+/* ======================================================
+   MARKET COLLECTION REPORT – ENTERPRISE DESIGN SYSTEM
+====================================================== */
+
+/* ===== GLOBAL LAYOUT ===== */
+.market-collection-report-container {
+  padding: 32px;
+  background: #f4f6f9;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ===== HEADER ===== */
+.report-header-pro {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px 28px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.title-icon {
+  font-size: 22px;
+  color: #2563eb;
+}
+
+/* ===== CONTROLS CARD ===== */
+.enhanced-controls-card {
+  border-radius: 12px !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: none !important;
+}
+
+.controls-container {
+  padding: 20px;
+}
+
+.tabs-section .ant-tabs-tab {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.tabs-section .ant-tabs-tab-active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-radius: 6px;
+}
+
+/* ===== REPORT CONTENT ===== */
+.report-content {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 32px;
+  border: 1px solid #e5e7eb;
+}
+
+/* ===== REPORT TITLE ===== */
+.report-title-section h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* ===== SUMMARY CARDS ===== */
+.summary-card {
+  border-radius: 12px !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease;
+}
+
+.summary-card:hover {
+  border-color: #d1d5db !important;
+}
+
+.summary-card .ant-statistic-title {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.summary-card .ant-statistic-content {
+  font-size: 26px;
+  font-weight: 600;
+}
+
+/* Remove gradients */
+.summary-card.total-collections,
+.summary-card.total-transactions,
+.summary-card.missed-days,
+.summary-card.advance-days {
+  background: #ffffff !important;
+}
+
+/* ===== PAYMENT BREAKDOWN ===== */
+.payment-breakdown-card {
+  border-radius: 12px !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: none !important;
+}
+
+.payment-type-card {
+  border-radius: 10px !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: none !important;
+}
+
+.payment-type-card .stat-title {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.payment-type-card .stat-value {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.payment-type-card .stat-percent {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* ===== TABLE DESIGN ===== */
+.report-content .ant-table {
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.report-content .ant-table-thead > tr > th {
+  background: #f9fafb !important;
+  font-weight: 600;
+  color: #374151;
+  font-size: 13px;
+}
+
+.report-content .ant-table-tbody > tr > td {
+  font-size: 13px;
+  color: #374151;
+}
+
+.report-content .ant-table-tbody > tr:hover > td {
+  background: #f3f4f6 !important;
+}
+
+/* ===== TAGS ===== */
+.ant-tag {
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+/* ===== BUTTONS ===== */
+.ant-btn-primary {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.ant-btn-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+/* ===== MODAL ===== */
+.ant-modal-content {
+  border-radius: 12px;
+}
+
+/* ===== PRINT CLEANUP ===== */
+@media print {
+  .report-header-pro,
+  .enhanced-controls-card,
+  .ant-btn,
+  .header-right {
+    display: none !important;
+  }
+
+  .report-content {
+    border: none;
+    box-shadow: none;
+  }
+
+  .ant-card {
+    border: 1px solid #d1d5db;
+  }
+
+  .ant-table-thead > tr > th {
+    background: #f3f4f6 !important;
+    color: #000 !important;
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .market-collection-report-container {
+    padding: 16px;
+  }
+
+  .report-content {
+    padding: 20px;
+  }
+
+  .report-header-pro {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
