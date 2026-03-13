@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-   baseURL: 'https://meeo.opolmisor.com/BackEnd/public/api',
+   baseURL: 'https://opolmisor.com/BackEnd/public/api',
 //  baseURL: "http://127.0.0.1:8000/api" ,
  withCredentials: true, // Enable sending cookies with requests
 });
