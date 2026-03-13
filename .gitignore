@@ -27,4 +27,6 @@ yarn-error.log*
 *.apk
 *.aab
 
-
+# Old APK folders (never track again)
+public/Apk/
+public/apk/
