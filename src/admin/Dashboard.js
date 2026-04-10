@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Layout,
   Row,
@@ -10,6 +10,7 @@ import {
 
   Tooltip,
 } from "antd";
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   FiTrendingUp,
 
@@ -34,40 +35,18 @@ import {
 import { DollarOutlined } from "@ant-design/icons";
 import Sidebar from "./Sidebar";
 import SectionManager from "./SectionManager";
-import AdminApplications from "./ApplicationForm";
-import AdminVendorProfiles from "./VendorProfile";
-import MarketRegistration from "./MarketRegistration";
-import VendorsMissedPayments from "./VendorMissedDay";
+
 import VendorPaymentManagement from "./VendorPaymentManagement";
-import MarketReport from "./MarketReport";
+
 import VendorAnalysis from "./VendorAnalysis";
-import SlaughterReport from "./SlaughterReport";
+
 import RentalReport from "./RentalReport";
-
-
-
-import AdminStallChangeRequests from "./AdminStallChangeRequests";
-
-import CollectorReports from "./CollectorReports";
-
-import Reports from "./Reports";
-
-import StallHistory from "./StallHistory";
-
-import UnremittedPayments from "./UnremittedPayments";
-import MarketCollectionReport from "./MarketCollectionReport";
-import WharfReport from "./WharfReport";
-
-import MotorPoolReport from "./MotorPoolReport";
-
-import AdminRemoveStall from "./AdminRemoveStall";
 
 import TargetsReports from "./TargetsReports";
 
 import LoadingOverlay from "./Loading";
 // import CashTickets from "./CashTickets";
 import CashTicketManagement from "./CashTicketManagement";
-import RenewalRequests from "./RenewalRequest";
 
 
 import VendorPaymentCalendar from "./VendorPaymentCalendar";
@@ -76,23 +55,19 @@ import ExpectedCollectionAnalysis from "./ExpectedCollectionAnalysis";
 
 import MarketOpenSpaceScreen from "./MarketOpenSpaceScreen";
 
-import DepartmentCollectionReporting from "./DepartmentCollectionReporting";
 
 // New Market Management Components
 import VendorManagement from "./VendorManagement";
-import PaymentMonitoring from "./PaymentMonitoring";
-import TargetCollectionReporting from "./TargetCollectionReporting";
-import CertificateManagement from "./CertificateManagement";
+import ProductManagement from "./ProductManagement";
 
 import AdminProfile from "./AdminProfile";
 
 import api from "../Api";
-
-import BlocklistedVendors from "./BlockListed";
-
-import PaymentReports from "./PaymentReports";
+import Footer from "../Auth/Footer";
 
 import StallRateDashboard from "./StallRateDashboard";
+
+import PaymentManagement from "./PaymentManagement";
 
 import {
   ResponsiveContainer,
@@ -100,7 +75,9 @@ import {
   CartesianGrid,
   XAxis,
   YAxis,
-  Bar
+  Bar,
+  Legend,
+  Tooltip as RechartsTooltip
 } from 'recharts';
 
 
@@ -109,7 +86,37 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const AdminDashboard = () => {
-  const [activeView, setActiveView] = useState("dashboard");
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get screen from URL path or default to dashboard
+  const getScreenFromURL = useCallback(() => {
+    const pathSegments = location.pathname.split('/');
+    const lastSegment = pathSegments[pathSegments.length - 1];
+    
+    // Map of path segments to screen keys
+    const pathToScreenMap = {
+      'dashboard': 'dashboard',
+      'vendor-management': 'vendor-management',
+      'product-management': 'product-management',
+      'cash-ticket': 'cash-ticket',
+      'vendor-payment-calendar': 'vendor-payment-calendar',
+      'market-section-stalls': 'market-section-stalls',
+      'stall-rate-dashboard': 'stall-rate-dashboard',
+      'vendor-payment': 'vendor-payment',
+      'payment-management': 'payment-management',
+      'target': 'target',
+      'remaining-balance': 'remaining-balance',
+      'rental-report': 'rental-report',
+      'estimated_collection': 'estimated_collection',
+      'market-open-space-collections': 'market-open-space-collections',
+      'profile': 'profile'
+    };
+    
+    return pathToScreenMap[lastSegment] || 'dashboard';
+  }, [location.pathname]);
+  
+  const [activeView, setActiveView] = useState(getScreenFromURL());
   const [stats, setStats] = useState({
     rentedStalls: 0,
     availableStalls: 0,
@@ -130,6 +137,7 @@ const AdminDashboard = () => {
     previous_year_collected: 0,
   });
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(null); // null for current/default, 1-12 for specific months
   const [availableYears, setAvailableYears] = useState([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -144,10 +152,55 @@ const AdminDashboard = () => {
   const textPrimary = "#0f172a";
   const textSecondary = "#64748b";
 
+  // Month options for dropdown
+  const monthOptions = [
+    { value: null, label: "Current Period" },
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+
+  // Update URL when activeView changes
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const basePath = '/admin';
+    
+    let newPath;
+    if (activeView === 'dashboard') {
+      newPath = `${basePath}/dashboard`;
+    } else {
+      newPath = `${basePath}/${activeView}`;
+    }
+    
+    if (newPath !== currentPath) {
+      navigate(newPath, { replace: true });
+    }
+  }, [activeView, navigate, location.pathname]);
+
+  // Listen for browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveView(getScreenFromURL());
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [location, getScreenFromURL]);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
+        // Main dashboard data without month filter
         const { data } = await api.get(`/dashboard/stats?year=${selectedYear}`);
         setStats(data.basic_stats);
         setSectionStats(data.section_statistics);
@@ -161,7 +214,33 @@ const AdminDashboard = () => {
       }
     };
     fetchDashboardData();
-  }, [selectedYear]);
+  }, [selectedYear]); // Only depend on year now
+
+  // Separate effect for revenue performance data
+  useEffect(() => {
+    const fetchRevenueData = async () => {
+      try {
+        let url = `/dashboard/stats?year=${selectedYear}`;
+        if (selectedMonth) {
+          url += `&month=${selectedMonth}`;
+        }
+        const { data } = await api.get(url);
+        // Only update revenue-related stats
+        setStats(prevStats => ({
+          ...prevStats,
+          market_monthly_revenue: data.basic_stats.market_monthly_revenue,
+          open_space_monthly_revenue: data.basic_stats.open_space_monthly_revenue,
+          taboc_gym_monthly_revenue: data.basic_stats.taboc_gym_monthly_revenue,
+          market_monthly_collection: data.basic_stats.market_monthly_collection,
+          open_space_monthly_collection: data.basic_stats.open_space_monthly_collection,
+          taboc_gym_monthly_collection: data.basic_stats.taboc_gym_monthly_collection,
+        }));
+      } catch (error) {
+        console.warn('Failed to fetch revenue data:', error);
+      }
+    };
+    fetchRevenueData();
+  }, [selectedYear, selectedMonth]);
 
   const StatCard = ({ title, value, icon, color, targetView, subtitle }) => (
     <Card
@@ -352,7 +431,7 @@ const AdminDashboard = () => {
             marginBottom: 16,
           }}
         >
-          Revenue Analytics
+         Revenue Projections Analytics
         </Title>
       </div>
       <Row gutter={[20, 20]} style={{ marginBottom: 32 }}>
@@ -660,48 +739,78 @@ const AdminDashboard = () => {
             bodyStyle={{ padding: 24 }}
           >
             <div style={{ marginBottom: 20 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div
-                  style={{
-                    background: primaryColor,
-                    color: "white",
-                    borderRadius: 8,
-                    padding: 8,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 16,
-                  }}
-                >
-                  <FiBarChart />
-                </div>
-                <div>
-                  <Text
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div
                     style={{
+                      background: primaryColor,
+                      color: "white",
+                      borderRadius: 8,
+                      padding: 8,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       fontSize: 16,
-                      fontWeight: 600,
-                      color: textPrimary,
-                      display: "block",
                     }}
                   >
-                    Revenue Performance
+                    <FiBarChart />
+                  </div>
+                  <div>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 600,
+                        color: textPrimary,
+                        display: "block",
+                      }}
+                    >
+                      Revenue Performance
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: textSecondary,
+                      }}
+                    >
+                      Monthly Revenue vs Collection Comparison
+                    </Text>
+                  </div>
+                </div>
+                
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Text style={{ color: textSecondary, fontSize: 14, fontWeight: 500 }}>
+                    Select Month:
                   </Text>
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: textSecondary,
-                    }}
+                  <Select
+                    value={selectedMonth}
+                    onChange={setSelectedMonth}
+                    style={{ width: 150 }}
+                    size="small"
                   >
-                    Market, Open Space & Taboc Gym comparison
-                  </Text>
+                    {monthOptions.map(month => (
+                      <Option key={month.value || 'current'} value={month.value}>
+                        {month.label}
+                      </Option>
+                    ))}
+                  </Select>
                 </div>
               </div>
             </div>
             
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={[
-                { name: 'Daily Revenue', Market: stats.market_daily_collection || 0, 'Open Space': stats.open_space_daily_collection || 0, 'Taboc Gym': stats.taboc_gym_daily_collection || 0 },
-                { name: 'Monthly Revenue', Market: stats.market_monthly_collection || 0, 'Open Space': stats.open_space_monthly_collection || 0, 'Taboc Gym': stats.taboc_gym_monthly_collection || 0 },
+                { 
+                  name: selectedMonth ? `${monthOptions.find(m => m.value === selectedMonth)?.label || 'Selected Month'} Revenue` : 'Monthly Revenue', 
+                  Market: stats.market_monthly_revenue || 0, 
+                  'Open Space': stats.open_space_monthly_revenue || 0, 
+                  'Taboc Gym': stats.taboc_gym_monthly_revenue || 0 
+                },
+                { 
+                  name: selectedMonth ? `${monthOptions.find(m => m.value === selectedMonth)?.label || 'Selected Month'} Collection` : 'Monthly Collection', 
+                  Market: stats.market_monthly_collection || 0, 
+                  'Open Space': stats.open_space_monthly_collection || 0, 
+                  'Taboc Gym': stats.taboc_gym_monthly_collection || 0 
+                },
               ]}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis 
@@ -713,7 +822,7 @@ const AdminDashboard = () => {
                   tick={{ fill: textSecondary, fontSize: 12 }} 
                   axisLine={{ stroke: '#e2e8f0' }}
                 />
-                <Tooltip 
+                <RechartsTooltip 
                   contentStyle={{ 
                     backgroundColor: cardBackground, 
                     border: '1px solid #e2e8f0',
@@ -722,10 +831,18 @@ const AdminDashboard = () => {
                     padding: '12px'
                   }}
                   formatter={(value, name) => [`₱${value.toLocaleString()}`, name]}
+                  labelFormatter={(label) => `📊 ${label}`}
                 />
-                <Bar dataKey="Market" fill={primaryColor} radius={[6, 6, 0, 0]} />
-                <Bar dataKey="Open Space" fill={successColor} radius={[6, 6, 0, 0]} />
-                <Bar dataKey="Taboc Gym" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                <Legend 
+                  wrapperStyle={{
+                    paddingTop: '20px',
+                    fontSize: '12px'
+                  }}
+                  iconType="rect"
+                />
+                <Bar dataKey="Market" fill={primaryColor} radius={[6, 6, 0, 0]} name="Market (Blue)" />
+                <Bar dataKey="Open Space" fill={successColor} radius={[6, 6, 0, 0]} name="Open Space (Green)" />
+                <Bar dataKey="Taboc Gym" fill="#f59e0b" radius={[6, 6, 0, 0]} name="Taboc Gym (Orange)" />
               </BarChart>
             </ResponsiveContainer>
           </Card>
@@ -1327,56 +1444,27 @@ const AdminDashboard = () => {
   switch (activeView) {
     case "profile":
       return <AdminProfile />;
-    case "payment-monitoring":
-      return <PaymentMonitoring />;
 
-    case "target-collection":
-      return <TargetCollectionReporting />;
+   
 case "vendor-management":
   return <VendorManagement />;
-    case "department-collection":
-      return <DepartmentCollectionReporting />;
+   
+case "product-management":
+  return <ProductManagement />;
+   
 case "cash-ticket":
   return <CashTicketManagement />;
-    case "certificate-management":
-      return <CertificateManagement />;
-case "market-collection-reports":
-  return <MarketCollectionReport />;
+
+
     case "market-section-stalls":
       return <SectionManager />;
 case "remaining-balance":
   return <VendorAnalysis />;
 case "rental-report":
   return <RentalReport />;
-    case "market-registration":
-      return <MarketRegistration />;
 
-    case "market-vendor-applications":
-      return <AdminApplications />;
 
-    case "market-stall-change":
-      return <AdminStallChangeRequests />;
 
-    case "market-remittance":
-      return <MarketReport />;
-
-    case "renewal":
-      return <RenewalRequests />;
-
-    case "slaughter-remittance":
-      return <SlaughterReport />;
-
-    case "motorpool-remittance":
-      return <MotorPoolReport />;
-
-    case "wharf-remittance":
-      return <WharfReport />;
-
-    case "unremitted":
-      return <UnremittedPayments />;
-
-    case "vendor-accounts":
-      return <AdminVendorProfiles />;
 
     case "target":
       return <TargetsReports />;
@@ -1384,29 +1472,10 @@ case "rental-report":
     case "vendor-payment":
       return <VendorPaymentManagement />;
 
-    case "department":
-      return <Reports />;
-
-    case "collector":
-      return <CollectorReports />;
-
-    case "remove-stall":
-      return <AdminRemoveStall />;
-
-    case "vendor-payments":
-      return <VendorsMissedPayments />;
 
     case "vendor-payment-calendar":
       return <VendorPaymentCalendar />;
-
-    case "stall":
-      return <StallHistory />;
-
-    case "payment-reports":
-      return <PaymentReports />;
-
-    case "block-listed":
-      return <BlocklistedVendors />;
+   
 case "estimated_collection":
 return <ExpectedCollectionAnalysis />;
 
@@ -1415,6 +1484,9 @@ return <MarketOpenSpaceScreen />;
 
 case "stall-rate-dashboard":
   return <StallRateDashboard />;
+
+case "payment-management":
+  return <PaymentManagement />;
 
     default:
       return renderDashboard();
@@ -1541,11 +1613,25 @@ case "stall-rate-dashboard":
           </div>
         </Header>
 
-        <Content style={{ padding: 0 }}>{renderContent()}</Content>
+        <Content style={{ 
+          padding: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 'calc(100vh - 64px)' // Full height minus header
+        }}>
+          <div style={{ flex: 1 }}>
+            {renderContent()}
+          </div>
+          
+          {/* Dashboard Footer */}
+          <Footer />
+        </Content>
       </Layout>
 
       {loading && <LoadingOverlay message="Loading Dashboard..." />}
+     
     </Layout>
+    
   );
 
  };

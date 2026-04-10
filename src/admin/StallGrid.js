@@ -66,6 +66,11 @@ const [loadingPaymentHistory, setLoadingPaymentHistory] = useState(false);
   const [editIsMonthly, setEditIsMonthly] = useState(false);
   const [editEffectiveDate, setEditEffectiveDate] = useState(null);
   const [updatingRent, setUpdatingRent] = useState(false);
+  
+  // Delete stall functionality
+  const [deleteStallModalVisible, setDeleteStallModalVisible] = useState(false);
+  const [stallToDelete, setStallToDelete] = useState(null);
+  const [deletingStall, setDeletingStall] = useState(false);
     const gridRef = useRef(null); 
 const primaryButtonStyle = {
   minWidth: 110,
@@ -127,8 +132,8 @@ const neutralButtonStyle = {
         daily_rent: data.daily_rent || 0,
         monthly_rent: data.monthly_rent || 0,
         payment_type: data.payment_type || "—",
-        missedDays: data.rented?.missed_days || 0,
-        missed_days: data.rented?.missed_days || 0, // Add this line for consistency
+        missedDays: data.missed_days || 0,
+        missed_days: data.missed_days || 0, // Fix: read from root level, not from rented object
          nextDueDate: data.next_due_date,
         id: data.id,
         is_active: data.is_active ?? true,
@@ -193,7 +198,6 @@ const fetchPaymentDetails = async (rentedId) => {
     try {
       const res = await api.get(`/stall/${stallId}`);
       setRentedHistory(res.data.history || []);
-      console.log(res.data.history)
     } catch (err) {
       console.error(err);
       setRentedHistory([]);
@@ -249,10 +253,6 @@ const fetchPaymentDetails = async (rentedId) => {
         effective_date: editEffectiveDate ? editEffectiveDate.format('YYYY-MM-DD') : null,
       });
       
-      console.log('Update stall rent response:', response);
-      console.log('Response data:', response.data);
-      console.log('Response status:', response.status);
-      
       if (response.data && response.data.success) {
         const updatedCount = response.data.updated_rented_records || 0;
         const effectiveDateMsg = response.data.effective_date && response.data.effective_date !== new Date().toISOString().split('T')[0] 
@@ -302,6 +302,30 @@ const fetchPaymentDetails = async (rentedId) => {
     }
   };
 
+  const handleDeleteStall = async () => {
+    if (!stallToDelete) return;
+    
+    try {
+      setDeletingStall(true);
+      await api.delete(`/stalls/${stallToDelete.id}`);
+      
+      message.success(`Stall #${stallToDelete.stall_number} deleted successfully`);
+      setDeleteStallModalVisible(false);
+      setStallToDelete(null);
+      onRefresh?.(); // Refresh the stall grid
+    } catch (err) {
+      console.error('Error deleting stall:', err);
+      message.error('Failed to delete stall');
+    } finally {
+      setDeletingStall(false);
+    }
+  };
+  
+  const openDeleteStallModal = (stall) => {
+    setStallToDelete(stall);
+    setDeleteStallModalVisible(true);
+  };
+  
   const openEditRentModal = () => {
     if (!modalVendor) return;
     setEditDailyRate(modalVendor.daily_rate || '');
@@ -363,7 +387,9 @@ const fetchPaymentDetails = async (rentedId) => {
     setSelectedRented(rented);
     setMissedPaymentModalVisible(true);
     // Pre-calculate total missed amount
-    const totalMissed = (rented.missed_days || 0) * (rented.daily_rent || 0);
+    const totalMissed = rented.is_monthly 
+      ? (rented.missed_days || 0) * (rented.monthly_rent || rented.daily_rent * 30 || 0)
+      : (rented.missed_days || 0) * (rented.daily_rent || 0);
     setPaymentAmount(totalMissed.toString());
   };
 
@@ -372,7 +398,9 @@ const fetchPaymentDetails = async (rentedId) => {
     if (!paymentAmount || parseFloat(paymentAmount) <= 0) return 'partial';
     
     const amount = parseFloat(paymentAmount);
-    const totalMissed = (modalVendor.missed_days || 0) * (modalVendor.daily_rent || 0);
+    const totalMissed = modalVendor.is_monthly 
+      ? (modalVendor.missed_days || 0) * (modalVendor.monthly_rent || modalVendor.daily_rent * 30 || 0)
+      : (modalVendor.missed_days || 0) * (modalVendor.daily_rent || 0);
     
     if (amount < totalMissed) return 'partial';
     if (amount === totalMissed) return 'fully paid';
@@ -402,17 +430,24 @@ const fetchPaymentDetails = async (rentedId) => {
   const getPaymentTypeDescription = () => {
     const type = getPaymentType();
     const amount = parseFloat(paymentAmount || 0);
-    const totalMissed = (modalVendor.missed_days || 0) * (modalVendor.daily_rent || 0);
-    const daysCovered = Math.min(Math.floor(amount / (modalVendor.daily_rent || 1)), modalVendor.missed_days || 0);
+    const totalMissed = modalVendor.is_monthly 
+      ? (modalVendor.missed_days || 0) * (modalVendor.monthly_rent || modalVendor.daily_rent * 30 || 0)
+      : (modalVendor.missed_days || 0) * (modalVendor.daily_rent || 0);
+    const rate = modalVendor.is_monthly 
+      ? (modalVendor.monthly_rent || modalVendor.daily_rent * 30 || 1)
+      : (modalVendor.daily_rent || 1);
+    const unit = modalVendor.is_monthly ? 'month' : 'day';
+    const units = modalVendor.is_monthly ? 'months' : 'days';
+    const covered = Math.min(Math.floor(amount / rate), modalVendor.missed_days || 0);
     
     switch (type) {
       case 'partial': 
-        return `Covers ${daysCovered} of ${modalVendor.missed_days} missed days`;
+        return `Covers ${covered} of ${modalVendor.missed_days} missed ${units}`;
       case 'fully paid': 
-        return `All ${modalVendor.missed_days} missed days will be settled`;
+        return `All ${modalVendor.missed_days} missed ${units} will be settled`;
       case 'advance': 
-        const advanceDays = Math.floor((amount - totalMissed) / (modalVendor.daily_rent || 1));
-        return `Settles all missed days plus ${advanceDays} advance days`;
+        const advanceUnits = Math.floor((amount - totalMissed) / rate);
+        return `Settles all missed ${units} plus ${advanceUnits} advance ${unit}s`;
       default: 
         return '';
     }
@@ -704,7 +739,7 @@ const fetchPaymentDetails = async (rentedId) => {
         style={gridStyle}
       >
         {gridCells.map(({ stall, row, col }) => {
-          const color = stall ? getStatusColor(stall.status) : "#f0f0f0ff";
+          const color = stall ? (stall.color || getStatusColor(stall.status)) : "#f0f0f0ff";
           
           // For wet areas with horizontal display, reverse numbering to start from right
           // For single row, keep original order (vertical layout)
@@ -941,7 +976,9 @@ const fetchPaymentDetails = async (rentedId) => {
                         justifyContent: "space-between",
                       }}
                     >
-                      <Text type="secondary">Missed Days</Text>
+                      <Text type="secondary">
+                        {modalVendor.is_monthly ? "Missed Months" : "Missed Days"}
+                      </Text>
                       <Text strong>{modalVendor.missed_days}</Text>
                     </div>
                 
@@ -1039,16 +1076,16 @@ const fetchPaymentDetails = async (rentedId) => {
               },
             
               {
-                title: "Missed Days",
+                title: "Missed Days/Months",
                 dataIndex: "missed_days",
-                render: (text) => (
+                render: (text, record) => (
                   <Text
                     style={{
                       fontSize: 12,
                       color: text > 0 ? "#fa541c" : "#52c41a",
                     }}
                   >
-                    {text}
+                    {text} {record.is_monthly ? "months" : "days"}
                   </Text>
                 ),
               },
@@ -1398,7 +1435,9 @@ const fetchPaymentDetails = async (rentedId) => {
                     <div style={{ fontSize: 24, fontWeight: 'bold' }}>
                       {modalVendor.missed_days || 0}
                     </div>
-                    <div style={{ fontSize: 12, opacity: 0.8 }}>Missed Days</div>
+                    <div style={{ fontSize: 12, opacity: 0.8 }}>
+                      {modalVendor.is_monthly ? "Missed Months" : "Missed Days"}
+                    </div>
                   </div>
                   <div>
                     
@@ -1486,7 +1525,7 @@ const fetchPaymentDetails = async (rentedId) => {
                       key={days}
                       size="large"
                       onClick={() => {
-                        const amount = days * (modalVendor.daily_rent || 0);
+                        const amount = days * (modalVendor.is_monthly ? (modalVendor.monthly_rent || modalVendor.daily_rent * 30 || 0) : (modalVendor.daily_rent || 0));
                         setPaymentAmount(amount.toString());
                       }}
                       style={{
@@ -1504,10 +1543,10 @@ const fetchPaymentDetails = async (rentedId) => {
                         {days}
                       </div>
                       <div style={{ fontSize: 11, color: '#666' }}>
-                        {days === 1 ? 'day' : 'days'}
+                        {modalVendor.is_monthly ? (days === 1 ? 'month' : 'months') : (days === 1 ? 'day' : 'days')}
                       </div>
                       <div style={{ fontSize: 12, fontWeight: 600, marginTop: 4 }}>
-                        {fmtMoney(days * (modalVendor.daily_rent || 0))}
+                        {fmtMoney(days * (modalVendor.is_monthly ? (modalVendor.monthly_rent || modalVendor.daily_rent * 30 || 0) : (modalVendor.daily_rent || 0)))}
                       </div>
                     </Button>
                   ))}
@@ -1540,22 +1579,26 @@ const fetchPaymentDetails = async (rentedId) => {
                 </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <Text style={{ color: '#666' }}>Missed Days Covered:</Text>
+                  <Text style={{ color: '#666' }}>
+                    {modalVendor.is_monthly ? "Missed Months Covered:" : "Missed Days Covered:"}
+                  </Text>
                   <Text strong style={{ color: '#52c41a' }}>
                     {Math.min(
-                      Math.floor(parseFloat(paymentAmount || 0) / (modalVendor.daily_rent || 1)),
+                      Math.floor(parseFloat(paymentAmount || 0) / (modalVendor.is_monthly ? (modalVendor.monthly_rent || modalVendor.daily_rent * 30 || 1) : (modalVendor.daily_rent || 1))),
                       modalVendor.missed_days || 0
-                    )} / {modalVendor.missed_days || 0} days
+                    )} / {modalVendor.missed_days || 0} {modalVendor.is_monthly ? "months" : "days"}
                   </Text>
                 </div>
                 
              
                 
-                {parseFloat(paymentAmount || 0) > (modalVendor.missed_days || 0) * (modalVendor.daily_rent || 0) && (
+                {parseFloat(paymentAmount || 0) > (modalVendor.missed_days || 0) * (modalVendor.is_monthly ? (modalVendor.monthly_rent || modalVendor.daily_rent * 30 || 0) : (modalVendor.daily_rent || 0)) && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <Text style={{ color: '#666' }}>Advance Days:</Text>
+                    <Text style={{ color: '#666' }}>
+                      {modalVendor.is_monthly ? "Advance Months:" : "Advance Days:"}
+                    </Text>
                     <Text strong style={{ color: '#722ed1' }}>
-                      {Math.floor((parseFloat(paymentAmount || 0) - ((modalVendor.missed_days || 0) * (modalVendor.daily_rent || 0))) / (modalVendor.daily_rent || 1))} days
+                      {Math.floor((parseFloat(paymentAmount || 0) - ((modalVendor.missed_days || 0) * (modalVendor.is_monthly ? (modalVendor.monthly_rent || modalVendor.daily_rent * 30 || 0) : (modalVendor.daily_rent || 0)))) / (modalVendor.is_monthly ? (modalVendor.monthly_rent || modalVendor.daily_rent * 30 || 1) : (modalVendor.daily_rent || 1)))} {modalVendor.is_monthly ? "months" : "days"}
                     </Text>
                   </div>
                 )}
@@ -1750,18 +1793,35 @@ const fetchPaymentDetails = async (rentedId) => {
               Remove Vendor
             </Button>
           )}
+          {editMode && (
+            <Button
+              onClick={() => openDeleteStallModal({
+                id: selectedStall,
+                stall_number: modalVendor?.stall_number || 'N/A',
+                size: modalVendor?.size || 'N/A'
+              })}
+              danger
+              style={{
+                backgroundColor: '#ff4d4f',
+                borderColor: '#ff4d4f',
+                color: '#fff',
+                fontWeight: 'bold',
+              }}
+            >
+              Delete Stall
+            </Button>
+          )}
           <Space>
             <Button
               onClick={() => setShowModal(false)}
-                 style={neutralButtonStyle}
-
+              style={neutralButtonStyle}
             >
               Close
             </Button>
             <Button
               type="primary"
               onClick={handleToggleActive}
-               style={primaryButtonStyle}
+              style={primaryButtonStyle}
             >
               Save Changes
             </Button>
@@ -1975,7 +2035,7 @@ const fetchPaymentDetails = async (rentedId) => {
               title: "Missed Days",
               dataIndex: "missed_days",
               align: "center",
-              render: (value) => (
+              render: (value, record) => (
                 <span
                   style={{
                     display: "inline-flex",
@@ -1986,10 +2046,10 @@ const fetchPaymentDetails = async (rentedId) => {
                     background: "#fff7e6",
                     border: "1px solid #ffe7ba",
                     fontSize: 11,
-                    minWidth: 40,
+                    minWidth: 60,
                   }}
                 >
-                  {value ?? 0}
+                  {value ?? 0} {record.is_monthly ? "months" : "days"}
                 </span>
               ),
             },
@@ -2114,8 +2174,12 @@ const fetchPaymentDetails = async (rentedId) => {
           <Text type="secondary">{selectedRented.vendor?.fullname || 'Unknown Vendor'}</Text>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Text>Missed Days: <Text strong>{selectedRented.missed_days || 0}</Text></Text>
-          <Text>Daily Rate: <Text strong>{fmtMoney(selectedRented.daily_rent)}</Text></Text>
+          <Text>
+            {selectedRented.is_monthly ? "Missed Months" : "Missed Days"}: <Text strong>{selectedRented.missed_days || 0}</Text>
+          </Text>
+          <Text>
+            {selectedRented.is_monthly ? "Monthly Rate" : "Daily Rate"}: <Text strong>{fmtMoney(selectedRented.is_monthly ? (selectedRented.monthly_rent || selectedRented.daily_rent * 30 || 0) : selectedRented.daily_rent)}</Text>
+          </Text>
         </div>
       </div>
 
@@ -2151,12 +2215,12 @@ const fetchPaymentDetails = async (rentedId) => {
         <div style={{ marginBottom: 16 }}>
           <Text style={{ fontSize: 12, color: '#666' }}>Quick Actions:</Text>
           <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-            {[1, 3, 7, 15, 30].map(days => (
+            {[1, 2, 3, 4, 5].map(days => (
               <Button
                 key={days}
                 size="small"
                 onClick={() => {
-                  const amount = days * (selectedRented.daily_rent || 0);
+                  const amount = days * (selectedRented.is_monthly ? (selectedRented.monthly_rent || selectedRented.daily_rent * 30 || 0) : (selectedRented.daily_rent || 0));
                   setPaymentAmount(amount.toString());
                   if (days >= (selectedRented.missed_days || 0)) {
                     setPaymentType('advance');
@@ -2166,7 +2230,7 @@ const fetchPaymentDetails = async (rentedId) => {
                 }}
                 style={{ borderRadius: 12 }}
               >
-                {days} {days === 1 ? 'day' : 'days'} ({fmtMoney(days * (selectedRented.daily_rent || 0))})
+                {days} {selectedRented.is_monthly ? (days === 1 ? 'month' : 'months') : (days === 1 ? 'day' : 'days')} ({fmtMoney(days * (selectedRented.is_monthly ? (selectedRented.monthly_rent || selectedRented.daily_rent * 30 || 0) : (selectedRented.daily_rent || 0)))})
               </Button>
             ))}
           </div>
@@ -2182,7 +2246,7 @@ const fetchPaymentDetails = async (rentedId) => {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
             <Text>Total Missed Amount:</Text>
-            <Text strong>{fmtMoney((selectedRented.missed_days || 0) * (selectedRented.daily_rent || 0))}</Text>
+            <Text strong>{fmtMoney((selectedRented.missed_days || 0) * (selectedRented.is_monthly ? (selectedRented.monthly_rent || selectedRented.daily_rent * 30 || 0) : (selectedRented.daily_rent || 0)))}</Text>
           </div>
         
         </div>
@@ -2213,6 +2277,65 @@ const fetchPaymentDetails = async (rentedId) => {
     </div>
   )}
 </Modal>
+
+      {/* Delete Stall Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
+            <span>Delete Stall - #{stallToDelete?.stall_number || 'N/A'}</span>
+          </div>
+        }
+        open={deleteStallModalVisible}
+        onCancel={() => {
+          setDeleteStallModalVisible(false);
+          setStallToDelete(null);
+        }}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={() => {
+              setDeleteStallModalVisible(false);
+              setStallToDelete(null);
+            }}
+            disabled={deletingStall}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="delete"
+            type="primary"
+            danger
+            onClick={handleDeleteStall}
+            loading={deletingStall}
+            style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }}
+          >
+            Delete Stall
+          </Button>,
+        ]}
+      >
+        <div style={{ padding: '20px 0' }}>
+          <Text strong style={{ fontSize: 16, color: '#262626' }}>
+            Are you sure you want to delete this stall?
+          </Text>
+          <br />
+          <br />
+          <Text type="secondary">
+            This action cannot be undone. All rental data and payment history for this stall will be permanently deleted.
+          </Text>
+          {stallToDelete && (
+            <div style={{ marginTop: 16, padding: 12, backgroundColor: '#f5f5f5', borderRadius: 6 }}>
+              <Text strong>Stall Details:</Text>
+              <br />
+              <Text>Stall Number: #{stallToDelete.stall_number}</Text>
+              <br />
+              <Text>Section: {section?.name || 'N/A'}</Text>
+              <br />
+              <Text>Size: {stallToDelete.size || 'N/A'}</Text>
+            </div>
+          )}
+        </div>
+      </Modal>
 
       {/* Edit Rent Rates Modal */}
       <Modal

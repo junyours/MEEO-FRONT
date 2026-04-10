@@ -191,7 +191,7 @@ useEffect(() => {
       // Add MEE logo on the right (predominantly red and yellow circular logo)
       doc.addImage('/logo_meeo.png', 'PNG', pageWidth - margin - 30, yPosition, 30, 30);
     } catch (error) {
-      console.log('Logos not found:', error);
+      // Logos not found, continuing without them
     }
     
     yPosition += 15;

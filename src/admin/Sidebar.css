@@ -107,7 +107,7 @@
 
 .sidebar-menu .ant-menu-item:hover {
   background: rgba(255, 255, 255, 0.08) !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: #000000 !important;
 }
 
 .sidebar-menu .ant-menu-item-selected {
@@ -126,7 +126,7 @@
 }
 
 .sidebar-menu .ant-menu-item:hover .ant-menu-item-icon {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: #000000 !important;
 }
 
 /* Submenu Styles */
@@ -141,12 +141,12 @@
 
 .sidebar-menu .ant-menu-submenu:hover {
   background: rgba(255, 255, 255, 0.08) !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: #000000 !important;
 }
 
 .sidebar-menu .ant-menu-submenu-open {
   background: rgba(255, 255, 255, 0.08) !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: #000000 !important;
 }
 
 .sidebar-menu .ant-menu-submenu-title {
@@ -185,6 +185,7 @@
 
 .sidebar-menu .ant-menu-sub .ant-menu-item:hover {
   background: rgba(255, 255, 255, 0.1) !important;
+  color: #000000 !important;
 }
 
 .sidebar-menu .ant-menu-sub .ant-menu-item-selected {

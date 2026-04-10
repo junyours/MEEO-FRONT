@@ -76,6 +76,8 @@ import {
 
   LineChartOutlined,
 
+  ShoppingOutlined,
+
 } from "@ant-design/icons";
 
 import api from "../Api";
@@ -199,6 +201,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
       label: "Dashboard",
 
     }, 
+ { key: "product-management", label: "Product Management", icon: <ShoppingOutlined /> },
 
     {
 
@@ -212,6 +215,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
 
         { key: "vendor-management", label: "Vendor Management", icon: <UserOutlined /> },
 
+       
         { key: "cash-ticket", label: "Cash Ticket Payments", icon: <CreditCardOutlined /> },
 
         { key: "vendor-payment-calendar", label: "Payment Schedule", icon: <CalendarOutlined /> },
@@ -221,6 +225,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
         { key: "stall-rate-dashboard", label: "Stall Rates", icon: <RiseOutlined /> },
 
         { key: "vendor-payment", label: "Payment Settlement", icon: <FileTextOutlined /> },
+
+        { key: "payment-management", label: "Payment Management", icon: <DollarOutlined /> },
 
 
       ],
@@ -280,7 +286,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
           </span>
         ),
         onClick: () => {
-          console.log('Menu item selected:', item.key, item.label);
           setSelectedKey(item.key);
           onMenuClick(item.key);
         },
@@ -305,6 +310,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
           top: 0,
           zIndex: 10,
           overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         {/* --- Header with Burger --- */}
@@ -377,9 +384,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
         <div 
           style={{
             padding: "8px 16px", /* Reduce padding from 16px to 8px */
-            height: "calc(100vh - 120px)",
+            flex: 1,
             overflowY: "auto",
             overflowX: "hidden",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           <Menu

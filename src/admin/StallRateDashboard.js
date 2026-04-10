@@ -47,6 +47,7 @@ import {
 } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import letterheadTemplate from '../assets/report_template/letterhead_template.jpg';
 
 const StallRateDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -178,7 +179,7 @@ const StallRateDashboard = () => {
       // Add MEE logo on the right (predominantly red and yellow circular logo)
       doc.addImage('/logo_meeo.png', 'PNG', pageWidth - margin - 30, yPosition, 30, 30);
     } catch (error) {
-      console.log('Logos not found:', error);
+      // Logos not found, continuing without them
     }
     
     yPosition += 15;
@@ -226,13 +227,18 @@ const StallRateDashboard = () => {
       const pageHeight = doc.internal.pageSize.getHeight();
       const margin = 20;
       
-      // Add government header
-      let yPosition = addGovernmentHeader(doc, pageWidth, margin);
+      // Add letterhead template as background
+      try {
+        doc.addImage(letterheadTemplate, 'JPEG', 0, 0, pageWidth, pageHeight);
+      } catch (error) {
+        // Letterhead template not found, continuing without it
+      }
       
       // Title
+      let yPosition = 70; // Start position after letterhead
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
-      doc.text('Stall Rate & Availability Dashboard Report', pageWidth / 2, yPosition, { align: 'center' });
+      doc.setFontSize(16);
+      doc.text('Stall Rate & Availability Report', pageWidth / 2, yPosition, { align: 'center' });
       
       // Date
       yPosition += 10;
@@ -245,60 +251,31 @@ const StallRateDashboard = () => {
       });
       doc.text(`Generated on: ${currentDate}`, pageWidth / 2, yPosition, { align: 'center' });
       
-      yPosition += 15;
+      yPosition += 20;
       
-      // Summary Statistics
+      // Market Sections Title
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.text('Summary Statistics', margin, yPosition);
+      doc.setFontSize(14);
+      doc.text('Market Sections', pageWidth / 2, yPosition, { align: 'center' });
       
-      yPosition += 8;
-      
-      const summaryData = [
-        ['Total Areas', dashboardData.summary.total_areas.toString()],
-        ['Total Stalls', dashboardData.summary.total_stalls.toString()],
-        ['Available Stalls', dashboardData.summary.available_stalls.toString()],
-        ['Occupancy Rate', `${dashboardData.summary.occupancy_rate}%`]
-      ];
-      
-      autoTable(doc, {
-        head: [['Metric', 'Value']],
-        body: summaryData,
-        startY: yPosition,
-        theme: 'grid',
-        styles: { 
-          fontSize: 10,
-          lineWidth: 0.5,
-          lineColor: [0, 0, 0]
-        },
-        headStyles: { 
-          fillColor: [255, 255, 255],
-          textColor: [0, 0, 0],
-          fontStyle: 'bold'
-        },
-        columnStyles: {
-          0: { cellWidth: 60 },
-          1: { cellWidth: 40, halign: 'right' }
-        }
-      });
-      
-      yPosition = doc.lastAutoTable.finalY + 15;
-      
-      // Areas and Sections
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.text('Market Sections', margin, yPosition);
-      
-      yPosition += 8;
+      yPosition += 12;
       
       const marketAreas = dashboardData.areas.filter(area => area.type === 'dry' || area.type === 'wet');
       const openSpaceAreas = dashboardData.areas.filter(area => area.type === 'open_space');
       
       // Market Areas Table
       const marketAreasData = [];
+      let marketTotalStalls = 0;
+      let marketTotalAvailable = 0;
+      let marketTotalOccupied = 0;
+      
       marketAreas.forEach(area => {
         area.sections.forEach(section => {
           const availability = section.availability;
+          marketTotalStalls += availability.total;
+          marketTotalAvailable += availability.available;
+          marketTotalOccupied += availability.occupied;
+          
           marketAreasData.push([
             section.name,
             availability.total.toString(),
@@ -308,6 +285,15 @@ const StallRateDashboard = () => {
           ]);
         });
       });
+      
+      // Add total row
+      marketAreasData.push([
+        'TOTAL',
+        marketTotalStalls.toString(),
+        marketTotalAvailable.toString(),
+        marketTotalOccupied.toString(),
+        `${Math.round((marketTotalOccupied / marketTotalStalls) * 100)}%`
+      ]);
       
       autoTable(doc, {
         head: [['Section', 'Total Stalls', 'Available', 'Occupied', 'Occupancy Rate']],
@@ -324,13 +310,25 @@ const StallRateDashboard = () => {
           textColor: [0, 0, 0],
           fontStyle: 'bold'
         },
+        footStyles: {
+          fillColor: [240, 240, 240],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold'
+        },
         columnStyles: {
           0: { cellWidth: 40 },
           1: { cellWidth: 30, halign: 'center' },
           2: { cellWidth: 30, halign: 'center' },
           3: { cellWidth: 30, halign: 'center' },
           4: { cellWidth: 30, halign: 'center' }
-        }
+        },
+        didParseCell: function(data) {
+          if (data.row.index === marketAreasData.length - 1) {
+            data.cell.styles.fillColor = [240, 240, 240];
+            data.cell.styles.fontStyle = 'bold';
+          }
+        },
+        margin: { left: (pageWidth - 160) / 2 }
       });
       
       yPosition = doc.lastAutoTable.finalY + 15;
@@ -338,23 +336,36 @@ const StallRateDashboard = () => {
       // Add new page for Open Space Areas if they exist
       if (openSpaceAreas.length > 0) {
         doc.addPage();
-        yPosition = 20;
         
-        // Add government header to new page
-        yPosition = addGovernmentHeader(doc, pageWidth, margin);
+        // Add letterhead template as background to new page
+        try {
+          doc.addImage(letterheadTemplate, 'JPEG', 0, 0, pageWidth, pageHeight);
+        } catch (error) {
+          // Letterhead template not found, continuing without it
+        }
+        
+        let yPosition = 70; // Start position after letterhead
         
         // Title for Open Space
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(14);
         doc.text('Open Space Sections', pageWidth / 2, yPosition, { align: 'center' });
         
-        yPosition += 15;
+        yPosition += 20;
         
         // Open Space Areas Table
         const openSpaceData = [];
+        let openSpaceTotalStalls = 0;
+        let openSpaceTotalAvailable = 0;
+        let openSpaceTotalOccupied = 0;
+        
         openSpaceAreas.forEach(area => {
           area.sections.forEach(section => {
             const availability = section.availability;
+            openSpaceTotalStalls += availability.total;
+            openSpaceTotalAvailable += availability.available;
+            openSpaceTotalOccupied += availability.occupied;
+            
             openSpaceData.push([
               section.name,
               availability.total.toString(),
@@ -364,6 +375,15 @@ const StallRateDashboard = () => {
             ]);
           });
         });
+        
+        // Add total row
+        openSpaceData.push([
+          'TOTAL',
+          openSpaceTotalStalls.toString(),
+          openSpaceTotalAvailable.toString(),
+          openSpaceTotalOccupied.toString(),
+          `${Math.round((openSpaceTotalOccupied / openSpaceTotalStalls) * 100)}%`
+        ]);
         
         autoTable(doc, {
           head: [['Section', 'Total Stalls', 'Available', 'Occupied', 'Occupancy Rate']],
@@ -380,18 +400,30 @@ const StallRateDashboard = () => {
             textColor: [0, 0, 0],
             fontStyle: 'bold'
           },
+          footStyles: {
+            fillColor: [240, 240, 240],
+            textColor: [0, 0, 0],
+            fontStyle: 'bold'
+          },
           columnStyles: {
             0: { cellWidth: 40 },
             1: { cellWidth: 30, halign: 'center' },
             2: { cellWidth: 30, halign: 'center' },
             3: { cellWidth: 30, halign: 'center' },
             4: { cellWidth: 30, halign: 'center' }
-          }
+          },
+          didParseCell: function(data) {
+            if (data.row.index === openSpaceData.length - 1) {
+              data.cell.styles.fillColor = [240, 240, 240];
+              data.cell.styles.fontStyle = 'bold';
+            }
+          },
+          margin: { left: (pageWidth - 160) / 2 }
         });
       }
       
       // Save the PDF
-      doc.save(`Stall_Rate_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`);
+      doc.save(`Stall_Rate_${new Date().toISOString().split('T')[0]}.pdf`);
       message.success('PDF exported successfully!');
       
     } catch (error) {
@@ -493,7 +525,7 @@ const StallRateDashboard = () => {
       <div className="dashboard-header">
         <div className="header">
           <HistoryOutlined className="title-icon" />
-          <h2>Stall Rate & Availability Dashboard</h2>
+          <h2>Stall Rate & Availability </h2>
         </div>
         <div className="header-actions">
           <Button 
@@ -514,7 +546,7 @@ const StallRateDashboard = () => {
 
       {/* Summary Statistics */}
       <Row gutter={[16, 16]} className="summary-section">
-        <Col xs={24} sm={12} md={6}>
+        <Col xs={24} sm={12} md={8}>
           <Card>
             <Statistic
               title="Total Areas"
@@ -524,7 +556,7 @@ const StallRateDashboard = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
+        <Col xs={24} sm={12} md={8}>
           <Card>
             <Statistic
               title="Total Stalls"
@@ -534,7 +566,7 @@ const StallRateDashboard = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
+        <Col xs={24} sm={12} md={8}>
           <Card>
             <Statistic
               title="Available"
@@ -544,7 +576,7 @@ const StallRateDashboard = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
+        <Col xs={24} sm={12} md={8}>
           <Card>
             <Statistic
               title="Occupancy Rate"
@@ -552,6 +584,36 @@ const StallRateDashboard = () => {
               suffix="%"
               prefix={<UserOutlined />}
               valueStyle={{ color: '#fa8c16' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8}>
+          <Card>
+            <Statistic
+              title="Market Available Stalls"
+              value={(() => {
+                const marketAreas = dashboardData.areas.filter(area => area.type === 'dry' || area.type === 'wet');
+                return marketAreas.reduce((sum, area) => 
+                  sum + area.sections.reduce((sectionSum, section) => sectionSum + section.availability.available, 0), 0
+                );
+              })()}
+              prefix={<ShopOutlined />}
+              valueStyle={{ color: '#13c2c2' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8}>
+          <Card>
+            <Statistic
+              title="Open Space Available Stalls"
+              value={(() => {
+                const openSpaceAreas = dashboardData.areas.filter(area => area.type === 'open_space');
+                return openSpaceAreas.reduce((sum, area) => 
+                  sum + area.sections.reduce((sectionSum, section) => sectionSum + section.availability.available, 0), 0
+                );
+              })()}
+              prefix={<CloudOutlined />}
+              valueStyle={{ color: '#52c41a' }}
             />
           </Card>
         </Col>

@@ -28,6 +28,7 @@ import {
   PrinterOutlined,
   PlusOutlined,
   DeleteOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import {
   PieChart,
@@ -177,13 +178,10 @@ const TargetsReports = () => {
       );
       const data = res.data;
       
-      console.log('API Response:', data); // Debug log
-      
       // Transform the data to match expected format for each year
       const transformedReports = {};
       
       if (data.departments && Array.isArray(data.departments)) {
-        console.log('Departments found:', data.departments.length); // Debug log
         
         // Group departments by year
         const departmentsByYear = {};
@@ -193,8 +191,6 @@ const TargetsReports = () => {
           if (!departmentsByYear[year]) {
             departmentsByYear[year] = [];
           }
-          
-          console.log(`Department ${dept.name} (${year}): Target=${dept.target?.annual_target}, Collection=${dept.collection?.total_collection}`); // Debug log
           
           departmentsByYear[year].push({
             id: dept.id,
@@ -222,11 +218,8 @@ const TargetsReports = () => {
         
         // Set the transformed reports
         Object.assign(transformedReports, departmentsByYear);
-      } else {
-        console.log('No departments found in response'); // Debug log
       }
       
-      console.log('Transformed Reports:', transformedReports); // Debug log
       setReports(transformedReports);
     } catch (error) {
       console.error(error);
@@ -415,6 +408,22 @@ const TargetsReports = () => {
                     }
                   />
                 </div>
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={() => {
+                    fetchReports(yearRange[0], yearRange[1]);
+                    fetchDepartments();
+                  }}
+                  disabled={loading}
+                  style={{
+                    borderRadius: '6px',
+                    height: '36px',
+                    border: `1px solid ${COLORS.border}`,
+                    color: COLORS.neutral[700]
+                  }}
+                >
+                  Refresh
+                </Button>
                 <Button
                   type="primary"
                   icon={<PlusOutlined />}
@@ -609,14 +618,16 @@ const TargetsReports = () => {
                       {isEditable && (
                         <Tooltip title="Edit Target">
                           <Button
-                            type="text"
                             icon={<EditOutlined />}
                             className={CSS_CLASSES.buttonGhost}
                             style={{
-                              ...buttonStyles.ghost,
                               height: '24px',
                               width: '24px',
-                              padding: 0
+                              padding: 0,
+                              backgroundColor: COLORS.white,
+                              color: '#000000',
+                              border: `1px solid ${COLORS.border}`,
+                              boxShadow: 'none'
                             }}
                             onClick={() => {
                               setTargetValues(prev => ({
@@ -643,12 +654,18 @@ const TargetsReports = () => {
                   const monthlyCollection = row.monthly?.[i + 1] || 0;
 
                   if (editingCell === cellKey) {
+                    const currentValue = targetValues[cellKey] !== undefined 
+                      ? targetValues[cellKey] 
+                      : Number(monthlyCollection);
+                    const originalValue = Number(monthlyCollection);
+                    const hasChanged = currentValue !== originalValue;
+                    
                     return (
                       <div
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          minWidth: '80px',
+                          minWidth: '140px',
                           gap: '4px',
                           justifyContent: 'flex-end'
                         }}
@@ -665,7 +682,7 @@ const TargetsReports = () => {
                           onChange={(e) => handleMonthlyChange(cellKey, e.target.value)}
                           className={CSS_CLASSES.input}
                           style={{
-                            width: '60px',
+                            width: '100px',
                             borderRadius: '4px',
                             fontSize: '12px',
                             textAlign: 'right',
@@ -674,30 +691,35 @@ const TargetsReports = () => {
                           }}
                         />
 
-                        <Tooltip title="Save">
-                          <Button
-                            size="small"
-                            icon={<SaveOutlined />}
-                            style={{
-                              ...buttonStyles.primary,
-                              width: '24px',
-                              height: '24px',
-                              fontSize: '10px'
-                            }}
-                            onClick={() => handleSaveMonthlyCollection(row, year, m, i + 1)}
-                          />
-                        </Tooltip>
+                        {hasChanged && (
+                          <Tooltip title="Save">
+                            <Button
+                              icon={<SaveOutlined />}
+                              style={{
+                                width: '24px',
+                                height: '24px',
+                                fontSize: '10px',
+                                backgroundColor: COLORS.white,
+                                color: '#000000',
+                                border: `1px solid ${COLORS.border}`,
+                                boxShadow: 'none'
+                              }}
+                              onClick={() => handleSaveMonthlyCollection(row, year, m, i + 1)}
+                            />
+                          </Tooltip>
+                        )}
+                        
                         <Tooltip title="Cancel">
                           <Button
                             size="small"
                             icon={<CloseOutlined />}
-                            type="text"
-                            danger
                             style={{ 
                               width: '24px',
                               height: '24px',
                               fontSize: '10px',
-                              border: `1px solid ${COLORS.danger}`
+                              backgroundColor: COLORS.danger,
+                              color: COLORS.white,
+                              borderColor: COLORS.danger
                             }}
                             onClick={() => setEditingCell(null)}
                           />
@@ -717,8 +739,8 @@ const TargetsReports = () => {
                         style={{
                           whiteSpace: "nowrap",
                           fontVariantNumeric: "tabular-nums",
-                          fontSize: '12px',
-                          color: COLORS.neutral[700]
+                          fontSize: '13px',
+                          color: '#000000'
                         }}
                       >
                         ₱
@@ -731,15 +753,17 @@ const TargetsReports = () => {
                       {isEditable && (
                         <Tooltip title="Edit Monthly Collection">
                           <Button
-                            type="text"
                             icon={<EditOutlined />}
                             className={CSS_CLASSES.buttonGhost}
                             style={{
-                              ...buttonStyles.ghost,
-                              height: '20px',
-                              width: '20px',
-                              fontSize: '10px',
-                              padding: 0
+                              height: '24px',
+                              width: '24px',
+                              fontSize: '12px',
+                              padding: 0,
+                              backgroundColor: COLORS.white,
+                              color: '#000000',
+                              border: `1px solid ${COLORS.border}`,
+                              boxShadow: 'none'
                             }}
                             onClick={() => {
                               setTargetValues(prev => ({
@@ -800,9 +824,9 @@ const TargetsReports = () => {
                           top: 0,
                           left: "50%",
                           transform: "translateX(-50%)",
-                          color: COLORS.neutral[700],
+                          color: '#000000',
                           fontWeight: 500,
-                          fontSize: '11px',
+                          fontSize: '12px',
                           lineHeight: '6px'
                         }}
                       >

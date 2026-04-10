@@ -34,6 +34,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import letterheadTemplate from '../assets/report_template/letterhead_template.jpg';
 import api from '../Api';
 import LoadingOverlay from './Loading';
 import './MarketOpenSpaceScreen.css';
@@ -122,55 +123,11 @@ const MarketOpenSpaceScreen = () => {
     fetchYearlyData();
   };
 
-  const addGovernmentHeader = (doc, pageWidth, margin = 20) => {
-    let yPosition = 10;
-    
-    // Government Header with Logos matching design
-    try {
-      // Add Municipality logo on the left (circular logo with blue, red, yellow, black elements)
-      doc.addImage('/logo_Opol.png', 'PNG', margin, yPosition, 30, 30);
-      
-      // Add MEE logo on the right (predominantly red and yellow circular logo)
-      doc.addImage('/logo_meeo.png', 'PNG', pageWidth - margin - 30, yPosition, 30, 30);
-    } catch (error) {
-      console.log('Logos not found:', error);
-    }
-    
-    yPosition += 15;
-    
-    // Centered Government Header - matching exact requirements
-    doc.setFont('calibri', 'bold');
-    doc.setFontSize(12.3);
-    doc.text('Province of Misamis Oriental', pageWidth / 2, yPosition, { align: 'center' });
-    
-    yPosition += 6;
-    doc.setFontSize(12.3);
-    doc.text('Municipality of Opol', pageWidth / 2, yPosition, { align: 'center' });
-    
-    yPosition += 6;
-    doc.setFontSize(12.5);
-    doc.text('OFFICE OF THE MUNICIPAL ECONOMIC ENTERPRISE', pageWidth / 2, yPosition, { align: 'center' });
-    
-    // Add double lines below OFFICE OF THE MUNICIPAL ECONOMIC ENTERPRISE
-    yPosition += 5;
-    doc.setLineWidth(0.5);
-    doc.line(margin + 30, yPosition, pageWidth - margin - 30, yPosition);
-    yPosition += 2;
-    doc.line(margin + 30, yPosition, pageWidth - margin - 30, yPosition);
-    doc.setLineWidth(0); // Reset to default line width
-    
-    yPosition += 12;
-    
-    return yPosition; // Return the next y position for content
-  };
-
   const exportToPDF = () => {
     if (!yearlyData) {
       message.error('No data available to export');
       return;
     }
-
-    console.log('Exporting PDF with data:', yearlyData);
 
     try {
       const doc = new jsPDF({
@@ -180,14 +137,20 @@ const MarketOpenSpaceScreen = () => {
       });
       
       const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 35;
       
-      // Use the consistent government header
-      let yPosition = addGovernmentHeader(doc, pageWidth);
+      // Add letterhead template as background only on first page
+      try {
+        doc.addImage(letterheadTemplate, 'JPEG', 0, 0, pageWidth, pageHeight);
+      } catch (error) {
+        // Letterhead template not found, continuing without it
+      }
       
-      // Report Title
-      yPosition += 10;
+      // Title - positioned after letterhead
+      let yPosition = 55; // Start position after letterhead
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
+      doc.setFontSize(16);
       
       let reportTitle = '';
       if (mainTableTab === 'market') {
@@ -200,19 +163,20 @@ const MarketOpenSpaceScreen = () => {
         reportTitle = `Market, Open Space & Taboc Gym Collections Report - ${selectedYear}`;
       }
       
-      doc.text(reportTitle, pageWidth / 2, yPosition, { align: 'center' });
-      
-      yPosition += 15;
+      // Position title to avoid background collision
+      const titleX = pageWidth / 2 + 10; // Shift title slightly to the right
+      doc.text(reportTitle, titleX, yPosition, { align: 'center' });
       
       // Date below title
-      doc.setFontSize(10.5);
+      yPosition += 10;
       doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
       const currentDate = new Date().toLocaleDateString('en-US', { 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
       });
-      doc.text(currentDate, pageWidth / 2, yPosition, { align: 'center' });
+      doc.text(`Generated on: ${currentDate}`, pageWidth / 2, yPosition, { align: 'center' });
       
       yPosition += 15;
       
@@ -224,41 +188,41 @@ const MarketOpenSpaceScreen = () => {
         
         if (mainTableTab === 'market') {
           tableHeaders = ['Month', 'Market Collections', 'Market Payments'];
-          tableData = monthlyData.map(month => ({
-            'Month': month.month,
-            'Market Collections': Number(month.market_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            'Market Payments': month.market_payment_count
-          }));
+          tableData = monthlyData.map(month => [
+            month.month,
+            Number(month.market_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            month.market_payment_count
+          ]);
         } else if (mainTableTab === 'open-space') {
           tableHeaders = ['Month', 'Open Space Collections', 'Open Space Payments'];
-          tableData = monthlyData.map(month => ({
-            'Month': month.month,
-            'Open Space Collections': Number(month.open_space_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            'Open Space Payments': month.open_space_payment_count
-          }));
+          tableData = monthlyData.map(month => [
+            month.month,
+            Number(month.open_space_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            month.open_space_payment_count
+          ]);
         } else if (mainTableTab === 'taboc-gym') {
           tableHeaders = ['Month', 'Taboc Gym Collections', 'Taboc Gym Payments'];
-          tableData = monthlyData.map(month => ({
-            'Month': month.month,
-            'Taboc Gym Collections': Number(month.taboc_gym_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            'Taboc Gym Payments': month.taboc_gym_payment_count
-          }));
+          tableData = monthlyData.map(month => [
+            month.month,
+            Number(month.taboc_gym_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            month.taboc_gym_payment_count
+          ]);
         } else {
           tableHeaders = ['Month', 'Market Collections', 'Market Payments', 'Open Space Collections', 'Open Space Payments', 'Taboc Gym Collections', 'Taboc Gym Payments', 'Total Collections', 'Total Payments'];
-          tableData = monthlyData.map(month => ({
-            'Month': month.month,
-            'Market Collections': Number(month.market_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            'Market Payments': month.market_payment_count,
-            'Open Space Collections': Number(month.open_space_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            'Open Space Payments': month.open_space_payment_count,
-            'Taboc Gym Collections': Number(month.taboc_gym_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            'Taboc Gym Payments': month.taboc_gym_payment_count,
-            'Total Collections': Number(month.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            'Total Payments': month.total_payment_count
-          }));
+          tableData = monthlyData.map(month => [
+            month.month,
+            Number(month.market_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            month.market_payment_count,
+            Number(month.open_space_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            month.open_space_payment_count,
+            Number(month.taboc_gym_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            month.taboc_gym_payment_count,
+            Number(month.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            month.total_payment_count
+          ]);
         }
         
-        // Calculate totals for the summary row
+        // Calculate totals for summary row
         let totalRow = [];
         if (mainTableTab === 'market') {
           const totalMarketAmount = monthlyData.reduce((sum, month) => sum + month.market_amount, 0);
@@ -306,46 +270,105 @@ const MarketOpenSpaceScreen = () => {
           ];
         }
 
+        // Dynamic column styles based on selected tab
+        const getColumnStyles = () => {
+          if (mainTableTab === 'all') {
+            return {
+              0: { cellWidth: 20, halign: 'left' }, // Month
+              1: { cellWidth: 25, halign: 'right' }, // Market Collections
+              2: { cellWidth: 18, halign: 'center' }, // Market Payments
+              3: { cellWidth: 25, halign: 'right' }, // Open Space Collections
+              4: { cellWidth: 18, halign: 'center' }, // Open Space Payments
+              5: { cellWidth: 25, halign: 'right' }, // Taboc Gym Collections
+              6: { cellWidth: 18, halign: 'center' }, // Taboc Gym Payments
+              7: { cellWidth: 25, halign: 'right' }, // Total Collections
+              8: { cellWidth: 18, halign: 'center' }  // Total Payments
+            };
+          } else {
+            return {
+              0: { cellWidth: 30, halign: 'left' },
+              1: { cellWidth: 40, halign: 'right' },
+              2: { cellWidth: 25, halign: 'center' }
+            };
+          }
+        };
+
+        let startYValue;
+        let marginLeftValue;
+        
+        if (mainTableTab === 'all') {
+          startYValue = yPosition + 40;
+          marginLeftValue = 17;
+        } else {
+          // For single collection types, move higher and center the table
+          startYValue = yPosition + 15; // Move higher for single collection
+          
+          // Calculate table width based on column styles
+          let tableWidth = 0;
+          if (mainTableTab === 'market' || mainTableTab === 'open-space' || mainTableTab === 'taboc-gym') {
+            // 3 columns: Month (30mm) + Collection (40mm) + Payments (25mm) = 95mm
+            tableWidth = 95;
+          }
+          
+          // Center the table on the page
+          const pageWidth = doc.internal.pageSize.getWidth();
+          marginLeftValue = (pageWidth - tableWidth) / 2; // Center the table
+        }
+
         autoTable(doc, {
           head: [tableHeaders],
-          body: [...tableData.map(row => Object.values(row)), totalRow],
-          startY: yPosition,
+          body: [...tableData, totalRow],
+          startY: startYValue,
           theme: 'grid',
           styles: {
-            font: 'helvetica',
-            fontSize: 9,
-            textColor: [0, 0, 0],
-            lineColor: [0, 0, 0],
-            fillColor: [255, 255, 255],
+            fontSize: mainTableTab === 'all' ? 7 : 9,
+            cellPadding: 3,
+            fillColor: [255, 255, 255], // White background for all cells
+            lineColor: [0, 0, 0], // Black borders
+            lineWidth: 0.1,
+            halign: 'center', // Center align all cells
+            valign: 'middle',
+            textColor: [0, 0, 0] // Black font color for all data
           },
           headStyles: {
+            fillColor: [255, 255, 255], // White background for header
             textColor: [0, 0, 0],
-            fillColor: [240, 240, 240],
-            lineColor: [0, 0, 0],
             fontStyle: 'bold',
+            lineColor: [0, 0, 0],
+            lineWidth: 0.1
           },
           footStyles: {
+                    fillColor: [255, 255, 255], // White background for header
+ 
             textColor: [0, 0, 0],
-            fillColor: [245, 245, 245],
             lineColor: [0, 0, 0],
+            lineWidth: 0.1,
             fontStyle: 'bold',
+            halign: 'center',
+            valign: 'middle'
           },
+          columnStyles: getColumnStyles(),
+          margin: { left: marginLeftValue, right: marginLeftValue, bottom: 15 },
           didParseCell: function(data) {
-            // Make the total row bold and add background color
+            // Center align all data cells except for first column (Month)
+            if (data.column.index !== 0) {
+              data.cell.styles.halign = 'center';
+            }
+            // Style the total row
             if (data.row.index === tableData.length) {
-              data.cell.styles.fillColor = [245, 245, 245];
+              data.cell.styles.fillColor = [255,255, 255];
               data.cell.styles.fontStyle = 'bold';
             }
-          },
+          }
         });
         
         yPosition = doc.lastAutoTable.finalY + 20;
       } else {
-        doc.text('No monthly data available', 14, yPosition);
+        doc.text('No monthly data available', margin, yPosition);
         yPosition += 20;
       }
       
-      // Save the PDF
+      // Save PDF
       const fileName = mainTableTab === 'market' ? `market-collections-${selectedYear}.pdf` : 
                      mainTableTab === 'open-space' ? `open-space-collections-${selectedYear}.pdf` : 
                      mainTableTab === 'taboc-gym' ? `taboc-gym-collections-${selectedYear}.pdf` : 
@@ -361,8 +384,6 @@ const MarketOpenSpaceScreen = () => {
 
   const prepareChartData = () => {
     if (!yearlyData) return [];
-
-    console.log('Yearly Data:', yearlyData);
     
     const monthlyData = yearlyData.monthly_data || [];
     

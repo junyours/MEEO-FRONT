@@ -31,9 +31,11 @@ import {
   PrinterOutlined,
   InfoCircleOutlined,
   ClockCircleOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import letterheadTemplate from '../assets/report_template/letterhead_template.jpg';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -383,6 +385,22 @@ const VendorAnalysis = () => {
     }).format(amount);
   };
 
+  const getCurrentSectionName = () => {
+    if (activeTab === 'all' || !vendorData?.section_breakdown) {
+      // When 'All Sections' is selected, concatenate all section names
+      if (vendorData?.section_breakdown && vendorData.section_breakdown.length > 0) {
+        const sectionNames = vendorData.section_breakdown.map(section => section.section_name);
+        return `${sectionNames.join('/')} Sections`;
+      }
+      return 'All Sections';
+    }
+    
+    const sectionId = activeTab.replace('section-', '');
+    const currentSection = vendorData.section_breakdown.find(section => section.section_id == sectionId);
+    
+    return currentSection ? `${currentSection.section_name} Section` : 'Carenderia Section';
+  };
+
   const addGovernmentHeader = (doc, pageWidth, margin = 20) => {
     let yPosition = 10;
     
@@ -394,13 +412,17 @@ const VendorAnalysis = () => {
       // Add MEE logo on the right (predominantly red and yellow circular logo)
       doc.addImage('/logo_meeo.png', 'PNG', pageWidth - margin - 30, yPosition, 30, 30);
     } catch (error) {
-      console.log('Logos not found:', error);
+      // Logos not found, continuing without them
     }
     
     yPosition += 15;
     
     // Centered Government Header - matching exact requirements
     doc.setFont('calibri', 'bold');
+    doc.setFontSize(12.3);
+    doc.text('Republic of the Philippines', pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 6;
     doc.setFontSize(12.3);
     doc.text('Province of Misamis Oriental', pageWidth / 2, yPosition, { align: 'center' });
     
@@ -410,7 +432,7 @@ const VendorAnalysis = () => {
     
     yPosition += 6;
     doc.setFontSize(12.5);
-    doc.text('OFFICE OF THE MUNICIPAL ECONOMIC ENTERPRISE', pageWidth / 2, yPosition, { align: 'center' });
+    doc.text('MUNICIPAL ECONOMIC ENTERPRISE OFFICE', pageWidth / 2, yPosition, { align: 'center' });
     
     // Add double lines below OFFICE OF THE MUNICIPAL ECONOMIC ENTERPRISE
     yPosition += 5;
@@ -435,7 +457,7 @@ const VendorAnalysis = () => {
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: [210, 350] // Custom size: A4 width (210mm) with extra height (350mm)
+        format: [216, 330] // Custom size: 216mm width x 330mm height
       });
       
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -498,7 +520,7 @@ const VendorAnalysis = () => {
       doc.setFont('calibri', 'bold');
       doc.text(selectedVendor.fullname, margin, yPosition);
       yPosition += 7;
-      doc.text('Carenderia Section', margin, yPosition);
+      doc.text(getCurrentSectionName(), margin, yPosition);
       
       yPosition += 10;
       doc.text('Dear Sir/Madam:', margin, yPosition);
@@ -510,29 +532,30 @@ const VendorAnalysis = () => {
       doc.setFontSize(10.5);
       const bodyMaxWidth = pageWidth - 2 * margin; // Max width for text to fit with margins
       const bodyText = [
-        'Please be informed that as per record in this office you failed to pay the daily rental for three (3) consecutive days thus your Contract become automatically terminated and rescinded. The said premises shall be vacated peacefully by the Lessee without even any formal notice or demand yet we do the same. Upon cancellation of the contract the Lessee hereby grants to the Lessor the legal right to enter and take possession of the leased premises as though the term of this lease has expired.',
-        '',
-        'Be notified further that your stall rental delinquencies are as follows:'
+        'Please be informed that as per record in this office you failed to pay the daily rental for three (3) consecutive days thus your Contract become automatically terminated and rescinded. The said premises shall be vacated peacefully by the Lessee without even any formal notice or demand yet we do the same. Upon cancellation of the contract the Lessee hereby grants to the Lessor the legal right to enter and take possession of the leased premises as though the term of this lease has expired.\nBe notified further that your stall rental delinquencies are as follows:'
       ];
       
       bodyText.forEach(paragraph => {
         const splitText = doc.splitTextToSize(paragraph, bodyMaxWidth);
         splitText.forEach(line => {
           doc.text(line, margin, yPosition);
-          yPosition += 7; // Line height
+          yPosition += 5; // Single spacing line height
         });
         if (paragraph !== '') {
-          yPosition += 3; // Add a small gap between paragraphs, but not for empty lines
+          yPosition += 2; // Add a small gap between paragraphs, but not for empty lines
         }
       });
       
-      yPosition += 8;
+      yPosition += 3; // Reduced space before the table
       
       // Delinquency Table - Centered on page
       const tableX = (pageWidth - 100) / 2; // Center the 100mm wide table
       
-      // Table header with gray background
-      doc.setFillColor(200, 200, 200);
+      // Set consistent line width for all borders
+      doc.setLineWidth(0.1);
+      
+      // Table header with white background
+      doc.setFillColor(255, 255, 255);
       doc.rect(tableX, yPosition, 50, 10, 'F');
       doc.rect(tableX + 50, yPosition, 50, 10, 'F');
       
@@ -549,16 +572,14 @@ const VendorAnalysis = () => {
       
       // Table data rows
       monthsWithBalance.forEach((item, index) => {
-        // Row borders
+        // White background for all cells
+        doc.setFillColor(255, 255, 255);
+        doc.rect(tableX, yPosition, 50, 8, 'F');
+        doc.rect(tableX + 50, yPosition, 50, 8, 'F');
+        
+        // Row borders with consistent thickness
         doc.rect(tableX, yPosition, 50, 8);
         doc.rect(tableX + 50, yPosition, 50, 8);
-        
-        // Alternate row shading
-        if (index % 2 === 0) {
-          doc.setFillColor(245, 245, 245);
-          doc.rect(tableX, yPosition, 50, 8, 'F');
-          doc.rect(tableX + 50, yPosition, 50, 8, 'F');
-        }
         
         // Text content
         doc.text(item.month, tableX + 5, yPosition + 5);
@@ -566,8 +587,8 @@ const VendorAnalysis = () => {
         yPosition += 8;
       });
       
-      // Total row with darker background
-      doc.setFillColor(180, 180, 180);
+      // Total row with white background
+      doc.setFillColor(255, 255, 255);
       doc.rect(tableX, yPosition, 50, 10, 'F');
       doc.rect(tableX + 50, yPosition, 50, 10, 'F');
       doc.rect(tableX, yPosition, 100, 10);
@@ -582,9 +603,7 @@ const VendorAnalysis = () => {
       doc.setFont('calibri', 'normal');
       const footerMaxWidth = pageWidth - 2 * margin; // Max width for text to fit with margins
       const instructions = [
-        'Please settle the above-mentioned obligations within five (5) working days upon receipt hereof.',
-        'Please disregard this notice if payment has been made and for further queries kindly come to my office.',
-        'Thank you for giving this matter your most attention.'
+        'Please settle the above-mentioned obligations within five (5) working days upon receipt hereof.\nPlease disregard this notice if payment has been made and for further queries kindly come to my office.\nThank you for giving this matter your most attention.'
       ];
       
       yPosition += 5;
@@ -593,10 +612,10 @@ const VendorAnalysis = () => {
         const splitText = doc.splitTextToSize(paragraph, footerMaxWidth);
         splitText.forEach(line => {
           doc.text(line, margin, yPosition);
-          yPosition += 7; // Line height
+          yPosition += 5; // Single spacing line height
         });
         if (paragraph !== '') {
-          yPosition += 3; // Add a small gap between paragraphs, but not for empty lines
+          yPosition += 2; // Add a small gap between paragraphs, but not for empty lines
         }
       });
       
@@ -606,40 +625,42 @@ const VendorAnalysis = () => {
       doc.setFont('calibri', 'normal');
       doc.text('Prepared by:', margin, yPosition);
       
-      yPosition += 8;
+      yPosition += 10; // Double space between "Prepared by:" and name
       doc.setFont('calibri', 'bold');
       doc.text('MYRANIE A. YAID', margin, yPosition);
       
-      yPosition += 5;
+      yPosition += 10; // Double space between name and 'Noted by:'
       doc.setFont('calibri', 'normal');
       doc.text('Noted by:', margin, yPosition);
       
-      yPosition += 8;
+      yPosition += 10; // Double space between "Noted by:" and name
       doc.setFont('calibri', 'bold');
       doc.text('ARIEL BRIAN Y. ORTIGOZA', margin, yPosition);
       
-      yPosition += 6;
+      yPosition += 5; // Single space between name and designation
       doc.setFontSize(10);
       doc.setFont('calibri', 'normal');
       doc.text('MEEO - designate', margin, yPosition);
       
+      yPosition += 3; // 3 spaces between 'MEEO - designate' and 'Received by:'
       // Received By Section
       yPosition += 5; // Minimal space before signature section
       doc.setFontSize(9.7);
       
       // Row 1: Received by
       doc.text('Received by:', margin, yPosition);
-      yPosition += 15;
+      yPosition += 10; // Double space between 'Received by:' and signature line
       doc.line(margin, yPosition, margin + 70, yPosition); // Received by signature line
-         yPosition += 5;
+      yPosition += 5; // Single space between signature line and 'Signature over Printed Name'
       doc.setFontSize(10);
+      doc.setFont('calibri', 'normal');
       doc.text('Signature over Printed Name', margin, yPosition);
-      yPosition += 5; // Space between rows
+      yPosition += 10; // Double space before Date and Control No
       
       // Row 2: Date and Control No
       doc.text('Date:', margin, yPosition);
       doc.text('Control No:', margin + 80, yPosition); // Add Control No on same line
-      yPosition += 15;
+      yPosition += 10; // Double space between labels and lines
       doc.line(margin, yPosition, margin + 70, yPosition); // Date line
       doc.line(margin + 80, yPosition, margin + 130, yPosition); // Control No line
       
@@ -652,6 +673,233 @@ const VendorAnalysis = () => {
     } catch (error) {
       console.error('Error generating delinquency notice:', error);
       message.error('Failed to generate delinquency notice');
+    }
+  };
+
+  const generateAllDelinquencyNotices = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/vendor-analysis/all-vendors-with-balances', {
+        params: { year: selectedYear }
+      });
+      
+      const vendorsWithBalances = response.data;
+      
+      if (vendorsWithBalances.length === 0) {
+        message.info('No vendors with delinquent balances found for this year');
+        setLoading(false);
+        return;
+      }
+      
+      // Generate a single PDF with all vendor notices
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      
+      // Get current date and format it properly
+      const currentDate = new Date();
+      const formattedDate = currentDate.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      
+      let currentPage = 0;
+      
+      vendorsWithBalances.forEach((vendorData, vendorIndex) => {
+        // Add new page for each vendor except the first one
+        if (currentPage > 0) {
+          doc.addPage();
+        }
+        
+        let yPosition = addGovernmentHeader(doc, pageWidth, margin);
+        
+        // Title centered and bold
+        doc.setFont('calibri', 'bold');
+        doc.setFontSize(10.5);
+        doc.text('NOTICE OF DELINQUENCY', pageWidth / 2, yPosition, { align: 'center' });
+        
+        yPosition += 10;
+        
+        // Date below title
+        doc.setFontSize(10.5);
+        doc.setFont('calibri', 'normal');
+        doc.text(formattedDate, pageWidth / 2, yPosition, { align: 'center' });
+        
+        yPosition += 12;
+        
+        // Recipient Information Section (left aligned)
+        doc.setFontSize(10.5);
+        doc.setFont('calibri', 'bold');
+        doc.text(vendorData.vendor.fullname, margin, yPosition);
+        yPosition += 7;
+        
+        // Get section name for this vendor
+        const sectionName = vendorData.section_breakdown && vendorData.section_breakdown.length > 0 
+          ? vendorData.section_breakdown.map(section => section.section_name).join('/') + ' Sections'
+          : 'All Sections';
+        
+        doc.text(sectionName, margin, yPosition);
+        
+        yPosition += 10;
+        doc.text('Dear Sir/Madam:', margin, yPosition);
+        
+        yPosition += 10;
+        
+        // Body Content - Formal notice paragraph
+        doc.setFont('calibri', 'normal');
+        doc.setFontSize(10.5);
+        const bodyMaxWidth = pageWidth - 2 * margin;
+        const bodyText = [
+          'Please be informed that as per record in this office you failed to pay the daily rental for three (3) consecutive days thus your Contract become automatically terminated and rescinded. The said premises shall be vacated peacefully by the Lessee without even any formal notice or demand yet we do the same. Upon cancellation of the contract the Lessee hereby grants to the Lessor the legal right to enter and take possession of the leased premises as though the term of this lease has expired.\nBe notified further that your stall rental delinquencies are as follows:'
+        ];
+        
+        bodyText.forEach(paragraph => {
+          const splitText = doc.splitTextToSize(paragraph, bodyMaxWidth);
+          splitText.forEach(line => {
+            doc.text(line, margin, yPosition);
+            yPosition += 5;
+          });
+          if (paragraph !== '') {
+            yPosition += 2;
+          }
+        });
+        
+        yPosition += 3;
+        
+        // Delinquency Table - Centered on page
+        const tableX = (pageWidth - 100) / 2;
+        
+        // Set consistent line width for all borders
+        doc.setLineWidth(0.1);
+        
+        // Table header with white background
+        doc.setFillColor(255, 255, 255);
+        doc.rect(tableX, yPosition, 50, 10, 'F');
+        doc.rect(tableX + 50, yPosition, 50, 10, 'F');
+        
+        // Table borders
+        doc.rect(tableX, yPosition, 50, 10);
+        doc.rect(tableX + 50, yPosition, 50, 10);
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text('DATE', tableX + 5, yPosition + 7);
+        doc.text('AMOUNT', tableX + 55, yPosition + 7);
+        
+        yPosition += 10;
+        doc.setFont('helvetica', 'normal');
+        
+        // Table data rows
+        vendorData.monthsWithBalance.forEach((item) => {
+          // White background for all cells
+          doc.setFillColor(255, 255, 255);
+          doc.rect(tableX, yPosition, 50, 8, 'F');
+          doc.rect(tableX + 50, yPosition, 50, 8, 'F');
+          
+          // Row borders with consistent thickness
+          doc.rect(tableX, yPosition, 50, 8);
+          doc.rect(tableX + 50, yPosition, 50, 8);
+          
+          // Text content
+          doc.text(item.month, tableX + 5, yPosition + 5);
+          doc.text(formatCurrencyForPDF(item.balance), tableX + 55, yPosition + 5);
+          yPosition += 8;
+        });
+        
+        // Total row with white background
+        doc.setFillColor(255, 255, 255);
+        doc.rect(tableX, yPosition, 50, 10, 'F');
+        doc.rect(tableX + 50, yPosition, 50, 10, 'F');
+        doc.rect(tableX, yPosition, 100, 10);
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text('TOTAL Php', tableX + 5, yPosition + 7);
+        doc.text(formatCurrencyForPDF(vendorData.totalBalance), tableX + 55, yPosition + 7);
+        
+        yPosition += 15;
+        
+        // Footer Instructions
+        doc.setFont('calibri', 'normal');
+        const footerMaxWidth = pageWidth - 2 * margin;
+        const instructions = [
+          'Please settle the above-mentioned obligations within five (5) working days upon receipt hereof.\nPlease disregard this notice if payment has been made and for further queries kindly come to my office.\nThank you for giving this matter your most attention.'
+        ];
+        
+        yPosition += 5;
+        
+        instructions.forEach(paragraph => {
+          const splitText = doc.splitTextToSize(paragraph, footerMaxWidth);
+          splitText.forEach(line => {
+            doc.text(line, margin, yPosition);
+            yPosition += 5;
+          });
+          if (paragraph !== '') {
+            yPosition += 2;
+          }
+        });
+        
+        yPosition += 5;
+        
+        doc.setFontSize(10.5);
+        doc.setFont('calibri', 'normal');
+        doc.text('Prepared by:', margin, yPosition);
+        
+        yPosition += 10;
+        doc.setFont('calibri', 'bold');
+        doc.text('MYRANIE A. YAID', margin, yPosition);
+        
+        yPosition += 10;
+        doc.setFont('calibri', 'normal');
+        doc.text('Noted by:', margin, yPosition);
+        
+        yPosition += 10;
+        doc.setFont('calibri', 'bold');
+        doc.text('ARIEL BRIAN Y. ORTIGOZA', margin, yPosition);
+        
+        yPosition += 5;
+        doc.setFontSize(10);
+        doc.setFont('calibri', 'normal');
+        doc.text('MEEO - designate', margin, yPosition);
+        
+        yPosition += 3;
+        yPosition += 5;
+        doc.setFontSize(9.7);
+        
+        // Row 1: Received by
+        doc.text('Received by:', margin, yPosition);
+        yPosition += 10;
+        doc.line(margin, yPosition, margin + 70, yPosition);
+        yPosition += 5;
+        doc.setFontSize(10);
+        doc.setFont('calibri', 'normal');
+        doc.text('Signature over Printed Name', margin, yPosition);
+        yPosition += 10;
+        
+        // Row 2: Date and Control No
+        doc.text('Date:', margin, yPosition);
+        doc.text('Control No:', margin + 80, yPosition);
+        yPosition += 10;
+        doc.line(margin, yPosition, margin + 70, yPosition);
+        doc.line(margin + 80, yPosition, margin + 130, yPosition);
+        
+        currentPage++;
+      });
+      
+      // Save the PDF with all notices
+      doc.save(`All_Delinquency_Notices_${selectedYear}.pdf`);
+      message.success(`Successfully generated ${vendorsWithBalances.length} delinquency notices!`);
+      
+    } catch (error) {
+      console.error('Error generating all delinquency notices:', error);
+      message.error('Failed to generate all delinquency notices');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -904,31 +1152,47 @@ const VendorAnalysis = () => {
       const pageHeight = doc.internal.pageSize.getHeight();
       const margin = 20;
       
-      // Function to add header and footer to each page
-      const addHeaderAndFooter = () => {
-        // Use the same government header as the delinquency notice
-        const headerYPosition = addGovernmentHeader(doc, pageWidth, margin);
-        
-        // Add title after the header
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10.5);
-        doc.text(`Vendor Remaining Balance Report - ${selectedYear}`, pageWidth / 2, headerYPosition, { align: 'center' });
-        
-        // Vendor Info
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10.5);
-        doc.text(`Vendor Name: ${selectedVendor.fullname}`, margin, headerYPosition + 10);
-        
-        return headerYPosition + 20; // Return the next y position for content
-      };
-
-      // Add header to first page
-      let contentYPosition = addHeaderAndFooter();
+      // Add letterhead template as background
+      try {
+        doc.addImage(letterheadTemplate, 'JPEG', 0, 0, pageWidth, pageHeight);
+      } catch (error) {
+        // Letterhead template not found, continuing without it
+      }
+      
+      // Title
+      let yPosition = 70; // Start position after letterhead
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text('Vendor Remaining Balance Report', pageWidth / 2, yPosition, { align: 'center' });
+      
+      // Date
+      yPosition += 10;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      const currentDate = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      doc.text(`Generated on: ${currentDate}`, pageWidth / 2, yPosition, { align: 'center' });
+      
+      // Vendor Info
+      yPosition += 10;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text(`Vendor: ${selectedVendor.fullname}`, pageWidth / 2, yPosition, { align: 'center' });
+      
+      yPosition += 10;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`Year: ${selectedYear}`, pageWidth / 2, yPosition, { align: 'center' });
+      
+      yPosition += 20;
       
       // Stall Analysis Table
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10.5);
-      doc.text('Stall Analysis', margin, contentYPosition);
+      doc.setFontSize(12);
+      doc.text('Stall Analysis', pageWidth / 2, yPosition, { align: 'center' });
       
       const stallData = [{
         vendor_name: vendorData.vendor_analysis.vendor_name,
@@ -949,10 +1213,28 @@ const VendorAnalysis = () => {
           row.annual,
           row.space_rights
         ]),
-        startY: contentYPosition + 5,
+        startY: yPosition + 10, // Adjusted for single spacing
         theme: 'grid',
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [24, 144, 255] }
+        styles: { 
+          fontSize: 9,
+          lineWidth: 0.5,
+          lineColor: [0, 0, 0]
+        },
+        headStyles: { 
+          fillColor: [255, 255, 255],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold',
+          halign: 'center'
+        },
+        columnStyles: {
+          0: { cellWidth: 35, halign: 'center' },
+          1: { cellWidth: 25, halign: 'center' },
+          2: { cellWidth: 30, halign: 'center' },
+          3: { cellWidth: 30, halign: 'center' },
+          4: { cellWidth: 30, halign: 'center' },
+          5: { cellWidth: 30, halign: 'center' }
+        },
+        margin: { left: (pageWidth - 180) / 2 + 5} // Moved 10 units to the right
       });
       
       // Monthly Payment Analysis Table (below Stall Analysis)
@@ -973,10 +1255,10 @@ const VendorAnalysis = () => {
         deposit: formatCurrencyForPDF(vendorData.monthly_breakdown.reduce((sum, item) => sum + item.deposit, 0))
       });
       
-      const stallTableY = doc.lastAutoTable.finalY || contentYPosition + 5;
+      const stallTableY = doc.lastAutoTable.finalY || yPosition + 10;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10.5);
-      doc.text('Monthly Payment Analysis', margin, stallTableY + 10);
+      doc.setFontSize(12);
+      doc.text('Monthly Payment Analysis', pageWidth / 2, stallTableY + 15, { align: 'center' });
       
       autoTable(doc, {
         head: [['Month', 'Monthly Rate', 'Payment', 'Balance', 'Deposit']],
@@ -987,33 +1269,36 @@ const VendorAnalysis = () => {
           row.balance,
           row.deposit
         ]),
-        startY: stallTableY + 15,
+        startY: stallTableY + 20, // Adjusted for single spacing
         theme: 'grid',
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [24, 144, 255] },
+        styles: { 
+          fontSize: 9,
+          lineWidth: 0.5,
+          lineColor: [0, 0, 0]
+        },
+        headStyles: { 
+          fillColor: [255, 255, 255],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold',
+          halign: 'center'
+        },
+        columnStyles: {
+          0: { cellWidth: 30, halign: 'center' },
+          1: { cellWidth: 35, halign: 'center' },
+          2: { cellWidth: 35, halign: 'center' },
+          3: { cellWidth: 35, halign: 'center' },
+          4: { cellWidth: 35, halign: 'center' }
+        },
         didParseCell: function(data) {
           // Style total row
           if (data.row.index === monthlyData.length - 1) {
             data.cell.styles.fontStyle = 'bold';
-            data.cell.styles.fillColor = [240, 240, 240];
+            data.cell.styles.fillColor = [255,255, 255];
+            data.cell.styles.halign = 'center';
           }
-        }
+        },
+        margin: { left: (pageWidth - 170) / 2 }
       });
-      
-      // Summary Statistics after Monthly Payment Analysis Table
-      const monthlyTableY = doc.lastAutoTable.finalY || stallTableY + 15;
-      const summaryX = pageWidth - margin;
-      const summaryY = monthlyTableY + 15;
-      
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10.5);
-      doc.text('Summary Statistics', summaryX, summaryY, { align: 'right' });
-      
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9.5);
-      doc.text(`Monthly Total: ${formatCurrencyForPDF(vendorData.totals.monthly)}`, summaryX, summaryY + 8, { align: 'right' });
-      doc.text(`Total Paid: ${formatCurrencyForPDF(vendorData.yearly_totals.total_payments)}`, summaryX, summaryY + 13, { align: 'right' });
-      doc.text(`Remaining Balance: ${formatCurrencyForPDF(vendorData.yearly_totals.total_balance)}`, summaryX, summaryY + 18, { align: 'right' });
       
       // Save the PDF
       doc.save(`Vendor_Analysis_${selectedVendor.fullname.replace(/\s+/g, '_')}_${selectedYear}.pdf`);
@@ -1380,11 +1665,27 @@ const VendorAnalysis = () => {
           {selectedVendor && (
             <>
               <Button
+                type="default"
+                icon={<ReloadOutlined />}
+                onClick={() => {
+                  fetchVendors();
+                  if (selectedVendor) {
+                    handleVendorChange(selectedVendor.id);
+                  }
+                }}
+                size="large"
+                disabled={loading}
+              >
+                Refresh
+              </Button>
+              <Button
                 type="primary"
                 icon={<DownloadOutlined />}
                 onClick={exportToPDF}
                 size="large"
                 disabled={!vendorData || loading}
+                   style={{ backgroundColor: '#ffffffff', borderColor: '#52c41a', color: 'black' }}
+           
               >
                 Export PDF
               </Button>
@@ -1407,6 +1708,16 @@ const VendorAnalysis = () => {
                 style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f', color: 'white' }}
               >
                 Print Notice
+              </Button>
+              <Button
+                type="default"
+                icon={<PrinterOutlined />}
+                onClick={generateAllDelinquencyNotices}
+                size="large"
+                disabled={loading}
+                style={{ backgroundColor: '#ff7875', borderColor: '#ff7875', color: 'white' }}
+              >
+                Print All Notices
               </Button>
               <Alert
                 message={`Displaying: ${selectedVendor.fullname} (${selectedYear})`}
@@ -1551,7 +1862,7 @@ const VendorAnalysis = () => {
                   key={`section-${section.section_id}`}
                 >
                   <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                    <Col xs={24} sm={8}>
+                    <Col xs={24} sm={6}>
                       <Card size="small">
                         <Statistic
                           title="Daily Rate"
@@ -1566,7 +1877,7 @@ const VendorAnalysis = () => {
                         />
                       </Card>
                     </Col>
-                    <Col xs={24} sm={8}>
+                    <Col xs={24} sm={6}>
                       <Card size="small">
                         <Statistic
                           title="Monthly Rate"
@@ -1576,7 +1887,17 @@ const VendorAnalysis = () => {
                         />
                       </Card>
                     </Col>
-                    <Col xs={24} sm={8}>
+                    <Col xs={24} sm={6}>
+                      <Card size="small">
+                        <Statistic
+                          title="Annual Rate"
+                          value={section.monthly_total * 12}
+                          formatter={(value) => formatCurrency(value)}
+                          valueStyle={{ color: '#fa8c16', fontSize: '16px' }}
+                        />
+                      </Card>
+                    </Col>
+                    <Col xs={24} sm={6}>
                       <Card size="small">
                         <Statistic
                           title="Space Rights"

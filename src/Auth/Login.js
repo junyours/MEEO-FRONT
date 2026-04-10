@@ -823,20 +823,30 @@ const Login = () => {
     animation: shake ? 'shake 0.5s' : '',
     opacity: loaded ? 1 : 0,
     transform: loaded ? 'translateY(0) scale(1)' : 'translateY(40px) scale(0.95)',
-    position: 'relative'
+    position: 'relative',
+    flexDirection: window.innerWidth <= 768 ? 'column' : 'row',
+    maxHeight: window.innerWidth <= 768 ? '90vh' : 'auto',
+    margin: window.innerWidth <= 768 ? '10px' : 'auto',
+    boxSizing: 'border-box'
   };
 
   const formContainerStyle = {
-    flex: 1.2,
-    padding: '70px 60px',
+    flex: window.innerWidth <= 768 ? '1' : '1.2',
+    padding: window.innerWidth <= 768 ? '25px 20px' : '70px 60px',
     color: '#1e293b',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%)',
-    borderRadius: '24px 0 0 24px',
+    borderRadius: window.innerWidth <= 768 ? '24px 24px 0 0' : '24px 0 0 24px',
     position: 'relative',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    order: window.innerWidth <= 768 ? '2' : '1',
+    maxHeight: window.innerWidth <= 768 ? '75vh' : 'auto',
+    overflowY: 'auto',
+    width: '100%',
+    boxSizing: 'border-box',
+    minWidth: 0
   };
 
   const formContainerPattern = {
@@ -850,14 +860,19 @@ const Login = () => {
   };
 
   const logoContainerStyle = {
-    flex: 0.8,
+    flex: window.innerWidth <= 768 ? '0.8' : '0.8',
     background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 30%, #334155 60%, #475569 100%)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '100px 80px',
+    padding: window.innerWidth <= 768 ? '40px 20px' : '100px 80px',
     position: 'relative',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    order: window.innerWidth <= 768 ? '1' : '2',
+    minHeight: window.innerWidth <= 768 ? '150px' : 'auto',
+    width: '100%',
+    boxSizing: 'border-box',
+    minWidth: 0
   };
 
   const logoContainerPattern = {
@@ -871,17 +886,20 @@ const Login = () => {
   };
 
   const logoStyle = {
-    maxWidth: '480px',
-    maxHeight: '480px',
+    maxWidth: window.innerWidth <= 768 ? '200px' : '480px',
+    maxHeight: window.innerWidth <= 768 ? '200px' : '480px',
+    width: '100%',
+    height: 'auto',
     objectFit: 'contain',
     filter: 'drop-shadow(0 20px 40px rgba(255, 255, 255, 0.15))',
     animation: 'float 1.5s ease-in-out infinite',
     position: 'relative',
-    zIndex: 1
+    zIndex: 1,
+    boxSizing: 'border-box'
   };
 
   const titleStyle = {
-    fontSize: '36px',
+    fontSize: window.innerWidth <= 768 ? '28px' : '36px',
     marginBottom: '16px',
     fontWeight: '800',
     color: '#0f172a',
@@ -895,7 +913,7 @@ const Login = () => {
   };
 
   const subtitleStyle = {
-    fontSize: '18px',
+    fontSize: window.innerWidth <= 768 ? '16px' : '18px',
     marginBottom: '40px',
     color: '#64748b',
     lineHeight: '1.6',
@@ -914,7 +932,10 @@ const Login = () => {
     padding: '6px',
     border: '2px solid #e2e8f0',
     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    width: '100%',
+    boxSizing: 'border-box',
+    minWidth: 0
   };
 
   const inputContainerFocus = {
@@ -943,7 +964,9 @@ const Login = () => {
     fontWeight: '500',
     transition: 'all 0.3s ease',
     fontFamily: 'Inter, sans-serif',
-    letterSpacing: '0.3px'
+    letterSpacing: '0.3px',
+    minWidth: 0,
+    boxSizing: 'border-box'
   };
 
   const otpInputStyle = {
@@ -976,7 +999,8 @@ const Login = () => {
     marginRight: '16px',
     transition: 'all 0.3s ease',
     padding: '8px',
-    borderRadius: '12px'
+    borderRadius: '12px',
+    flexShrink: 0
   };
 
   const buttonStyle = {
@@ -1112,21 +1136,43 @@ const Login = () => {
         <div style={cardWrapperStyle}>
           <div style={formContainerStyle}>
             <div style={formContainerPattern}></div>
-            <div style={{ textAlign: 'center', marginBottom: '50px' }}>
-              <div style={{ marginBottom: '30px' }}>
+            <div style={{ textAlign: 'center', marginBottom: window.innerWidth <= 768 ? '30px' : '50px', paddingTop: '10px' }}>
+              <div style={{ marginBottom: window.innerWidth <= 768 ? '20px' : '30px' }}>
                 <img 
                   src={logo} 
                   alt="MEEO Logo" 
                   style={{ 
-                    width: '100px', 
-                    height: '100px',
+                    width: window.innerWidth <= 768 ? '60px' : '100px', 
+                    height: window.innerWidth <= 768 ? '60px' : '100px',
                     marginBottom: '8px',
                     filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.15))'
                   }} 
                 />
               </div>
-              <h2 style={titleStyle}>Login</h2>
-              <p style={subtitleStyle}>
+              <h2 style={{
+                fontSize: window.innerWidth <= 768 ? '24px' : '36px',
+                marginBottom: '12px',
+                fontWeight: '800',
+                color: '#0f172a',
+                textAlign: 'center',
+                letterSpacing: '-1px',
+                lineHeight: '1.1',
+                background: 'linear-gradient(135deg, #0f172a 0%, #334155 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}>
+                Login
+              </h2>
+              <p style={{
+                fontSize: window.innerWidth <= 768 ? '14px' : '18px',
+                marginBottom: '20px',
+                color: '#64748b',
+                lineHeight: '1.5',
+                textAlign: 'center',
+                fontWeight: '400',
+                letterSpacing: '0.2px'
+              }}>
                 Municipal Economic Enterprise Office Management System
                 <br />
                 <span style={{ color: '#667eea', fontWeight: '600' }}>Multi-Factor Security Login</span>
@@ -1339,6 +1385,43 @@ const Login = () => {
                   >
                     <FaQuestionCircle style={{ marginRight: '6px', fontSize: '12px' }} />
                     Forgot Password?
+                  </button>
+                </div>
+
+                {/* Back to Homepage Button */}
+                <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/')}
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      border: 'none',
+                      color: '#fff',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      padding: '12px 24px',
+                      borderRadius: '12px',
+                      transition: 'all 0.3s ease',
+                      fontFamily: 'Inter, sans-serif',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      margin: '0 auto',
+                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.4)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                    }}
+                  >
+                    <FaArrowLeft style={{ fontSize: '12px' }} />
+                    Back to Homepage
                   </button>
                 </div>
               </form>
@@ -2108,6 +2191,97 @@ const Login = () => {
               
               .featureTextStyle {
                 textAlign: 'left';
+              }
+              
+              /* Enhanced mobile responsiveness */
+              .ant-modal {
+                margin: 20px !important;
+                max-width: calc(100vw - 40px) !important;
+              }
+              
+              .ant-modal-body {
+                padding: 30px 20px !important;
+              }
+              
+              /* Mobile OTP inputs */
+              .ant-input {
+                width: 40px !important;
+                height: 40px !important;
+                font-size: 18px !important;
+              }
+              
+              /* Mobile canvas captcha */
+              canvas {
+                width: 150px !important;
+                height: 50px !important;
+              }
+              
+              /* Mobile button adjustments */
+              button {
+                padding: 16px 24px !important;
+                font-size: 16px !important;
+              }
+              
+              /* Mobile form container */
+              div[style*='padding: 70px 60px'] {
+                padding: 25px 20px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                max-height: 75vh !important;
+                justify-content: flex-start !important;
+              }
+              
+              /* Mobile logo container */
+              div[style*='padding: 100px 80px'] {
+                padding: 40px 20px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+              }
+              
+              /* Mobile card wrapper */
+              div[style*='max-width: 1200px'] {
+                margin: 10px !important;
+                max-height: 90vh !important;
+                width: calc(100vw - 20px) !important;
+                max-width: calc(100vw - 20px) !important;
+              }
+            }
+            
+            @media (max-width: 480px) {
+              /* Extra small mobile adjustments */
+              .ant-modal {
+                margin: 10px !important;
+                max-width: calc(100vw - 20px) !important;
+              }
+              
+              .ant-modal-body {
+                padding: 20px 15px !important;
+              }
+              
+              .ant-input {
+                width: 35px !important;
+                height: 35px !important;
+                font-size: 16px !important;
+              }
+              
+              canvas {
+                width: 120px !important;
+                height: 40px !important;
+              }
+              
+              div[style*='padding: 40px 30px'] {
+                padding: 20px 15px !important;
+              }
+              
+              div[style*='padding: 60px 40px'] {
+                padding: 30px 15px !important;
+              }
+              
+              /* Extra small card wrapper */
+              div[style*='max-width: 1200px'] {
+                margin: 5px !important;
+                width: calc(100vw - 10px) !important;
+                max-width: calc(100vw - 10px) !important;
               }
             }
             

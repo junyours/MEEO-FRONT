@@ -9,6 +9,7 @@ import VendorDashboard from './vendor/VendorDashboard';
 import InchargeDashboard from './incharge_collector/Dashboard';
 import MainDashboard from './main_collector/Dashboard';
 import Homepage from './Auth/Homepage';
+import AutoLogoutProvider from './components/AutoLogoutProvider';
 
 // New Market Management Components
 
@@ -18,7 +19,8 @@ function App() {
   return (
     <div className="App">
       <Router basename="/">
-        <Routes>
+        <AutoLogoutProvider>
+          <Routes>
       <Route path="/" element={<Homepage />} />
 
           <Route path="/login" element={<Login />} />
@@ -27,6 +29,118 @@ function App() {
 
           <Route
             path="/admin/dashboard"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/vendor-management"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/product-management"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/cash-ticket"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/vendor-payment-calendar"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/market-section-stalls"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/stall-rate-dashboard"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/vendor-payment"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/payment-management"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/target"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/remaining-balance"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/rental-report"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/estimated_collection"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/market-open-space-collections"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/profile"
             element={
               <PrivateRoute>
                 <AdminDashboard />
@@ -65,7 +179,8 @@ function App() {
           />
 
    
-        </Routes>
+          </Routes>
+        </AutoLogoutProvider>
       </Router>
     </div>
   );

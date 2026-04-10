@@ -87,15 +87,34 @@ const VendorPaymentManagement = () => {
   const [selectedVendorForMonthPayment, setSelectedVendorForMonthPayment] = useState(null);
   const [selectedMonths, setSelectedMonths] = useState([]);
   const [customPaymentAmount, setCustomPaymentAmount] = useState('');
+  const [useDeposit, setUseDeposit] = useState(false);
+  const [selectedPaymentForDeposit, setSelectedPaymentForDeposit] = useState(null);
+  const [depositConsumptionModal, setDepositConsumptionModal] = useState(false);
+  const [customDepositAmount, setCustomDepositAmount] = useState('');
 
   useEffect(() => {
     fetchVendors();
+    
   }, []);
+
+
+
+  // Format date helper
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const month = months[date.getMonth()];
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month},${day},${year}`;
+  };
 
   const fetchVendors = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/vendor-payments');
+      // Add cache-busting parameter
+      const response = await api.get('/vendor-payments?t=' + Date.now());
       setVendors(response.data.data);
     } catch (error) {
       message.error('Failed to fetch vendors');
@@ -296,9 +315,17 @@ const VendorPaymentManagement = () => {
     return paidToday && remainingBalance === 0 && hasAdvancePayment;
   };
 
-  const detectPaymentType = (amount, balance, dailyRent, paidToday = false) => {
-    if (!amount || amount <= 0) return 'daily';
+  const detectPaymentType = (amount, balance, dailyRent, paidToday = false, isMonthly = false, monthlyRent = 0) => {
+    if (!amount || amount <= 0) return isMonthly ? 'monthly' : 'daily';
 
+    // For monthly stalls, check against monthly rent
+    if (isMonthly) {
+      if (amount === monthlyRent) return 'monthly';
+      if (amount > monthlyRent) return 'advance';
+      return 'partial';
+    }
+
+    // For daily stalls (existing logic)
     if (amount === dailyRent) return 'daily';
     
     const fullyPaidAmount = balance + (paidToday ? 0 : dailyRent);
@@ -313,11 +340,16 @@ const VendorPaymentManagement = () => {
     const rental = selectedVendor?.rentals?.find(r => r.rental_id === rentalId);
     if (!rental) return;
 
+    const isMonthly = rental.is_monthly || false;
+    const monthlyRent = parseFloat(rental.monthly_rent) || 0;
+
     const paymentType = detectPaymentType(
       amount, 
       rental.remaining_balance || 0, 
       rental.daily_rent || 0,
-      rental.paid_today || false
+      rental.paid_today || false,
+      isMonthly,
+      monthlyRent
     );
     paymentForm.setFieldsValue({
       [`payment_type_${rentalId}`]: paymentType,
@@ -338,9 +370,15 @@ const VendorPaymentManagement = () => {
     let amount = 0;
     const paidToday = rental.paid_today || false;
     const dailyRent = parseFloat(rental.daily_rent) || 0;
+    const monthlyRent = parseFloat(rental.monthly_rent) || 0;
     const remainingBalance = parseFloat(rental.remaining_balance) || 0;
+    const isMonthly = rental.is_monthly || false;
 
     switch (paymentType) {
+      case 'monthly':
+        // Monthly payment: use monthly rent
+        amount = monthlyRent;
+        break;
       case 'daily':
         // Daily payment: only pay for today, don't deduct missed days
         amount = dailyRent;
@@ -350,17 +388,22 @@ const VendorPaymentManagement = () => {
         amount = remainingBalance + (paidToday ? 0 : dailyRent);
         break;
       case 'partial':
-        // Keep current amount or set to daily rent as default
+        // Keep current amount or set to default (daily rent or monthly rent)
         const currentAmount = paymentForm.getFieldValue([`amount_${rentalId}`]);
-        amount = currentAmount ? parseFloat(currentAmount) : dailyRent;
+        amount = currentAmount ? parseFloat(currentAmount) : (isMonthly ? monthlyRent : dailyRent);
         break;
       case 'advance':
-        // For advance: today's due + balance + 1 day advance (daily rent)
-        // If already paid today: balance + 1 day advance
-        amount = paidToday ? (remainingBalance + dailyRent) : (dailyRent + remainingBalance + dailyRent);
+        if (isMonthly) {
+          // For monthly stalls: monthly rent + advance
+          amount = monthlyRent + (monthlyRent || 0); // Add one month as advance
+        } else {
+          // For daily stalls: today's due + balance + 1 day advance (daily rent)
+          // If already paid today: balance + 1 day advance
+          amount = paidToday ? (remainingBalance + dailyRent) : (dailyRent + remainingBalance + dailyRent);
+        }
         break;
       default:
-        amount = dailyRent;
+        amount = isMonthly ? monthlyRent : dailyRent;
     }
 
     // Ensure amount is a number
@@ -382,43 +425,88 @@ const VendorPaymentManagement = () => {
     const rental = selectedVendor?.rentals?.find(r => r.rental_id === rentalId);
     if (!rental) return null;
 
+    // Check if this is a monthly stall
+    const isMonthly = rental.is_monthly || false;
+    const monthlyRent = parseFloat(rental.monthly_rent) || 0;
+
     // If in bulk mode, use the divided amount instead of form value
     let amount = 0;
-    let paymentType = 'daily';
+    let paymentType = isMonthly ? 'monthly' : 'daily';
     
     if (bulkPaymentMode && bulkPaymentData.amount > 0) {
-      // Check if this is a daily payment scenario
+      // Check if this is a daily/monthly payment scenario
       const dailyRent = parseFloat(rental.daily_rent || 0);
       const missedAmount = parseFloat(rental.remaining_balance || 0) || (parseFloat(rental.missed_days || 0) * dailyRent);
       
-      // If bulk payment type is daily, use individual stall's daily rent
-      if (bulkPaymentData.paymentType === 'daily') {
-        amount = dailyRent;
-        paymentType = 'daily';
-      } else {
-        // For other payment types, divide the total amount
-        amount = selectedRentals.length > 1 ? 
-          Math.round((bulkPaymentData.amount / selectedRentals.length) * 100) / 100 : 
-          bulkPaymentData.amount;
-        
-        // Determine payment type based on amount
-        // Use tolerance for floating point comparison
-        const tolerance = 0.01;
-        
-        if (Math.abs(amount - dailyRent) <= tolerance) {
-          paymentType = 'daily';
-        } else if (amount > missedAmount + (rental.paid_today ? 0 : dailyRent) + dailyRent + tolerance) {
-          paymentType = 'advance';
-        } else if (amount >= missedAmount + (rental.paid_today ? 0 : dailyRent) - tolerance) {
-          paymentType = 'fully paid';
+      if (isMonthly) {
+        // For monthly stalls, use monthly rent
+        if (bulkPaymentData.paymentType === 'monthly' || bulkPaymentData.paymentType === 'daily') {
+          amount = monthlyRent;
+          paymentType = 'monthly';
         } else {
-          paymentType = 'partial';
+          // For other payment types, divide the total amount with rounding adjustment
+          const rentalIndex = selectedRentals.indexOf(rentalId);
+          const baseAmount = bulkPaymentData.amount / selectedRentals.length;
+          const roundedBaseAmount = Math.round(baseAmount * 100) / 100;
+          
+          // Calculate total rounding error
+          const totalRoundedAmount = roundedBaseAmount * selectedRentals.length;
+          const roundingError = Math.round((bulkPaymentData.amount - totalRoundedAmount) * 100) / 100;
+          
+          // Apply rounding adjustment to the last stall
+          amount = rentalIndex === selectedRentals.length - 1 ? 
+            Math.round((roundedBaseAmount + roundingError) * 100) / 100 : 
+            roundedBaseAmount;
+          
+          // Determine payment type for monthly stall
+          const tolerance = 0.01;
+          if (Math.abs(amount - monthlyRent) <= tolerance) {
+            paymentType = 'monthly';
+          } else if (amount > monthlyRent + tolerance) {
+            paymentType = 'advance';
+          } else {
+            paymentType = 'partial';
+          }
+        }
+      } else {
+        // For daily stalls (existing logic)
+        if (bulkPaymentData.paymentType === 'daily') {
+          amount = dailyRent;
+          paymentType = 'daily';
+        } else {
+          // For other payment types, divide the total amount with rounding adjustment
+          const rentalIndex = selectedRentals.indexOf(rentalId);
+          const baseAmount = bulkPaymentData.amount / selectedRentals.length;
+          const roundedBaseAmount = Math.round(baseAmount * 100) / 100;
+          
+          // Calculate total rounding error
+          const totalRoundedAmount = roundedBaseAmount * selectedRentals.length;
+          const roundingError = Math.round((bulkPaymentData.amount - totalRoundedAmount) * 100) / 100;
+          
+          // Apply rounding adjustment to the last stall
+          amount = rentalIndex === selectedRentals.length - 1 ? 
+            Math.round((roundedBaseAmount + roundingError) * 100) / 100 : 
+            roundedBaseAmount;
+          
+          // Determine payment type based on amount
+          // Use tolerance for floating point comparison
+          const tolerance = 0.01;
+          
+          if (Math.abs(amount - dailyRent) <= tolerance) {
+            paymentType = 'daily';
+          } else if (amount > missedAmount + (rental.paid_today ? 0 : dailyRent) + dailyRent + tolerance) {
+            paymentType = 'advance';
+          } else if (amount >= missedAmount + (rental.paid_today ? 0 : dailyRent) - tolerance) {
+            paymentType = 'fully paid';
+          } else {
+            paymentType = 'partial';
+          }
         }
       }
     } else {
       // Use form values when not in bulk mode
       amount = parseFloat(paymentForm.getFieldValue([`amount_${rentalId}`]) || 0);
-      paymentType = paymentForm.getFieldValue([`payment_type_${rentalId}`]) || 'daily';
+      paymentType = paymentForm.getFieldValue([`payment_type_${rentalId}`]) || (isMonthly ? 'monthly' : 'daily');
     }
 
     // Calculate remaining balance from missed days * daily rent if no remaining_balance data
@@ -431,47 +519,68 @@ const VendorPaymentManagement = () => {
     let missedDaysCovered = 0;
     let advanceDays = 0;
     let newRemainingBalance = remainingBalance;
+    let monthlyStatus = '';
 
     if (amount > 0) {
-      if (paymentType === 'daily') {
-        // Daily payment: only pays for today, doesn't cover missed days
-        missedDaysCovered = 0;
-        newRemainingBalance = remainingBalance; // No change to missed days balance
-      } else if (paymentType === 'partial') {
-        missedDaysCovered = Math.floor(amount / dailyRent);
-        newRemainingBalance = Math.max(0, remainingBalance - amount);
-      } else if (paymentType === 'fully paid') {
-        // Fully paid: covers all missed days
-        missedDaysCovered = Math.ceil(remainingBalance / dailyRent);
-        newRemainingBalance = 0;
-      } else if (paymentType === 'advance') {
-        const missedDays = Math.ceil(remainingBalance / dailyRent);
-        // Match backend calculation: use effectiveRemaining (same as remainingBalance) + todayDue
-        const todayDue = dailyRent; // Backend adds today's due if not paid today
-        const totalRequired = remainingBalance + todayDue;
-        const extraAmount = amount - totalRequired;
-        advanceDays = Math.max(0, Math.floor(extraAmount / dailyRent));
-        // Show total days covered: missed days + advance days
-        missedDaysCovered = missedDays + advanceDays;
-        newRemainingBalance = 0;
+      if (isMonthly) {
+        // Monthly stall logic
+        if (paymentType === 'monthly') {
+          monthlyStatus = 'Monthly payment processed';
+          newRemainingBalance = 0;
+        } else if (paymentType === 'partial') {
+          monthlyStatus = `Partial monthly payment: ${fmtMoney(amount)} of ${fmtMoney(monthlyRent)}`;
+          newRemainingBalance = Math.max(0, monthlyRent - amount);
+        } else if (paymentType === 'advance') {
+          const extraMonths = Math.floor((amount - monthlyRent) / monthlyRent);
+          advanceDays = extraMonths * 30; // Approximate days for display
+          monthlyStatus = `Monthly payment + ${extraMonths} month(s) advance`;
+          newRemainingBalance = 0;
+        }
+        missedDaysCovered = 'N/A (Monthly)';
+      } else {
+        // Daily stall logic (existing logic)
+        if (paymentType === 'daily') {
+          // Daily payment: only pays for today, doesn't cover missed days
+          missedDaysCovered = 0;
+          newRemainingBalance = remainingBalance; // No change to missed days balance
+        } else if (paymentType === 'partial') {
+          missedDaysCovered = Math.floor(amount / dailyRent);
+          newRemainingBalance = Math.max(0, remainingBalance - amount);
+        } else if (paymentType === 'fully paid') {
+          // Fully paid: covers all missed days
+          missedDaysCovered = Math.ceil(remainingBalance / dailyRent);
+          newRemainingBalance = 0;
+        } else if (paymentType === 'advance') {
+          const missedDays = Math.ceil(remainingBalance / dailyRent);
+          // Match backend calculation: use effectiveRemaining (same as remainingBalance) + todayDue
+          const todayDue = dailyRent; // Backend adds today's due if not paid today
+          const totalRequired = remainingBalance + todayDue;
+          const extraAmount = amount - totalRequired;
+          advanceDays = Math.max(0, Math.floor(extraAmount / dailyRent));
+          // Show total days covered: missed days + advance days
+          missedDaysCovered = missedDays + advanceDays;
+          newRemainingBalance = 0;
+        }
       }
     }
 
     // Determine if today's due is paid based on payment type
     let paidTodayStatus = rental.paid_today || false;
-    if (paymentType === 'daily' || paymentType === 'fully paid' || paymentType === 'advance') {
+    if (paymentType === 'daily' || paymentType === 'fully paid' || paymentType === 'advance' || paymentType === 'monthly') {
       paidTodayStatus = true;
     }
 
     return {
       totalRemainingBalance: remainingBalance,
-      missedDaysCovered: paymentType === 'daily' ? '0 days (today only)' : `${missedDaysCovered}/${rental.missed_days || 0} days`,
+      missedDaysCovered: isMonthly ? monthlyStatus : (paymentType === 'daily' ? '0 days (today only)' : `${missedDaysCovered}/${rental.missed_days || 0} days`),
       paidToday: paidTodayStatus,
       amountEntered: amount,
       remainingBalance: newRemainingBalance,
       advanceDays,
       paymentType,
-      dailyRent
+      dailyRent,
+      monthlyRent: isMonthly ? monthlyRent : null,
+      isMonthly
     };
   };
 
@@ -511,6 +620,11 @@ const VendorPaymentManagement = () => {
   };
 
   const handleBulkPaymentMode = (enabled) => {
+    // Prevent enabling bulk mode if less than 2 stalls are selected
+    if (enabled && selectedRentals.length <= 1) {
+      return;
+    }
+    
     setBulkPaymentMode(enabled);
     if (enabled && selectedRentals.length > 1) {
       // Auto-calculate amounts for bulk mode
@@ -525,18 +639,21 @@ const VendorPaymentManagement = () => {
     }
   };
 
+  // Auto-disable bulk mode when selected rentals changes to 1 or less
+  useEffect(() => {
+    if (selectedRentals.length <= 1 && bulkPaymentMode) {
+      setBulkPaymentMode(false);
+    }
+  }, [selectedRentals.length, bulkPaymentMode]);
+
   // Auto-divide when bulk payment amount changes
   useEffect(() => {
-    console.log('useEffect triggered:', { bulkPaymentMode, amount: bulkPaymentData.amount, stallsCount: selectedRentals.length, paymentType: bulkPaymentData.paymentType });
-    
     if (bulkPaymentMode && bulkPaymentData.amount > 0 && selectedRentals.length > 1) {
       // Check if entered amount equals total daily rent
       const summary = calculateBulkPaymentSummary();
       const isTotalDailyRent = summary && Math.abs(bulkPaymentData.amount - summary.totalDailyRent) <= 0.01;
       
       if (isTotalDailyRent) {
-        console.log('Amount equals total daily rent - using individual daily rents');
-        
         // Update bulk payment data to reflect daily payment type
         setBulkPaymentData(prev => ({ ...prev, paymentType: 'daily' }));
         
@@ -546,49 +663,53 @@ const VendorPaymentManagement = () => {
           
           const dailyRent = parseFloat(rental.daily_rent || 0);
           
-          console.log('Setting stall:', { rentalId, amount: dailyRent, paymentType: 'daily' });
-          
           paymentForm.setFieldsValue({
             [`amount_${rentalId}`]: dailyRent,
             [`payment_type_${rentalId}`]: 'daily'
           });
         });
       } else {
-        // Divide the amount among all selected stalls and auto-determine payment type
-        const amountPerStall = Math.round((bulkPaymentData.amount / selectedRentals.length) * 100) / 100;
+        // Divide the amount among all selected stalls with rounding adjustment
+        const baseAmount = bulkPaymentData.amount / selectedRentals.length;
+        const roundedBaseAmount = Math.round(baseAmount * 100) / 100;
         
-        console.log('Dividing amount:', { total: bulkPaymentData.amount, perStall: amountPerStall, stalls: selectedRentals.length });
+        // Calculate total rounding error
+        const totalRoundedAmount = roundedBaseAmount * selectedRentals.length;
+        const roundingError = Math.round((bulkPaymentData.amount - totalRoundedAmount) * 100) / 100;
         
         // Determine the most common payment type to update bulk payment data
         const paymentTypeCounts = {};
         
-        selectedRentals.forEach(rentalId => {
-          // Determine payment type based on amount per stall
+        selectedRentals.forEach((rentalId, index) => {
+          // Determine payment type based on actual amount for this stall
           const rental = selectedVendor?.rentals?.find(r => r.rental_id === rentalId);
           if (!rental) return;
           
           const dailyRent = parseFloat(rental.daily_rent || 0);
           const missedAmount = parseFloat(rental.remaining_balance || 0) || (parseFloat(rental.missed_days || 0) * dailyRent);
           
-          // Auto-determine payment type based on entered amount
+          // Calculate actual amount for this stall (with rounding adjustment for last stall)
+          const actualAmount = index === selectedRentals.length - 1 ? 
+            Math.round((roundedBaseAmount + roundingError) * 100) / 100 : 
+            roundedBaseAmount;
+          
+          // Auto-determine payment type based on actual amount
           let paymentType = 'partial';
           // Use tolerance for floating point comparison
           const tolerance = 0.01;
           
-          if (Math.abs(amountPerStall - dailyRent) <= tolerance) {
+          if (Math.abs(actualAmount - dailyRent) <= tolerance) {
             paymentType = 'daily';
-          } else if (amountPerStall > missedAmount + (rental.paid_today ? 0 : dailyRent) + dailyRent + tolerance) {
+          } else if (actualAmount > missedAmount + (rental.paid_today ? 0 : dailyRent) + dailyRent + tolerance) {
             paymentType = 'advance';
-          } else if (amountPerStall >= missedAmount + (rental.paid_today ? 0 : dailyRent) - tolerance) {
+          } else if (actualAmount >= missedAmount + (rental.paid_today ? 0 : dailyRent) - tolerance) {
             paymentType = 'fully paid';
           }
 
           paymentTypeCounts[paymentType] = (paymentTypeCounts[paymentType] || 0) + 1;
 
-          console.log('Setting stall:', { rentalId, amount: amountPerStall, paymentType });
-
           paymentForm.setFieldsValue({
-            [`amount_${rentalId}`]: amountPerStall,
+            [`amount_${rentalId}`]: actualAmount,
             [`payment_type_${rentalId}`]: paymentType
           });
         });
@@ -685,26 +806,34 @@ const VendorPaymentManagement = () => {
       
       if (bulkPaymentMode) {
         // In bulk mode, calculate amounts based on bulk payment data
-        amounts = selectedRentals.map(rentalId => {
-          const rental = selectedVendor?.rentals?.find(r => r.rental_id === rentalId);
-          if (!rental) return 0;
-          
-          const dailyRent = parseFloat(rental.daily_rent || 0);
-          
-          // If bulk payment type is daily, use individual stall's daily rent
-          if (bulkPaymentData.paymentType === 'daily') {
+        if (bulkPaymentData.paymentType === 'daily') {
+          // For daily payments, use individual stall's daily rent
+          amounts = selectedRentals.map(rentalId => {
+            const rental = selectedVendor?.rentals?.find(r => r.rental_id === rentalId);
+            if (!rental) return 0;
+            const dailyRent = parseFloat(rental.daily_rent || 0);
             return Math.round(dailyRent * 100) / 100;
-          } else {
-            // For other payment types, divide the total amount
-            const amount = selectedRentals.length > 1 ? 
-              Math.round((bulkPaymentData.amount / selectedRentals.length) * 100) / 100 : 
-              bulkPaymentData.amount;
-            return Math.round(amount * 100) / 100;
-          }
-        });
+          });
+        } else {
+          // For other payment types, divide the total amount with rounding adjustment
+          const baseAmount = bulkPaymentData.amount / selectedRentals.length;
+          const roundedBaseAmount = Math.round(baseAmount * 100) / 100;
+          
+          // Calculate total rounding error
+          const totalRoundedAmount = roundedBaseAmount * selectedRentals.length;
+          const roundingError = Math.round((bulkPaymentData.amount - totalRoundedAmount) * 100) / 100;
+          
+          amounts = selectedRentals.map((rentalId, index) => {
+            // Add the rounding error to the last stall
+            if (index === selectedRentals.length - 1) {
+              return Math.round((roundedBaseAmount + roundingError) * 100) / 100;
+            }
+            return roundedBaseAmount;
+          });
+        }
         
         // Determine payment types based on calculated amounts
-        paymentTypes = selectedRentals.map(rentalId => {
+        paymentTypes = selectedRentals.map((rentalId, index) => {
           const rental = selectedVendor?.rentals?.find(r => r.rental_id === rentalId);
           if (!rental) return 'daily';
           
@@ -715,10 +844,8 @@ const VendorPaymentManagement = () => {
           if (bulkPaymentData.paymentType === 'daily') {
             return 'daily';
           } else {
-            // For other payment types, determine based on divided amount
-            const amount = selectedRentals.length > 1 ? 
-              Math.round((bulkPaymentData.amount / selectedRentals.length) * 100) / 100 : 
-              bulkPaymentData.amount;
+            // For other payment types, determine based on actual calculated amount
+            const amount = amounts[index];
             
             // Use tolerance for floating point comparison
             const tolerance = 0.01;
@@ -768,20 +895,103 @@ const VendorPaymentManagement = () => {
     
     setProcessingPayment(true);
     try {
-      await api.post(`/vendor-payments/bulk/${selectedVendor.id}`, pendingPaymentData);
-      message.success('Bulk payment processed successfully');
+      const endpoint = useDeposit && selectedPaymentForDeposit 
+        ? `/vendor-payments/consume-deposit/${selectedVendor.id}`
+        : `/vendor-payments/bulk/${selectedVendor.id}`;
+      
+      const payload = useDeposit && selectedPaymentForDeposit
+        ? {
+            ...pendingPaymentData,
+            payment_id: selectedPaymentForDeposit.id,
+            consume_deposit: true
+          }
+        : pendingPaymentData;
+
+      await api.post(endpoint, payload);
+      message.success(useDeposit ? 'Deposit consumed successfully' : 'Bulk payment processed successfully');
       setConfirmationModal(false);
       setBulkPaymentModal(false);
-      setOrNumber(''); // Reset OR number
-      setPaymentDate(dayjs()); // Reset payment date to today
+      setOrNumber('');
+      setPaymentDate(dayjs());
+      setUseDeposit(false);
+      setSelectedPaymentForDeposit(null);
       fetchVendors();
     } catch (error) {
-      console.error('Bulk payment error:', error);
-      message.error(error.response?.data?.message || 'Failed to process bulk payment');
+      console.error('Payment error:', error);
+      message.error(error.response?.data?.message || 'Failed to process payment');
     } finally {
       setProcessingPayment(false);
       setPendingPaymentData(null);
     }
+  };
+
+  const handleDepositConsumption = (vendor) => {
+    setSelectedVendor(vendor);
+    setDepositConsumptionModal(true);
+    setSelectedPaymentForDeposit(null);
+    setUseDeposit(true);
+  };
+
+  const getTotalDepositAmount = (vendor) => {
+    const monthlyBalances = vendor.monthly_balances || [];
+    return monthlyBalances.reduce((sum, month) => {
+      const deposit = month.deposit || 0; // Use backend-provided deposit
+      return sum + deposit;
+    }, 0);
+  };
+
+  const getAvailablePaymentsForDeposit = (vendor) => {
+    // Collect all payments and calculate month deposits
+    const allPayments = [];
+    const monthDeposits = {};
+    
+    vendor.rentals?.forEach(rental => {
+      const monthlyBalances = rental.monthly_balances || [];
+      
+      // Calculate deposits for each month by summing all individual payments
+      monthlyBalances.forEach((monthBalance, monthIndex) => {
+        let totalMonthPayment = 0;
+        
+        // Sum all individual payments for this month
+        if (monthBalance.individual_payments && monthBalance.individual_payments.length > 0) {
+          monthBalance.individual_payments.forEach(payment => {
+            totalMonthPayment += parseFloat(payment.amount) || 0;
+          });
+        }
+        
+        // Calculate deposit: total payments - monthly rate
+        const totalDeposit = Math.max(0, totalMonthPayment - parseFloat(monthBalance.monthly_rate) || 0);
+        monthDeposits[monthIndex] = totalDeposit > 0;
+        
+        console.log(`Month ${monthIndex}: Total payments: ${totalMonthPayment}, Monthly rate: ${monthBalance.monthly_rate}, Deposit: ${totalDeposit}`);
+      });
+      
+      // Get all payments from all months
+      monthlyBalances.forEach((monthBalance, monthIndex) => {
+        if (monthBalance.individual_payments && monthBalance.individual_payments.length > 0) {
+          monthBalance.individual_payments.forEach(individualPayment => {
+            // Calculate deposit correctly: payment amount - actual monthly rate
+            const deposit = Math.max(0, individualPayment.amount - individualPayment.monthly_rate);
+            
+            allPayments.push({
+              ...individualPayment,
+              rental_id: rental.rental_id,
+              section_name: rental.section_name,
+              stall_number: rental.stall_number,
+              month: monthBalance.month,
+              monthIndex: monthIndex,
+              deposit: deposit, // Use corrected deposit calculation
+              has_deposit: monthDeposits[monthIndex], // Use calculated month deposit status
+            });
+            
+            console.log(`Payment ${individualPayment.payment_id}: Month ${monthIndex}, has_deposit: ${monthDeposits[monthIndex]}`);
+          });
+        }
+      });
+    });
+    
+    console.log('All payments with month deposit status:', allPayments);
+    return allPayments;
   };
 
   // Memoized calculations for better performance
@@ -837,6 +1047,7 @@ const VendorPaymentManagement = () => {
       'partial': 'orange',
       'fully paid': 'green',
       'advance': 'purple',
+      'monthly': 'cyan',
     };
     return colors[type] || 'default';
   };
@@ -964,6 +1175,44 @@ const VendorPaymentManagement = () => {
       },
     },
     {
+      title: (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <MoneyCollectOutlined style={{ color: '#52c41a' }} />
+          <span>Deposit</span>
+        </div>
+      ),
+      dataIndex: 'total_deposit',
+      key: 'total_deposit',
+      render: (_, record) => {
+        // Calculate total deposit from monthly balances (use backend-provided deposit values)
+        const monthlyBalances = record.monthly_balances || [];
+        const totalDeposit = monthlyBalances.reduce((sum, month) => {
+          const deposit = month.deposit || 0; // Use backend-provided deposit
+          return sum + deposit;
+        }, 0);
+
+        return (
+          <div>
+            <Text strong style={{ color: totalDeposit > 0 ? '#52c41a' : '#8c8c8c' }}>
+              {fmtMoney(totalDeposit)}
+            </Text>
+            {totalDeposit > 0 && (
+              <div>
+                <Text type="secondary" style={{ fontSize: '11px' }}>
+                  Available for consumption
+                </Text>
+              </div>
+            )}
+          </div>
+        );
+      },
+      sorter: (a, b) => {
+        const depositA = (a.monthly_balances || []).reduce((sum, month) => (month.deposit || 0) + sum, 0);
+        const depositB = (b.monthly_balances || []).reduce((sum, month) => (month.deposit || 0) + sum, 0);
+        return depositA - depositB;
+      },
+    },
+    {
       title: 'Paid Today',
       dataIndex: 'paid_today_count',
       key: 'paid_today_count',
@@ -1030,6 +1279,20 @@ const VendorPaymentManagement = () => {
                 size="small"
                 onClick={() => handleBulkPayment(record)}
                 disabled={record.paid_today_count === (Array.isArray(record.rentals) ? record.rentals.length : 0)}
+              />
+            </Tooltip>
+            <Tooltip title="Consume Deposit">
+              <Button
+                className="action-button black"
+                icon={<MoneyCollectOutlined />}
+                size="small"
+                onClick={() => handleDepositConsumption(record)}
+                disabled={getTotalDepositAmount(record) <= 0}
+                type={getTotalDepositAmount(record) > 0 ? "primary" : "default"}
+                style={{
+                  backgroundColor: getTotalDepositAmount(record) > 0 ? '#52c41a' : undefined,
+                  borderColor: getTotalDepositAmount(record) > 0 ? '#52c41a' : undefined
+                }}
               />
             </Tooltip>
           </Space>
@@ -1665,12 +1928,20 @@ const VendorPaymentManagement = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <Text strong>Bulk Payment</Text>
-              <Checkbox
-                checked={bulkPaymentMode}
-                onChange={(e) => handleBulkPaymentMode(e.target.checked)}
-              >
-                Enable bulk mode
-              </Checkbox>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Checkbox
+                  checked={bulkPaymentMode}
+                  onChange={(e) => handleBulkPaymentMode(e.target.checked)}
+                  disabled={selectedRentals.length <= 1}
+                >
+                  Enable bulk mode
+                </Checkbox>
+                {selectedRentals.length <= 1 && (
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    (Select 2+ stalls)
+                  </Text>
+                )}
+              </div>
             </div>
 
               {bulkPaymentMode && (
@@ -1793,15 +2064,25 @@ const VendorPaymentManagement = () => {
                       <Text strong style={{ marginBottom: '8px', display: 'block' }}>Payment Type</Text>
                       <Radio.Group
                         key={`payment_type_${rental.rental_id}_${stallRenderKey}`}
-                        value={paymentForm.getFieldValue([`payment_type_${rental.rental_id}`]) || 'daily'}
+                        value={paymentForm.getFieldValue([`payment_type_${rental.rental_id}`]) || (rental.is_monthly ? 'monthly' : 'daily')}
                         onChange={(e) => handlePaymentTypeChange(rental.rental_id, e.target.value)}
                         disabled={bulkPaymentMode}
                         size="small"
                       >
-                        <Radio.Button value="daily">Daily</Radio.Button>
-                        <Radio.Button value="partial">Partial</Radio.Button>
-                        <Radio.Button value="fully paid">Full</Radio.Button>
-                        <Radio.Button value="advance">Advance</Radio.Button>
+                        {rental.is_monthly ? (
+                          <>
+                            <Radio.Button value="monthly">Monthly</Radio.Button>
+                            <Radio.Button value="partial">Partial</Radio.Button>
+                            <Radio.Button value="advance">Advance</Radio.Button>
+                          </>
+                        ) : (
+                          <>
+                            <Radio.Button value="daily">Daily</Radio.Button>
+                            <Radio.Button value="partial">Partial</Radio.Button>
+                            <Radio.Button value="fully paid">Full</Radio.Button>
+                            <Radio.Button value="advance">Advance</Radio.Button>
+                          </>
+                        )}
                       </Radio.Group>
                     </div>
                     <div style={{ width: '150px' }}>
@@ -1828,18 +2109,49 @@ const VendorPaymentManagement = () => {
                     </div>
                     <div style={{ width: '100px' }}>
                       <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                        <Button
-                          size="small"
-                          block
-                          onClick={() => {
-                            const amount = Math.round(parseFloat(rental.daily_rent) * 100) / 100;
-                            handleAmountChange(rental.rental_id, amount);
-                          }}
-                          disabled={bulkPaymentMode}
-                        >
-                          Daily ({fmtMoney(rental.daily_rent)})
-                        </Button>
-                        {(rental.monthly_balances?.[new Date().getMonth()]?.balance || 0) > 0 && (
+                        {rental.is_monthly ? (
+                          <Button
+                            size="small"
+                            block
+                            onClick={() => {
+                              const amount = Math.round(parseFloat(rental.monthly_rent) * 100) / 100;
+                              handleAmountChange(rental.rental_id, amount);
+                              handlePaymentTypeChange(rental.rental_id, 'monthly');
+                            }}
+                            disabled={bulkPaymentMode}
+                            style={{ 
+                              fontSize: '11px',
+                              padding: '4px 8px',
+                              height: 'auto',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                          >
+                            Monthly ({fmtMoney(rental.monthly_rent)})
+                          </Button>
+                        ) : (
+                          <Button
+                            size="small"
+                            block
+                            onClick={() => {
+                              const amount = Math.round(parseFloat(rental.daily_rent) * 100) / 100;
+                              handleAmountChange(rental.rental_id, amount);
+                            }}
+                            disabled={bulkPaymentMode}
+                            style={{ 
+                              fontSize: '11px',
+                              padding: '4px 8px',
+                              height: 'auto',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                          >
+                            Daily ({fmtMoney(rental.daily_rent)})
+                          </Button>
+                        )}
+                        {(rental.monthly_balances?.[new Date().getMonth()]?.balance || 0) > 0 && !rental.is_monthly && (
                           <Button
                             size="small"
                             block
@@ -1850,6 +2162,14 @@ const VendorPaymentManagement = () => {
                               handlePaymentTypeChange(rental.rental_id, 'fully paid');
                             }}
                             disabled={bulkPaymentMode}
+                            style={{ 
+                              fontSize: '11px',
+                              padding: '4px 8px',
+                              height: 'auto',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
                           >
                             Full ({fmtMoney((rental.monthly_balances?.[new Date().getMonth()]?.balance || 0) + (rental.paid_today ? 0 : rental.daily_rent))})
                           </Button>
@@ -1865,9 +2185,16 @@ const VendorPaymentManagement = () => {
                               handlePaymentTypeChange(rental.rental_id, 'partial');
                             }}
                             disabled={bulkPaymentMode}
-                            style={{ marginTop: '4px' }}
+                            style={{ 
+                              fontSize: '11px',
+                              padding: '4px 8px',
+                              height: 'auto',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
                           >
-                            Pay Balance ({fmtMoney(rental.monthly_balances?.[new Date().getMonth()]?.balance || 0)})
+                            Balance ({fmtMoney(rental.monthly_balances?.[new Date().getMonth()]?.balance || 0)})
                           </Button>
                         )}
                       </Space>
@@ -1923,6 +2250,7 @@ const VendorPaymentManagement = () => {
             
             <Table
               dataSource={selectedVendorForBreakdown.monthly_balances || []}
+              rowKey={(record, index) => index}
               columns={[
                 {
                   title: 'Month',
@@ -2277,7 +2605,16 @@ const VendorPaymentManagement = () => {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <Text>Payment Date:</Text>
-                <Text strong>{pendingPaymentData.payment_date}</Text>
+                <Text strong>
+                  {pendingPaymentData.payment_date ? 
+                    new Date(pendingPaymentData.payment_date).toLocaleDateString('en-US', { 
+                      month: 'long', 
+                      day: 'numeric', 
+                      year: 'numeric' 
+                    }) : 
+                    'N/A'
+                  }
+                </Text>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <Text>Number of Stalls:</Text>
@@ -2324,6 +2661,374 @@ const VendorPaymentManagement = () => {
               showIcon
               style={{ marginTop: '16px' }}
             />
+          </div>
+        )}
+      </Modal>
+
+      {/* Deposit Consumption Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <MoneyCollectOutlined style={{ color: '#52c41a' }} />
+            <span>Consume Deposit - {selectedVendor?.name}</span>
+          </div>
+        }
+        open={depositConsumptionModal}
+        onCancel={() => {
+          setDepositConsumptionModal(false);
+          setSelectedPaymentForDeposit(null);
+          setUseDeposit(false);
+        }}
+        footer={[
+          <Button key="cancel" onClick={() => {
+            setDepositConsumptionModal(false);
+            setSelectedPaymentForDeposit(null);
+            setUseDeposit(false);
+            setSelectedRentals([]);
+            setOrNumber('');
+          }}>
+            Cancel
+          </Button>,
+          <Button
+            key="consume"
+            type="primary"
+            loading={processingPayment}
+            disabled={!selectedPaymentForDeposit || !orNumber.trim() || selectedRentals.length === 0}
+            onClick={async () => {
+              console.log('Selected payment:', selectedPaymentForDeposit);
+              console.log('Has deposit:', selectedPaymentForDeposit?.has_deposit);
+              console.log('Button disabled conditions:', {
+                noPayment: !selectedPaymentForDeposit,
+                noOrNumber: !orNumber.trim(),
+                noRentals: selectedRentals.length === 0,
+                noDeposit: !selectedPaymentForDeposit?.has_deposit
+              });
+              if (!selectedPaymentForDeposit) {
+                message.error('Please select a payment to consume deposit from');
+                return;
+              }
+              if (!orNumber.trim()) {
+                message.error('Please enter an OR number');
+                return;
+              }
+              if (selectedRentals.length === 0) {
+                message.error('Please select at least one stall to apply deposit to');
+                return;
+              }
+
+              // Process deposit consumption
+              setProcessingPayment(true);
+              try {
+                // Determine the amount to consume
+                const amountToConsume = customDepositAmount ? parseFloat(customDepositAmount) : getTotalDepositAmount(selectedVendor);
+                
+                // Validate that selected payment is from a month with deposits
+                if (!selectedPaymentForDeposit.has_deposit) {
+                  message.error('This payment is from a month that does not have any deposit available');
+                  return;
+                }
+                
+                // Validate amount
+                if (amountToConsume <= 0 || amountToConsume > getTotalDepositAmount(selectedVendor)) {
+                  message.error('Invalid deposit amount');
+                  return;
+                }
+
+                // Calculate amounts for each selected rental (distribute deposit equally)
+                const depositPerStall = amountToConsume / selectedRentals.length;
+                const amounts = selectedRentals.map(() => Math.round(depositPerStall * 100) / 100);
+                const paymentTypes = selectedRentals.map(() => 'daily');
+
+                const paymentData = {
+                  rental_ids: selectedRentals,
+                  amounts: amounts,
+                  payment_types: paymentTypes,
+                  advance_days: [],
+                  or_number: orNumber.trim(),
+                  payment_date: paymentDate.format('YYYY-MM-DD'),
+                  payment_id: selectedPaymentForDeposit.payment_id,
+                  consume_deposit: true,
+                  custom_amount: amountToConsume,
+                };
+
+                console.log('Payment data being sent to deployed backend:', paymentData);
+                console.log('Selected payment details:', selectedPaymentForDeposit);
+
+                const response = await api.post(`/vendor-payments/consume-deposit/${selectedVendor.id}`, paymentData);
+                
+                if (response.data.success) {
+                  message.success(`Deposit consumed successfully: ${fmtMoney(amountToConsume)}`);
+                  // Reset form and close modal
+                  setDepositConsumptionModal(false);
+                  setSelectedPaymentForDeposit(null);
+                  setUseDeposit(false);
+                  setSelectedRentals([]);
+                  setOrNumber('');
+                  setPaymentDate(dayjs());
+                  setCustomDepositAmount('');
+                  fetchVendors(); // Refresh data
+                } else {
+                  message.error('Failed to consume deposit');
+                }
+              } catch (error) {
+                console.error('Deposit consumption error:', error);
+                message.error(error.response?.data?.message || 'Failed to consume deposit');
+              } finally {
+                setProcessingPayment(false);
+              }
+            }}
+          >
+            {processingPayment ? 'Processing...' : 'Consume Deposit'}
+          </Button>
+        ]}
+        width={800}
+      >
+        {selectedVendor && (
+          <div>
+            <div style={{ marginBottom: '16px' }}>
+              <Text type="secondary">
+                Select a payment with deposit to consume. The deposit amount will be used to pay for current or future payments.
+              </Text>
+            </div>
+
+            <div style={{ marginBottom: '16px', padding: '16px', backgroundColor: '#f6ffed', borderRadius: '8px' }}>
+              <Text strong style={{ color: '#52c41a', fontSize: '16px' }}>
+                Total Available Deposit: {fmtMoney(getTotalDepositAmount(selectedVendor))}
+              </Text>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong style={{ marginBottom: '8px', display: 'block' }}>Select Payment with Deposit:</Text>
+              <Select
+                style={{ width: '100%' }}
+                placeholder="Select a payment"
+                value={selectedPaymentForDeposit ? `${selectedPaymentForDeposit.section_name} - ${selectedPaymentForDeposit.stall_number} (${selectedPaymentForDeposit.month}) - Payment: ${fmtMoney(selectedPaymentForDeposit.amount)}` : undefined}
+                onChange={(paymentId) => {
+                  const availablePayments = getAvailablePaymentsForDeposit(selectedVendor);
+                  const selectedPayment = availablePayments.find(p => p.payment_id === paymentId);
+                  setSelectedPaymentForDeposit(selectedPayment);
+                }}
+              >
+                {getAvailablePaymentsForDeposit(selectedVendor).map((payment) => (
+                  <Option key={payment.payment_id} value={payment.payment_id} >
+                    <div style={{ 
+                      padding: '8px 0',
+                      lineHeight: '1.4',
+                      minWidth: '350px'
+                    }}>
+                      <div style={{ marginBottom: '4px' }}>
+                        <Text strong style={{ fontSize: '14px', color: '#52c41a' }}>
+                          {payment.section_name} - {payment.stall_number}
+                        </Text>
+                        <Text style={{ marginLeft: '8px', fontSize: '12px', color: '#666' }}>
+                          ({payment.month})
+                        </Text>
+                      </div>
+                      <div style={{ marginBottom: '4px' }}>
+                        <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
+                          Payment: <Text strong>{fmtMoney(payment.amount)}</Text>
+                        </Text>
+                      </div>
+                      <div style={{ marginBottom: '4px' }}>
+                        <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
+                          Monthly Rate: <Text strong>{fmtMoney(payment.monthly_rate)}</Text>
+                        </Text>
+                      </div>
+                      {payment.or_number && (
+                        <div>
+                          <Text type="secondary" style={{ fontSize: '11px', display: 'block' }}>
+                            OR #: <Text strong>{payment.or_number}</Text>
+                          <Text style={{ marginLeft: '8px', fontSize: '10px', color: '#999' }}>
+                              ({formatDate(payment.payment_date)})
+                          </Text>
+                          </Text>
+                        </div>
+                      )}
+                    </div>
+                  </Option>
+                ))}
+              </Select>
+            </div>
+
+            {selectedPaymentForDeposit && (
+              <div style={{ padding: '16px', backgroundColor: '#e6f7ff', borderRadius: '8px' }}>
+                <div style={{ marginBottom: '8px' }}>
+                  <Text strong>Selected Payment Details:</Text>
+                </div>
+                <div>
+                  <Text>Stall: <Text strong>{selectedPaymentForDeposit.section_name} - {selectedPaymentForDeposit.stall_number}</Text></Text>
+                  <br />
+                  <Text>Month: <Text strong>{selectedPaymentForDeposit.month}</Text></Text>
+                  <br />
+                  <Text>Payment Amount: <Text strong>{fmtMoney(selectedPaymentForDeposit.amount)}</Text></Text>
+                  <br />
+                  <Text>Monthly Rate: <Text strong>{fmtMoney(selectedPaymentForDeposit.monthly_rate)}</Text></Text>
+                  {selectedPaymentForDeposit.deposit > 0 && (
+                    <>
+                      <br />
+                      <Text>Deposit Amount: <Text strong style={{ color: '#52c41a' }}>{fmtMoney(selectedPaymentForDeposit.deposit)}</Text></Text>
+                      <br />
+                      <Text>Available to consume: <Text strong style={{ color: '#52c41a' }}>{fmtMoney(selectedPaymentForDeposit.deposit)}</Text></Text>
+                    </>
+                  )}
+                  {selectedPaymentForDeposit.or_number && (
+                    <div>
+                      <Text>OR Number: <Text strong>{selectedPaymentForDeposit.or_number}</Text></Text>
+                      <Text style={{ marginLeft: '8px', fontSize: '11px', color: '#666' }}>
+                        ({formatDate(selectedPaymentForDeposit.payment_date)})
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Custom Deposit Amount Input */}
+            {selectedPaymentForDeposit && (
+              <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fff7e6', borderRadius: '8px' }}>
+                <div style={{ marginBottom: '8px' }}>
+                  <Text strong>Deposit Amount to Consume:</Text>
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <Radio.Group 
+                    value={customDepositAmount ? 'custom' : 'full'} 
+                    onChange={(e) => {
+                      if (e.target.value === 'full') {
+                        setCustomDepositAmount('');
+                      }
+                    }}
+                  >
+                    <Radio value="full">
+                      <Text>Use Full Deposit ({fmtMoney(getTotalDepositAmount(selectedVendor))})</Text>
+                    </Radio>
+                    <Radio value="custom">
+                      <Text>Custom Amount</Text>
+                    </Radio>
+                  </Radio.Group>
+                </div>
+                {customDepositAmount !== null && (
+                  <div>
+                    <Input
+                      placeholder="Enter amount to consume"
+                      value={customDepositAmount}
+                      onChange={(e) => setCustomDepositAmount(e.target.value)}
+                      prefix="₱"
+                      type="number"
+                      min={0}
+                      max={selectedPaymentForDeposit.deposit}
+                      style={{ width: '100%' }}
+                    />
+                    {customDepositAmount && parseFloat(customDepositAmount) > getTotalDepositAmount(selectedVendor) && (
+                      <Text type="danger" style={{ fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                        Amount cannot exceed available deposit ({fmtMoney(getTotalDepositAmount(selectedVendor))})
+                      </Text>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* OR Number and Payment Date Input */}
+            {selectedPaymentForDeposit && (
+              <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong>Payment Details for Deposit Consumption:</Text>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+                  <div style={{ flex: 1 }}>
+                    <Text strong style={{ marginBottom: '8px', display: 'block' }}>OR Number *</Text>
+                    <Input
+                      placeholder="Enter Official Receipt Number"
+                      value={orNumber}
+                      onChange={(e) => setOrNumber(e.target.value)}
+                      maxLength={50}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <Text strong style={{ marginBottom: '8px', display: 'block' }}>Payment Date *</Text>
+                    <DatePicker
+                      value={paymentDate}
+                      onChange={(date) => setPaymentDate(date)}
+                      style={{ width: '100%' }}
+                      format="MMMM D, YYYY"
+                      placeholder="Select payment date"
+                    
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong style={{ marginBottom: '8px', display: 'block' }}>Select Stalls to Pay:</Text>
+                  <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #d9d9d9', borderRadius: '6px', padding: '8px' }}>
+                    {selectedVendor.rentals?.map((rental) => (
+                      <div key={rental.rental_id} style={{ 
+                        padding: '8px', 
+                        marginBottom: '4px', 
+                        backgroundColor: '#fff', 
+                        borderRadius: '4px',
+                        border: '1px solid #f0f0f0'
+                      }}>
+                        <Checkbox
+                          checked={selectedRentals.includes(rental.rental_id)}
+                          onChange={(e) => handleRentalSelection(rental.rental_id, e.target.checked)}
+                        >
+                          <div>
+                            <Text strong>{rental.section_name} - {rental.stall_number}</Text>
+                            <br />
+                            <Text type="secondary" style={{ fontSize: '12px' }}>
+                              {rental.is_monthly ? 
+                                `Monthly Rate: ${fmtMoney(rental.monthly_rent)}` : 
+                                `Daily Rent: ${fmtMoney(rental.daily_rent)}`
+                              } | 
+                              Status: {rental.status}
+                              {rental.remaining_balance > 0 && ` | Balance: ${fmtMoney(rental.remaining_balance)}`}
+                            </Text>
+                          </div>
+                        </Checkbox>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {selectedRentals.length > 0 && (
+                  <div style={{ padding: '12px', backgroundColor: '#f6ffed', borderRadius: '6px' }}>
+                    <Text strong>
+                      Selected Stalls: {selectedRentals.length} | 
+                      Deposit to Consume: {fmtMoney(customDepositAmount ? parseFloat(customDepositAmount) : getTotalDepositAmount(selectedVendor))}
+                    </Text>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <Alert
+              message="Deposit Consumption Notice"
+              description="Once you consume a deposit, it will be applied to the selected payment and the deposit amount will be reduced accordingly. This action cannot be undone."
+              type="info"
+              showIcon
+              style={{ marginTop: '16px' }}
+            />
+            
+            {!orNumber.trim() && selectedPaymentForDeposit && (
+              <Alert
+                message="OR Number Required"
+                description="Please enter an OR number to proceed with deposit consumption."
+                type="warning"
+                showIcon
+                style={{ marginTop: '16px' }}
+              />
+            )}
+            
+            {selectedRentals.length === 0 && selectedPaymentForDeposit && (
+              <Alert
+                message="Select Stalls"
+                description="Please select at least one stall to apply the deposit to."
+                type="warning"
+                showIcon
+                style={{ marginTop: '16px' }}
+              />
+            )}
           </div>
         )}
       </Modal>

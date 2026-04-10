@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import html2canvas from "html2canvas";
+import letterheadTemplate from '../assets/report_template/letterhead_template.jpg';
 
 // Government Header Function
 const addGovernmentHeader = (doc, pageWidth, margin = 20) => {
@@ -62,16 +63,24 @@ export const generateTargetReportPDF = async (year, tableData, pieChartRef, over
     format: 'a3'
   });
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
   
+  // Add letterhead template as background
+  try {
+    doc.addImage(letterheadTemplate, 'JPEG', 0, 0, pageWidth, pageHeight);
+  } catch (error) {
+    // Letterhead template not found, continuing without it
+  }
+  
   // Add government header
-  let yOffset = addGovernmentHeader(doc, pageWidth, margin);
+  let yOffset = 30; // Start position after letterhead, moved significantly up
   
   // Add title after header
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text(`Target Report - ${year}`, pageWidth / 2, yOffset, { align: 'center' });
-  yOffset += 25;
+  doc.text(`Target Report - ${year}`, pageWidth / 2, yOffset + 25, { align: 'center' });
+  yOffset += 45; // Increased spacing after title to create double spacing with the table
 
   // Function to render a chart div
   const renderChart = async (chartRef) => {
@@ -155,25 +164,27 @@ export const generateTargetReportPDF = async (year, tableData, pieChartRef, over
   ];
   body.push(totalRow);
 
-  // ✅ ADD TABLE WITH TOTAL STYLING (unchanged)
+  // ✅ ADD TABLE WITH TOTAL STYLING (adjusted positioning to avoid background collision)
   autoTable(doc, {
-    startY: yOffset,
+    startY: yOffset + 25, // Additional spacing to create double spacing between title and table
+    margin: { left: 60, right: 60 }, // Reduced margins to increase table size and center it
+    tableWidth: pageWidth - 120, // Increased table width for better utilization of space
     head,
     body,
     theme: "grid",
     styles: {
-      fontSize: 8,
+      fontSize: 9, // Increased font size for better readability
       font: "helvetica",
-      fillColor: [255, 255, 255],
+      fillColor: [255, 255, 255], // White background to ensure readability
       textColor: [0, 0, 0],
       halign: "center",
       valign: "middle",
       lineWidth: 0.5,
       lineColor: [0, 0, 0],
-      cellPadding: 3,
+      cellPadding: 4, // Increased cell padding for larger appearance
     },
     headStyles: {
-      fillColor: [245, 245, 245],
+      fillColor: [245, 245, 245], // Light gray background for header
       textColor: [0, 0, 0],
       fontStyle: "bold",
       halign: "center",
@@ -183,7 +194,7 @@ export const generateTargetReportPDF = async (year, tableData, pieChartRef, over
     didParseCell: (data) => {
       if (data.row.index === body.length - 1) {
         data.cell.styles.fontStyle = "bold";
-        data.cell.styles.fillColor = [240, 240, 240];
+        data.cell.styles.fillColor = [240, 240, 240]; // Light gray for total row
       }
     },
   });

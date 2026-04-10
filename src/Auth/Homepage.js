@@ -204,7 +204,7 @@ const Homepage = () => {
     },
     // Enhanced stall monitoring styles
     stallMonitoringWrapper: {
-      padding: "100px 20px",
+      padding: "60px 20px",
       background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
       position: "relative"
     },
@@ -224,79 +224,85 @@ const Homepage = () => {
     },
     marketCardHeader: {
       background: "linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)",
-      padding: "32px",
+      padding: "clamp(20px, 5vw, 32px)",
       textAlign: "center",
       position: "relative",
       overflow: "hidden"
     },
     openSpaceCardHeader: {
       background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-      padding: "32px",
+      padding: "clamp(20px, 5vw, 32px)",
       textAlign: "center",
       position: "relative",
       overflow: "hidden"
     },
     cardIcon: {
-      fontSize: "64px",
+      fontSize: "clamp(40px, 8vw, 64px)",
       color: "#ffffff",
-      marginBottom: "16px",
+      marginBottom: "12px",
       filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.3))",
       transition: "all 0.3s ease"
     },
     cardTitle: {
-      fontSize: "28px",
+      fontSize: "clamp(20px, 4vw, 28px)",
       fontWeight: 900,
       color: "#ffffff",
-      marginBottom: "8px",
+      marginBottom: "6px",
       textShadow: "0 2px 8px rgba(0,0,0,0.3)",
       letterSpacing: "0.5px"
     },
     cardSubtitle: {
-      fontSize: "16px",
+      fontSize: "clamp(13px, 3vw, 16px)",
       color: "rgba(255,255,255,0.9)",
       textShadow: "0 1px 4px rgba(0,0,0,0.2)",
       fontWeight: 400
     },
     stallCardContent: {
-      padding: "32px",
+      padding: "clamp(20px, 5vw, 32px)",
       background: "linear-gradient(135deg, #fafbfc 0%, #f8f9fa 100%)"
     },
     statsGrid: {
       display: "grid",
-      gridTemplateColumns: "repeat(3, 1fr)",
-      gap: "20px",
+      gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
+      gap: "12px",
       marginBottom: "24px"
     },
     statItem: {
       textAlign: "center",
-      padding: "20px",
-      borderRadius: "16px",
+      padding: "16px 12px",
+      borderRadius: "12px",
       background: "linear-gradient(145deg, #ffffff, #f1f3f5)",
       boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-      transition: "all 0.3s ease"
+      transition: "all 0.3s ease",
+      minHeight: "90px",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center"
     },
     statItemHover: {
       transform: "translateY(-4px)",
       boxShadow: "0 8px 24px rgba(0,0,0,0.15)"
     },
     statNumber: {
-      fontSize: "32px",
+      fontSize: "clamp(24px, 5vw, 32px)",
       fontWeight: 900,
-      marginBottom: "8px",
-      letterSpacing: "0.5px"
+      marginBottom: "4px",
+      letterSpacing: "0.5px",
+      lineHeight: 1
     },
     statLabel: {
-      fontSize: "14px",
+      fontSize: "clamp(11px, 2.5vw, 14px)",
       fontWeight: 600,
       textTransform: "uppercase",
-      letterSpacing: "1px",
-      opacity: 0.7
+      letterSpacing: "0.5px",
+      opacity: 0.7,
+      lineHeight: 1.2
     },
     progressSection: {
       marginTop: "24px"
     },
     progressTitle: {
-      fontSize: "16px",
+      fontSize: "clamp(14px, 3.5vw, 16px)",
       fontWeight: 700,
       marginBottom: "12px",
       color: "#2c3e50",
@@ -408,7 +414,7 @@ const Homepage = () => {
           <div style={styles.hero}>
             <h1 style={styles.heroTitle}>Municipal Economic Enterprise Office</h1>
             <p style={styles.heroSubtitle}>
-              A centralized platform for General Fund Collection, Stall Rental Monitoring, Vendor Management, and Automated Financial Reporting.
+              A centralized platform for Economic Enterprise Revenue Collections, Stall Rental Monitoring, Vendor Management, and Automated Financial Reporting.
             </p>
           </div>
         )}
@@ -425,7 +431,7 @@ const Homepage = () => {
           {loading ? (
             <Spin size="large" style={{ display: "block", margin: "80px auto" }} />
           ) : (
-            <Row gutter={[32, 32]} justify="center" style={{ maxWidth: "1200px", margin: "0 auto" }}>
+            <Row gutter={[16, 16]} justify="center" style={{ maxWidth: "1200px", margin: "0 auto" }}>
               {/* Market Card */}
               <Col xs={24} lg={12}>
                 <Card
@@ -503,7 +509,7 @@ const Homepage = () => {
                     {/* Individual Market Sections */}
                     <div style={{ marginTop: "24px" }}>
                       <h4 style={{ 
-                        fontSize: "16px", 
+                        fontSize: "clamp(14px, 3.5vw, 16px)", 
                         fontWeight: 700, 
                         marginBottom: "16px", 
                         color: "#2c3e50",
@@ -511,20 +517,22 @@ const Homepage = () => {
                       }}>
                         Market Sections (Wet & Dry)
                       </h4>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                         {getMarketSections().map((section) => (
                           <div
                             key={section.id}
                             style={{
-                              padding: "12px 16px",
+                              padding: "12px",
                               borderRadius: "8px",
                               background: "linear-gradient(145deg, #ffffff, #f8f9fa)",
                               border: "1px solid #e9ecef",
                               display: "flex",
                               justifyContent: "space-between",
-                              alignItems: "center",
+                              alignItems: "flex-start",
                               transition: "all 0.3s ease",
-                              cursor: "pointer"
+                              cursor: "pointer",
+                              flexWrap: "wrap",
+                              gap: "8px"
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.transform = "translateX(4px)";
@@ -539,7 +547,7 @@ const Homepage = () => {
                           >
                             <div>
                               <div style={{ 
-                                fontSize: "14px", 
+                                fontSize: "clamp(12px, 3vw, 14px)", 
                                 fontWeight: 700, 
                                 color: "#2c3e50",
                                 marginBottom: "2px"
@@ -547,7 +555,7 @@ const Homepage = () => {
                                 {section.name}
                               </div>
                               <div style={{ 
-                                fontSize: "12px", 
+                                fontSize: "clamp(10px, 2.5vw, 12px)", 
                                 color: "#666" 
                               }}>
                                 {section.area?.name} Area
@@ -555,14 +563,26 @@ const Homepage = () => {
                             </div>
                             <div style={{ 
                               display: "flex", 
-                              gap: "12px",
-                              fontSize: "12px",
-                              fontWeight: 600
+                              gap: "6px",
+                              fontSize: "clamp(9px, 2.5vw, 11px)",
+                              fontWeight: 600,
+                              flexWrap: "wrap",
+                              alignItems: "center"
                             }}>
-                              <span style={{ color: "#27ae60" }}>
+                              <span style={{ 
+                                color: "#27ae60",
+                                background: "rgba(39, 174, 96, 0.1)",
+                                padding: "2px 6px",
+                                borderRadius: "4px"
+                              }}>
                                 {section.available_stalls_count} available
                               </span>
-                              <span style={{ color: "#e74c3c" }}>
+                              <span style={{ 
+                                color: "#e74c3c",
+                                background: "rgba(231, 76, 60, 0.1)",
+                                padding: "2px 6px",
+                                borderRadius: "4px"
+                              }}>
                                 {section.occupied_stalls_count} occupied
                               </span>
                             </div>
@@ -587,9 +607,11 @@ const Homepage = () => {
                       <div style={{ 
                         display: 'flex', 
                         justifyContent: 'space-between', 
-                        fontSize: '14px',
+                        fontSize: 'clamp(11px, 3vw, 14px)',
                         color: '#666',
-                        fontWeight: 600
+                        fontWeight: 600,
+                        flexWrap: 'wrap',
+                        gap: '8px'
                       }}>
                         <span style={{ color: '#27ae60' }}>
                           <CheckCircleOutlined /> {market.available} Available
@@ -680,7 +702,7 @@ const Homepage = () => {
                     {/* Individual Open Space Sections */}
                     <div style={{ marginTop: "24px" }}>
                       <h4 style={{ 
-                        fontSize: "16px", 
+                        fontSize: "clamp(14px, 3.5vw, 16px)", 
                         fontWeight: 700, 
                         marginBottom: "16px", 
                         color: "#2c3e50",
@@ -688,20 +710,22 @@ const Homepage = () => {
                       }}>
                         Open Space Sections
                       </h4>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                         {getOpenSpaceSections().map((section) => (
                           <div
                             key={section.id}
                             style={{
-                              padding: "12px 16px",
+                              padding: "12px",
                               borderRadius: "8px",
                               background: "linear-gradient(145deg, #ffffff, #f8f9fa)",
                               border: "1px solid #e9ecef",
                               display: "flex",
                               justifyContent: "space-between",
-                              alignItems: "center",
+                              alignItems: "flex-start",
                               transition: "all 0.3s ease",
-                              cursor: "pointer"
+                              cursor: "pointer",
+                              flexWrap: "wrap",
+                              gap: "8px"
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.transform = "translateX(4px)";
@@ -716,7 +740,7 @@ const Homepage = () => {
                           >
                             <div>
                               <div style={{ 
-                                fontSize: "14px", 
+                                fontSize: "clamp(12px, 3vw, 14px)", 
                                 fontWeight: 700, 
                                 color: "#2c3e50",
                                 marginBottom: "2px"
@@ -724,7 +748,7 @@ const Homepage = () => {
                                 {section.name}
                               </div>
                               <div style={{ 
-                                fontSize: "12px", 
+                                fontSize: "clamp(10px, 2.5vw, 12px)", 
                                 color: "#666" 
                               }}>
                                 {section.area?.name} Area
@@ -732,14 +756,26 @@ const Homepage = () => {
                             </div>
                             <div style={{ 
                               display: "flex", 
-                              gap: "12px",
-                              fontSize: "12px",
-                              fontWeight: 600
+                              gap: "6px",
+                              fontSize: "clamp(9px, 2.5vw, 11px)",
+                              fontWeight: 600,
+                              flexWrap: "wrap",
+                              alignItems: "center"
                             }}>
-                              <span style={{ color: "#27ae60" }}>
+                              <span style={{ 
+                                color: "#27ae60",
+                                background: "rgba(39, 174, 96, 0.1)",
+                                padding: "2px 6px",
+                                borderRadius: "4px"
+                              }}>
                                 {section.available_stalls_count} available
                               </span>
-                              <span style={{ color: "#e74c3c" }}>
+                              <span style={{ 
+                                color: "#e74c3c",
+                                background: "rgba(231, 76, 60, 0.1)",
+                                padding: "2px 6px",
+                                borderRadius: "4px"
+                              }}>
                                 {section.occupied_stalls_count} occupied
                               </span>
                             </div>
@@ -764,9 +800,11 @@ const Homepage = () => {
                       <div style={{ 
                         display: 'flex', 
                         justifyContent: 'space-between', 
-                        fontSize: '14px',
+                        fontSize: 'clamp(11px, 3vw, 14px)',
                         color: '#666',
-                        fontWeight: 600
+                        fontWeight: 600,
+                        flexWrap: 'wrap',
+                        gap: '8px'
                       }}>
                         <span style={{ color: '#27ae60' }}>
                           <CheckCircleOutlined /> {openSpace.available} Available

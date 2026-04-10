@@ -43,6 +43,13 @@ const SectionManager = () => {
   const [newAreaName, setNewAreaName] = useState("");
   const [areaColumns, setAreaColumns] = useState("");
   const [rowsPerColumn, setRowsPerColumn] = useState([]);
+  
+  // Edit Area
+  const [showEditAreaForm, setShowEditAreaForm] = useState(false);
+  const [editingArea, setEditingArea] = useState(null);
+  const [editAreaName, setEditAreaName] = useState("");
+  const [editAreaColumns, setEditAreaColumns] = useState("");
+  const [editRowsPerColumn, setEditRowsPerColumn] = useState([]);
 
   // Add Section
   const [showAddSectionForm, setShowAddSectionForm] = useState(false);
@@ -120,7 +127,6 @@ const SectionManager = () => {
 
         return { ...area, rows_per_column: rowsPerCol, vacancies };
       });
-      console.log(response.data.data)
       setAreas(dataWithVacancies);
     } catch (err) {
       console.error(err);
@@ -144,6 +150,79 @@ const SectionManager = () => {
     const updated = [...rowsPerColumn];
     updated[colIndex] = value;
     setRowsPerColumn(updated);
+  };
+  
+  // Edit area handlers
+  const handleEditColumnsChange = (value) => {
+    setEditAreaColumns(value);
+    setEditRowsPerColumn(Array.from({ length: parseInt(value) || 0 }, () => ""));
+  };
+
+  const handleEditRowChange = (colIndex, value) => {
+    const updated = [...editRowsPerColumn];
+    updated[colIndex] = value;
+    setEditRowsPerColumn(updated);
+  };
+  
+  const openEditAreaModal = (area) => {
+    setEditingArea(area);
+    setEditAreaName(area.name);
+    setEditAreaColumns(area.column_count.toString());
+    setEditRowsPerColumn(area.rows_per_column || []);
+    setShowEditAreaForm(true);
+  };
+  
+  const handleUpdateArea = async () => {
+    if (!editAreaName) {
+      return message.warning("Area name is required.");
+    }
+
+    setLoadingMessage("Updating Area...");
+    setLoading(true);
+    try {
+      const response = await api.put(`/areas/${editingArea.id}`, {
+        name: editAreaName,
+      });
+
+      const updatedArea = response.data.data;
+      const updatedAreas = areas.map((area) =>
+        area.id === editingArea.id
+          ? { ...area, ...updatedArea }
+          : area
+      );
+      setAreas(updatedAreas);
+      
+      setEditAreaName("");
+      setEditAreaColumns("");
+      setEditRowsPerColumn([]);
+      setEditingArea(null);
+      setShowEditAreaForm(false);
+      message.success("Area updated successfully!");
+    } catch (err) {
+      console.error(err);
+      message.error("Failed to update area.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleDeleteArea = async (areaId) => {
+    try {
+      setLoadingMessage("Deleting Area...");
+      setLoading(true);
+      
+      await api.delete(`/areas/${areaId}`);
+      
+      const updatedAreas = areas.filter((area) => area.id !== areaId);
+      setAreas(updatedAreas);
+      
+      message.success("Area deleted successfully!");
+    } catch (err) {
+      console.error(err);
+      message.error("Failed to delete area.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRowCountChange = (value) => {
@@ -319,6 +398,40 @@ const SectionManager = () => {
     } catch (err) {
       console.error(err);
       message.error("Failed to update section.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // ✅ Delete Section
+  const handleDeleteSection = async (sectionId) => {
+    try {
+      setLoadingMessage("Deleting Section...");
+      setLoading(true);
+      
+      await api.delete(`/sections/${sectionId}`);
+      
+      const updatedAreas = areas.map((area) => {
+        const updatedSections = area.sections.filter((s) => s.id !== sectionId);
+        const updatedVacancies = area.vacancies.map((vac) => {
+          if (vac.section?.id === sectionId) {
+            return { ...vac, section: null };
+          }
+          return vac;
+        });
+        
+        return {
+          ...area,
+          sections: updatedSections,
+          vacancies: updatedVacancies,
+        };
+      });
+      
+      setAreas(updatedAreas);
+      message.success("Section deleted successfully!");
+    } catch (err) {
+      console.error(err);
+      message.error("Failed to delete section.");
     } finally {
       setLoading(false);
     }
@@ -565,20 +678,22 @@ const SectionManager = () => {
             {editMode ? "Exit Edit Mode" : "Edit Mode"}
           </Button>
           {editMode && (
-            <Button
-              onClick={() => setShowAddAreaForm(true)}
-              type="primary"
-              style={{
-                backgroundColor: "#0ea5e9",
-                borderColor: "#0ea5e9",
-                color: "#fff",
-                fontWeight: "600",
-                borderRadius: 999,
-                paddingInline: 18,
-              }}
-            >
-              + Add Area
-            </Button>
+            <>
+              <Button
+                onClick={() => setShowAddAreaForm(true)}
+                type="primary"
+                style={{
+                  backgroundColor: "#0ea5e9",
+                  borderColor: "#0ea5e9",
+                  color: "#fff",
+                  fontWeight: "600",
+                  borderRadius: 999,
+                  paddingInline: 18,
+                }}
+              >
+                + Add Area
+              </Button>
+            </>
           )}
           <Button
             onClick={openMultiAssignModal}
@@ -600,6 +715,55 @@ const SectionManager = () => {
 
       {/* Global Loading Overlay with dynamic message */}
       {loading && <LoadingOverlay message={loadingMessage} />}
+
+      {/* Edit Area Modal */}
+      <Modal
+        title="Edit Area"
+        open={showEditAreaForm}
+        onCancel={() => setShowEditAreaForm(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setShowEditAreaForm(false)} style={{
+            backgroundColor: "#b1260aff",
+            borderColor: "#87CEEB",
+            color: "#fff",
+            fontWeight: "bold",
+          }}>
+            Cancel
+          </Button>,
+          <Button key="update" type="primary" onClick={handleUpdateArea} style={{
+            backgroundColor: "#043e54ff",
+            borderColor: "#87CEEB",
+            color: "#fff",
+            fontWeight: "bold",
+          }}>
+            Update
+          </Button>,
+        ]}
+      >
+        <Form layout="vertical">
+          <Form.Item label="Area Name" required>
+            <Input value={editAreaName} onChange={(e) => setEditAreaName(e.target.value)} />
+          </Form.Item>
+          <Form.Item label="Columns (Read-only)">
+            <Input
+              type="number"
+              value={editAreaColumns}
+              disabled
+              style={{ backgroundColor: '#f5f5f5' }}
+            />
+          </Form.Item>
+          {editRowsPerColumn.map((row, idx) => (
+            <Form.Item key={idx} label={`Rows for Column ${idx + 1} (Read-only)`}>
+              <Input
+                type="number"
+                value={row}
+                disabled
+                style={{ backgroundColor: '#f5f5f5' }}
+              />
+            </Form.Item>
+          ))}
+        </Form>
+      </Modal>
 
       {/* Add Area Modal */}
       <Modal
@@ -844,7 +1008,38 @@ const SectionManager = () => {
               <div className="legend-item"><span className="dot empty-dot" /> Empty</div>
             </div>
 
-            <div className="area-header"><h3>{area.name}</h3></div>
+            <div className="area-header">
+              <h3>{area.name}</h3>
+              {editMode && (
+                <div className="area-actions" style={{ marginLeft: '10px' }}>
+                  <Button
+                    size="small"
+                    onClick={() => openEditAreaModal(area)}
+                    style={{
+                      backgroundColor: "#043e54ff",
+                      borderColor: "#87CEEB",
+                      color: "#fff",
+                      fontWeight: "bold",
+                      marginRight: 4,
+                    }}
+                  >
+                    <EditOutlined /> Edit Area
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => handleDeleteArea(area.id)}
+                    style={{
+                      backgroundColor: "#ff4d4f",
+                      borderColor: "#ff4d4f",
+                      color: "#fff",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Delete Area
+                  </Button>
+                </div>
+              )}
+            </div>
 
             <div className="area-grid">
               {area.rows_per_column.map((rowCount, colIdx) => (
@@ -881,6 +1076,22 @@ const SectionManager = () => {
                                     }}
                                   >
                                     <EditOutlined /> Edit Section
+                                  </Button>
+                                  <Button
+                                    size="small"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteSection(vac.section.id);
+                                    }}
+                                    style={{
+                                      backgroundColor: "#ff4d4f",
+                                      borderColor: "#ff4d4f",
+                                      color: "#fff",
+                                      fontWeight: "bold",
+                                      marginRight: 4,
+                                    }}
+                                  >
+                                    Delete Section
                                   </Button>
                                   <Button
                                     size="small"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   Form,
@@ -72,13 +72,9 @@ const AdminProfile = () => {
 
   const fetchProfileData = async () => {
     try {
-      console.log('Starting fetchProfileData...');
       const response = await api.get('/admin/profile');
-      console.log('API Response:', response);
-      console.log('Response Data:', response.data);
       
       const profileData = response.data.data || response.data;
-      console.log('Processed Profile Data:', profileData);
       
       setProfileData(profileData);
       form.setFieldsValue({
@@ -87,10 +83,7 @@ const AdminProfile = () => {
         current_email: profileData.email,
         email: ''
       });
-      
-      console.log('Form fields after setting:', form.getFieldsValue());
     } catch (error) {
-      console.error('Fetch Profile Error:', error);
       message.error('Failed to fetch profile data');
     }
   };
@@ -109,11 +102,50 @@ const AdminProfile = () => {
   };
 
   const handleOtpChange = (index, value) => {
+    // Only allow numbers
     if (value && !/^\d$/.test(value)) return;
     
     const newOtpValues = [...otpValues];
     newOtpValues[index] = value;
     setOtpValues(newOtpValues);
+    
+    // Auto-focus next input
+    if (value && index < 5 && otpInputRefs[index + 1]?.current) {
+      otpInputRefs[index + 1].current.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      const newOtpValues = [...otpValues];
+      
+      if (otpValues[index]) {
+        // Clear current input
+        newOtpValues[index] = '';
+        setOtpValues(newOtpValues);
+      } else if (index > 0 && otpInputRefs[index - 1]?.current) {
+        // Move to previous input and clear it
+        newOtpValues[index - 1] = '';
+        setOtpValues(newOtpValues);
+        otpInputRefs[index - 1].current.focus();
+      }
+    } else if (e.key === 'ArrowLeft' && index > 0 && otpInputRefs[index - 1]?.current) {
+      otpInputRefs[index - 1].current.focus();
+    } else if (e.key === 'ArrowRight' && index < 5 && otpInputRefs[index + 1]?.current) {
+      otpInputRefs[index + 1].current.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    
+    if (pastedData.length === 6) {
+      const newOtpValues = pastedData.split('');
+      setOtpValues(newOtpValues);
+      otpInputRefs[5].current?.focus();
+    }
   };
 
   const getOtpCode = () => otpValues.join('');
@@ -122,11 +154,9 @@ const AdminProfile = () => {
     try {
       setLoading(true);
       
-      // Use provided parameters or fall back to state
       const otpType = type || changeType;
       const otpChanges = changes || pendingChanges;
       
-      // Ensure we have a change type
       if (!otpType) {
         message.error('No change type specified');
         return;
@@ -136,12 +166,6 @@ const AdminProfile = () => {
         type: otpType,
         ...otpChanges
       };
-      
-      console.log('Sending OTP request:', {
-        otpType,
-        otpChanges,
-        requestData
-      });
       
       const response = await api.post('/admin/send-otp', requestData);
 
@@ -153,8 +177,6 @@ const AdminProfile = () => {
         message.error(response.data.message || 'Failed to send OTP');
       }
     } catch (error) {
-      console.error('Send OTP Error:', error);
-      console.error('Error response:', error.response);
       message.error(error.response?.data?.message || 'Failed to send OTP');
     } finally {
       setLoading(false);
@@ -171,7 +193,6 @@ const AdminProfile = () => {
     try {
       setLoading(true);
       
-      // Ensure we have a change type
       if (!changeType) {
         message.error('No change type specified');
         return;
@@ -188,14 +209,11 @@ const AdminProfile = () => {
         setOtpModalVisible(false);
         message.success('OTP verified! Updating your credentials...');
         
-        // Apply the changes
         await applyChanges();
       } else {
         message.error(response.data.message || 'Invalid OTP');
       }
     } catch (error) {
-      console.error('Verify OTP Error:', error);
-      console.error('Error response:', error.response);
       message.error(error.response?.data?.message || 'OTP verification failed');
     } finally {
       setLoading(false);
@@ -260,15 +278,6 @@ const AdminProfile = () => {
   };
 
   const handlePasswordChange = async (values) => {
-    console.log('Password change attempt:', {
-      values,
-      hasCurrentPassword: !!values.current_password,
-      hasNewPassword: !!values.new_password,
-      hasConfirmPassword: !!values.confirm_password,
-      currentPasswordLength: values.current_password?.length,
-      newPasswordLength: values.new_password?.length
-    });
-
     if (!values.current_password || !values.new_password || !values.confirm_password) {
       return;
     }
@@ -278,8 +287,18 @@ const AdminProfile = () => {
       return;
     }
 
-    if (values.new_password.length < 8) {
-      message.error('Password must be at least 8 characters long');
+    if (values.new_password.length < 10) {
+      message.error('Password must be at least 10 characters long');
+      return;
+    }
+
+    const requirements = getPasswordRequirements(values.new_password);
+    const unmetRequirements = requirements.filter(req => !req.met);
+    
+    if (unmetRequirements.length > 0) {
+      setShakeRequirements(true);
+      setTimeout(() => setShakeRequirements(false), 500);
+      message.error('Password does not meet all requirements');
       return;
     }
 
@@ -288,12 +307,8 @@ const AdminProfile = () => {
       new_password: values.new_password
     };
     
-    console.log('Setting pending changes:', changes);
-    
-    // Send OTP with direct parameters
     await sendOTP('password', changes);
     
-    // Set state after successful OTP request
     setChangeType('password');
     setPendingChanges(changes);
   };
@@ -309,13 +324,57 @@ const AdminProfile = () => {
     if (!password) return 0;
     let strength = 0;
     
-    if (password.length >= 8) strength += 25;
-    if (password.length >= 12) strength += 25;
+    if (password.length >= 10) strength += 20;
+    if (password.length >= 12) strength += 10;
     if (/[A-Z]/.test(password)) strength += 25;
-    if (/[0-9]/.test(password)) strength += 12.5;
-    if (/[^A-Za-z0-9]/.test(password)) strength += 12.5;
+    if (/[a-z]/.test(password)) strength += 25;
+    if (/[0-9]/.test(password)) strength += 10;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 10;
     
     return Math.min(strength, 100);
+  };
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [passwordRequirements, setPasswordRequirements] = useState([]);
+  const [shakeRequirements, setShakeRequirements] = useState(false);
+  const otpInputRefs = [useRef(null), useRef(null), useRef(null), useRef(null), useRef(null), useRef(null)];
+
+  useEffect(() => {
+    setPasswordRequirements(getPasswordRequirements(currentPassword));
+  }, [currentPassword]);
+
+  const getPasswordRequirements = (password) => {
+    const requirements = [
+      { text: 'At least one Uppercase letter', met: /[A-Z]/.test(password) },
+      { text: 'At least one lowercase letter', met: /[a-z]/.test(password) },
+      { text: 'At least one number', met: /[0-9]/.test(password) },
+      { text: 'At least one Special Character', met: /[^A-Za-z0-9]/.test(password) },
+      { text: 'Minimum of 10 characters', met: password.length >= 10 }
+    ];
+    return requirements;
+  };
+
+  const getRequirementsStatus = (password) => {
+    const requirements = getPasswordRequirements(password);
+    const metCount = requirements.filter(req => req.met).length;
+    const totalCount = requirements.length;
+    const percentage = (metCount / totalCount) * 100;
+    
+    let status = 'weak';
+    let color = '#ff4d4f';
+    
+    if (percentage >= 80) {
+      status = 'strong';
+      color = '#52c41a';
+    } else if (percentage >= 60) {
+      status = 'good';
+      color = '#1890ff';
+    } else if (percentage >= 40) {
+      status = 'fair';
+      color = '#faad14';
+    }
+    
+    return { status, color, metCount, totalCount, percentage };
   };
 
   const getPasswordStrengthColor = (strength) => {
@@ -330,6 +389,22 @@ const AdminProfile = () => {
     if (strength < 60) return 'Fair';
     if (strength < 80) return 'Good';
     return 'Strong';
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Today';
+    
+    const date = new Date(dateString);
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    const month = months[date.getMonth()];
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${month},${day},${year}`;
   };
 
   return (
@@ -378,7 +453,7 @@ const AdminProfile = () => {
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Last Updated</span>
-                  <span className="detail-value">Today</span>
+                  <span className="detail-value">{formatDate(profileData.updated_at)}</span>
                 </div>
               </div>
             </Card>
@@ -562,7 +637,7 @@ const AdminProfile = () => {
                       name="new_password"
                       rules={[
                         { required: true, message: 'Please enter new password' },
-                        { min: 8, message: 'Password must be at least 8 characters' }
+                        { min: 10, message: 'Password must be at least 10 characters' }
                       ]}
                     >
                       <Input.Password
@@ -571,11 +646,39 @@ const AdminProfile = () => {
                         placeholder="Enter new password"
                         size="large"
                         onChange={(e) => {
-                          const strength = getPasswordStrength(e.target.value);
+                          const password = e.target.value;
+                          setCurrentPassword(password);
+                          setPasswordRequirements(getPasswordRequirements(password));
                         }}
                         iconRender={(visible) => (visible ? <FaEye /> : <FaEyeSlash />)}
                       />
                     </Form.Item>
+
+                    <div className={`password-requirements ${shakeRequirements ? 'shake' : ''}`}>
+                      <div className="requirements-header">
+                        <Text className="requirements-title">Password Must Contain:</Text>
+                        <span className="requirements-count" style={{ color: getRequirementsStatus(currentPassword).color }}>
+                          {getRequirementsStatus(currentPassword).metCount}/{getRequirementsStatus(currentPassword).totalCount}
+                        </span>
+                      </div>
+                      <div className="requirements-list">
+                        {passwordRequirements.map((req, index) => (
+                          <div key={index} className={`requirement-item ${req.met ? 'met' : 'unmet'}`}>
+                            <span className="requirement-icon">{req.met ? '✓' : '○'}</span>
+                            <span className="requirement-text">{req.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="requirements-progress">
+                        <div 
+                          className="progress-bar"
+                          style={{ 
+                            width: `${getRequirementsStatus(currentPassword).percentage}%`,
+                            backgroundColor: getRequirementsStatus(currentPassword).color
+                          }}
+                        />
+                      </div>
+                    </div>
 
                     <Form.Item
                       label="Confirm New Password"
@@ -648,9 +751,12 @@ const AdminProfile = () => {
             {otpValues.map((value, index) => (
               <Input
                 key={index}
+                ref={otpInputRefs[index]}
                 className="otp-input"
                 value={value}
                 onChange={(e) => handleOtpChange(index, e.target.value)}
+                onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                onPaste={handleOtpPaste}
                 maxLength={1}
               />
             ))}
@@ -690,7 +796,7 @@ const AdminProfile = () => {
         </div>
       </Modal>
 
-      <style jsx>{`
+      <style >{`
         .admin-profile-container {
           padding: 24px;
           background: #fafbfc;
@@ -863,15 +969,16 @@ const AdminProfile = () => {
           width: 100%;
           height: 48px;
           border-radius: 8px;
-          background: #24292f;
-          border: 1px solid #d0d7de;
-          color: white;
+          background: #ffffff;
+          border: 2px solid #000000ff;
+          color: #000000ff;
           font-weight: 500;
           font-size: 16px;
         }
 
         .submit-button:hover {
-          background: #1f2328;
+          background: #ffffff;
+          color: #ffffff;
         }
 
         .otp-modal .ant-modal-content {
@@ -962,6 +1069,107 @@ const AdminProfile = () => {
 
         .verify-button:hover {
           background: #0860ca;
+        }
+
+        .password-requirements {
+          margin: 16px 0;
+          padding: 16px;
+          background: #f6f8fa;
+          border-radius: 8px;
+          border: 1px solid #d0d7de;
+        }
+
+        .requirements-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+
+        .requirements-title {
+          font-weight: 600;
+          color: #24292f;
+        }
+
+        .requirements-count {
+          font-weight: 600;
+          font-size: 14px;
+          padding: 2px 8px;
+          border-radius: 12px;
+          background: rgba(0, 0, 0, 0.05);
+        }
+
+        .requirements-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+
+        .requirement-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          transition: all 0.2s ease;
+        }
+
+        .requirement-item.met {
+          color: #52c41a;
+        }
+
+        .requirement-item.unmet {
+          color: #ff4d4f;
+        }
+
+        .requirement-icon {
+          font-weight: 600;
+          font-size: 12px;
+          transition: all 0.2s ease;
+        }
+
+        .requirement-item.met .requirement-icon {
+          color: #52c41a;
+        }
+
+        .requirement-item.unmet .requirement-icon {
+          color: #ff4d4f;
+        }
+
+        .requirement-text {
+          font-size: 13px;
+        }
+
+        .requirements-progress {
+          height: 4px;
+          background: #e1e4e8;
+          border-radius: 2px;
+          overflow: hidden;
+          margin-top: 8px;
+        }
+
+        .progress-bar {
+          height: 100%;
+          transition: all 0.3s ease;
+          border-radius: 2px;
+        }
+
+        @keyframes shake {
+          0% { transform: translateX(0); }
+          10% { transform: translateX(-5px); }
+          20% { transform: translateX(5px); }
+          30% { transform: translateX(-5px); }
+          40% { transform: translateX(5px); }
+          50% { transform: translateX(-5px); }
+          60% { transform: translateX(5px); }
+          70% { transform: translateX(-5px); }
+          80% { transform: translateX(5px); }
+          90% { transform: translateX(-5px); }
+          100% { transform: translateX(0); }
+        }
+
+        .password-requirements.shake {
+          animation: shake 0.5s;
         }
 
         @media (max-width: 768px) {

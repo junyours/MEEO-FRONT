@@ -32,15 +32,22 @@ import {
   FilePdfOutlined,
   CalendarOutlined,
   SettingOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import LoadingOverlay from "./Loading";
 import dayjs from "dayjs";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import letterheadTemplate from '../assets/report_template/letterhead_template.jpg';
 import "./CashTicketManagement.css";
 
 const { Text, Title } = Typography;
 const { Option } = Select;
+
+// Helper function to format amount with commas
+const formatAmount = (amount) => {
+  return parseFloat(amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
 
 // Minimalist color scheme
 const colors = {
@@ -221,7 +228,7 @@ const CashTicketManagement = () => {
       // Add MEE logo on the right (predominantly red and yellow circular logo)
       doc.addImage('/logo_meeo.png', 'PNG', pageWidth - margin - 30, yPosition, 30, 30);
     } catch (error) {
-      console.log('Logos not found:', error);
+      // Logos not found, continuing without them
     }
     
     yPosition += 15;
@@ -255,23 +262,46 @@ const CashTicketManagement = () => {
   const exportToPDF = () => {
     try {
       setLoading(true);
-      const doc = new jsPDF();
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
       
       const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 20;
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 35;
       
-      // Add government header
-      let yPosition = addGovernmentHeader(doc, pageWidth, margin);
+      // Add letterhead template as background only on first page
+      try {
+        doc.addImage(letterheadTemplate, 'JPEG', 0, 0, pageWidth, pageHeight);
+      } catch (error) {
+        // Letterhead template not found, continuing without it
+      }
       
       // Get the selected type name for the title
       const selectedTypeName = selectedTicketType === 'all' 
         ? 'All Types'
         : cashTicketTypes.find(t => t.id.toString() === selectedTicketType)?.type || 'Unknown';
       
-      // Title
-      doc.setFontSize(18);
-      doc.setTextColor(colors.primary);
+      // Title - positioned after letterhead
+      let yPosition = 55; // Start position after letterhead
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
       doc.text(`Cash Tickets Report - ${selectedTypeName} - ${viewMode === 'daily' ? dayjs().month(selectedMonth - 1).format('MMMM') : 'Yearly'} ${selectedYear}`, pageWidth / 2, yPosition, { align: 'center' });
+      
+      // Date
+      yPosition += 10;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      const currentDate = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      doc.text(`Generated on: ${currentDate}`, pageWidth / 2, yPosition, { align: 'center' });
+      
+      yPosition += 15;
       
       // Filter types to show based on selected tab
       const typesToShow = selectedTicketType === 'all' 
@@ -290,7 +320,7 @@ const CashTicketManagement = () => {
         
         typesToShow.forEach(type => {
           const amount = parseFloat(row.types[type.id]?.amount || 0);
-          rowData.push(`${amount.toFixed(2)}`);
+          rowData.push(`${formatAmount(amount)}`);
         });
         
         // Calculate total for filtered types
@@ -298,11 +328,11 @@ const CashTicketManagement = () => {
           return sum + parseFloat(row.types[type.id]?.amount || 0);
         }, 0);
         
-        rowData.push(`${filteredTotal.toFixed(2)}`);
+        rowData.push(`${formatAmount(filteredTotal)}`);
         return rowData;
       });
 
-      // Add table
+      // Add table with white background and borders for all cells
       autoTable(doc, {
         head: [tableColumns],
         body: tableData,
@@ -311,21 +341,29 @@ const CashTicketManagement = () => {
         styles: {
           fontSize: 9,
           cellPadding: 3,
+          fillColor: [255, 255, 255], // White background for all cells
           lineColor: [0, 0, 0], // Black borders
           lineWidth: 0.1,
+          halign: 'center', // Center align all cells
+          valign: 'middle'
         },
         headStyles: {
-          fillColor: [27, 79, 114],
-          textColor: 255,
+          fillColor: [255, 255, 255], // White background for header
+          textColor: [0, 0, 0], // Black text for header
           lineColor: [0, 0, 0], // Black borders
           lineWidth: 0.1,
+          fontStyle: 'bold',
+          halign: 'center', // Center align header
+          valign: 'middle'
         },
         alternateRowStyles: {
-          fillColor: [245, 245, 245],
+          fillColor: [255, 255, 255], // White background for alternate rows
           lineColor: [0, 0, 0], // Black borders
           lineWidth: 0.1,
+          halign: 'center', // Center align alternate rows
+          valign: 'middle'
         },
-        margin: { top: yPosition + 10, bottom: 20 },
+        margin: { left: margin, right: margin, bottom: 25 },
       });
 
       // Save the PDF
@@ -407,7 +445,7 @@ const CashTicketManagement = () => {
               strong 
               className={amount > 0 ? "amount-active" : "amount-inactive"}
             >
-              ₱{amount.toFixed(2)}
+              ₱{formatAmount(amount)}
             </Text>
           );
         },
@@ -437,7 +475,7 @@ const CashTicketManagement = () => {
             strong 
             className="total-amount"
           >
-            ₱{filteredTotal.toFixed(2)}
+            ₱{formatAmount(filteredTotal)}
           </Text>
         );
       },
@@ -496,6 +534,16 @@ const CashTicketManagement = () => {
               </Text>
             </div>
             <div className="header-actions">
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={() => {
+                  fetchCashTicketTypes();
+                  fetchData();
+                }}
+                className="btn-secondary"
+              >
+                Refresh
+              </Button>
               <Button
                 icon={<PlusOutlined />}
                 onClick={() => openTypeModal()}
@@ -577,7 +625,7 @@ const CashTicketManagement = () => {
                       <div className="ticket-type-info">
                         <div className="ticket-type-name">{type.type}</div>
                         <div className="ticket-type-amount">
-                          ₱{parseFloat(type.amount || 0).toFixed(2)}
+                          ₱{formatAmount(type.amount || 0)}
                         </div>
                       </div>
                     </div>

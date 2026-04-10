@@ -46,7 +46,7 @@ const Footer = () => {
                 <EnvironmentOutlined className="auth-contact-icon" />
                 <div>
                   <Text className="auth-contact-text">Municipal Economic Enterprise Office</Text>
-                  <Text className="auth-contact-subtext">Poblacion, Opol, Misamis Oriental</Text>
+                  <Text className="auth-contact-subtext">Taboc, Opol, Misamis Oriental</Text>
                 </div>
               </div>
               
@@ -72,18 +72,28 @@ const Footer = () => {
             </div>
           </Col>
 
-          {/* QUICK LINKS COLUMN */}
+          {/* FACEBOOK COLUMN */}
           <Col xs={24} md={12} lg={8}>
             <Title level={5} className="auth-footer-heading">
-              Quick Links
+              Connect With Us
             </Title>
-            <div className="auth-footer-links">
-              <div className="auth-links-section">
-                <Link href="/admin/dashboard" className="auth-footer-link">Admin Dashboard</Link>
-                <Link href="/vendor/dashboard" className="auth-footer-link">Vendor Portal</Link>
-                <Link href="/collections" className="auth-footer-link">Fund Collection</Link>
-                <Link href="/stalls" className="auth-footer-link">Stall Management</Link>
-                <Link href="/support" className="auth-footer-link">Support Center</Link>
+            <div className="auth-facebook-section">
+              <div className="auth-facebook-card">
+                <FacebookOutlined className="auth-facebook-icon" />
+                <div className="auth-facebook-content">
+                  <Text className="auth-facebook-title">MEEO Opol Facebook</Text>
+                  <Text className="auth-facebook-description">
+                    Follow us for updates, announcements, and community news
+                  </Text>
+                  <Link 
+                    href="https://www.facebook.com/profile.php?id=61560479091650"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="auth-facebook-link"
+                  >
+                    Visit Our Page
+                  </Link>
+                </div>
               </div>
             </div>
           </Col>
@@ -100,25 +110,13 @@ const Footer = () => {
                 </Text>
               </div>
             </Col>
-            <Col xs={24} md={12}>
-              <div className="auth-footer-social">
-                <a
-                  href="https://www.facebook.com/profile.php?id=61560479091650"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="auth-social-icon"
-                  aria-label="Facebook"
-                >
-                  <FacebookOutlined />
-                </a>
-              </div>
-            </Col>
+           
           </Row>
           
           <div className="auth-footer-credits">
             <Text className="auth-credits-text">
               <HeartOutlined className="auth-heart-icon" />{" "}
-              Created by{" "}
+              Developed by{" "}
               <Link href="https://www.facebook.com/ronnie1016" target="_blank" rel="noreferrer" className="auth-developer-link">
                 Ronnie Flores
               </Link>
@@ -127,12 +125,18 @@ const Footer = () => {
                 Jon Brey Lastimosa
               </Link>
               {", "}
-              <Link href="https://www.facebook.com/profile.php?id=61583017889860" target="_blank" rel="noreferrer" className="auth-developer-link">
+              <Link href="https://www.facebook.com/tantanaba23/" target="_blank" rel="noreferrer" className="auth-developer-link">
                 Nathaniel Aba
               </Link>
-              {" & "}
+              {", "}
               <Link href="https://www.facebook.com/dean.franncis.quimanhan" target="_blank" rel="noreferrer" className="auth-developer-link">
                 Dean Francis Quimanhan
+              </Link>
+               {" &  "}
+              Special thanks to 
+              {" "}
+                <Link href="https://www.facebook.com/rowin.ranque.25" target="_blank" rel="noreferrer" className="auth-developer-link">
+                Rowin Ranque 
               </Link>
             </Text>
           </div>

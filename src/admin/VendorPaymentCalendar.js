@@ -263,19 +263,7 @@ const VendorPaymentCalendar = () => {
           />
         ),
       },
-      {
-        title: 'Missed Days',
-        key: 'missed_days',
-        width: 100,
-        align: 'center',
-
-        render: (_, record) => (
-          <Badge 
-            count={record.missed_days_count || 0} 
-            style={{ backgroundColor: record.missed_days_count > 0 ? '#ff4d4f' : '#52c41a' }}
-          />
-        ),
-      },
+     
       {
         title: 'Advance Covered',
         key: 'advance_covered',
@@ -685,12 +673,7 @@ const VendorPaymentCalendar = () => {
                         <div className="stat-icon-wrapper missed-days-icon">
                           <ExclamationCircleOutlined />
                         </div>
-                        <div className="stat-value-container">
-                          <div className="stat-title">Missed Days</div>
-                          <div className="stat-value" style={{ color: '#ff4d4f' }}>
-                            {summary.total_missed_days || 0}
-                          </div>
-                        </div>
+                    
                       </div>
                     </Card>
                   </Col>
@@ -903,12 +886,7 @@ const VendorPaymentCalendar = () => {
                   key: 'daily_rent',
                   render: (rent) => formatCurrency(rent),
                 },
-                {
-                  title: 'Missed Days',
-                  dataIndex: 'missed_days',
-                  key: 'missed_days',
-                  render: (days) => days > 0 ? <Tag color="orange">{days}</Tag> : '-',
-                },
+              
                 {
                   title: 'Advance Days',
                   dataIndex: 'advance_days',

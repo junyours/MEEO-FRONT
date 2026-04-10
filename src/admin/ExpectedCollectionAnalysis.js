@@ -992,6 +992,7 @@ const ExpectedCollectionAnalysis = () => {
                           const { cx, cy, payload } = props;
                           return (
                             <circle 
+                              key={`market-dot-${payload.month || payload.index}`}
                               cx={cx} 
                               cy={cy} 
                               r={payload.is_peak_month ? 8 : 6}
@@ -1016,6 +1017,7 @@ const ExpectedCollectionAnalysis = () => {
                           const { cx, cy, payload } = props;
                           return (
                             <circle 
+                              key={`openspace-dot-${payload.month || payload.index}`}
                               cx={cx} 
                               cy={cy} 
                               r={payload.is_peak_month ? 8 : 6}
@@ -1040,6 +1042,7 @@ const ExpectedCollectionAnalysis = () => {
                           const { cx, cy, payload } = props;
                           return (
                             <circle 
+                              key={`taboc-dot-${payload.month || payload.index}`}
                               cx={cx} 
                               cy={cy} 
                               r={payload.is_peak_month ? 8 : 6}
