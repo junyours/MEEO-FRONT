@@ -1,0 +1,424 @@
+.stalls-grid-container {
+    padding: 20px;
+}
+
+.grid-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.grid-header h4 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.stalls-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px solid #dee2e6;
+}
+
+.stall-cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    position: relative;
+    min-height: 60px;
+}
+
+.stall-cell:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
+.stall-cell.available {
+    color: white;
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.stall-cell.occupied {
+    color: white;
+    background: linear-gradient(135deg, #dc3545, #c82333);
+}
+
+.stall-cell.maintenance {
+    color: #212529;
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+}
+
+.stall-cell.reserved {
+    color: white;
+    background: linear-gradient(135deg, #17a2b8, #138496);
+}
+
+.stall-cell.empty {
+    background: #f8f9fa;
+    border: 1px dashed #ccc;
+    color: #6c757d;
+    cursor: default;
+}
+
+.stall-cell.empty:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.stall-info {
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.2;
+}
+
+.stall-number {
+    font-weight: 700;
+    font-size: 10px;
+    margin-bottom: 2px;
+}
+
+.vendor-name {
+    font-size: 9px;
+    opacity: 0.9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.empty-slot {
+    font-size: 20px;
+    font-weight: 300;
+    opacity: 0.5;
+}
+
+.legend {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid #333;
+}
+
+/* Modal styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3,
+.modal-header h4 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+    background: #f8f9fa;
+    color: #dc3545;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #495057;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.form-info {
+    margin: 10px 0;
+    padding: 10px;
+    background: #e7f3ff;
+    border-radius: 6px;
+    border-left: 4px solid #007bff;
+}
+
+.form-info small {
+    color: #495057;
+    font-style: italic;
+}
+
+.form-group input[type="radio"] {
+    width: auto;
+    margin-right: 8px;
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-size: 16px;
+}
+
+/* Ambulant Stall Styles */
+.stall-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.stall-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.ambulant-stall {
+    border-left: 4px solid #ff6b35;
+}
+
+.ambulant-stall.available {
+    background: linear-gradient(135deg, #fff5f0, #ffe4cc);
+}
+
+.ambulant-stall.occupied {
+    background: linear-gradient(135deg, #ffd4a3, #ffb366);
+}
+
+.ambulant-stall.maintenance {
+    background: linear-gradient(135deg, #fff3cd, #ffe4b5);
+}
+
+.ambulant-stall.reserved {
+    background: linear-gradient(135deg, #d1ecf1, #ffc107);
+}
+
+.empty-ambulant-slot {
+    border: 2px dashed #ff6b35;
+    background: #fff5f0;
+    color: #ff6b35;
+}
+
+.empty-ambulant-slot:hover {
+    background: #ffe4cc;
+    transform: scale(1.02);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .stalls-grid {
+        grid-template-columns: repeat(8, 1fr);
+        gap: 6px;
+        padding: 15px;
+    }
+    
+    .stall-cell {
+        min-height: 50px;
+    }
+    
+    .stall-number {
+        font-size: 9px;
+    }
+    
+    .vendor-name {
+        font-size: 8px;
+    }
+    
+    .legend {
+        gap: 15px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal {
+        width: 95%;
+        margin: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stalls-grid {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 4px;
+        padding: 10px;
+    }
+    
+    .stall-cell {
+        min-height: 40px;
+    }
+    
+    .stall-info {
+        font-size: 10px;
+    }
+    
+    .stall-number {
+        font-size: 8px;
+    }
+    
+    .vendor-name {
+        font-size: 7px;
+    }
+    
+    .grid-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .legend {
+        gap: 10px;
+    }
+    
+    .legend-item {
+        font-size: 11px;
+    }
+}

@@ -18,7 +18,9 @@ import {
   Tabs,
   Tag,
   Row,
-  Col
+  Col,
+  Drawer,
+  Grid
 } from 'antd';
 import { 
   PlusOutlined, 
@@ -34,8 +36,10 @@ import LoadingOverlay from './Loading';
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 const { Option } = Select;
+const { useBreakpoint } = Grid;
 
 const ProductManagement = () => {
+  const screens = useBreakpoint();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -48,6 +52,7 @@ const ProductManagement = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [existingImage, setExistingImage] = useState(null); // Track existing image
+  const [selectedCategory, setSelectedCategory] = useState('all'); // Track selected category
   const [form] = Form.useForm();
   const [productForm] = Form.useForm();
 
@@ -87,6 +92,20 @@ const ProductManagement = () => {
     }
   };
 
+  const fetchProductsByCategory = async (categoryId) => {
+    try {
+      if (categoryId === 'all') {
+        const response = await api.get('/products');
+        setProducts(response.data);
+      } else {
+        const response = await api.get(`/products/category/${categoryId}`);
+        setProducts(response.data);
+      }
+    } catch (error) {
+      message.error('Failed to fetch products by category');
+    }
+  };
+
   const handleRefresh = async () => {
     setRefreshLoading(true);
     setPageLoading(true);
@@ -104,11 +123,14 @@ const ProductManagement = () => {
     }
   };
 
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategory(categoryId);
+    fetchProductsByCategory(categoryId);
+  };
+
   const handleCategorySubmit = async (values) => {
     setLoading(true);
-    console.log('Category submit values:', values);
-    console.log('Editing category:', editingCategory);
-    console.log('Existing image:', existingImage);
+
     
     try {
       const formData = new FormData();
@@ -125,40 +147,37 @@ const ProductManagement = () => {
           imageFile = values.image;
         }
         
-        console.log('Image file detected:', imageFile);
-        
+      
         if (imageFile) {
           formData.append('image', imageFile);
-          console.log('Appending new image file');
+    
         } else if (existingImage) {
           // Keep existing image if no new image selected
           formData.append('existing_image', existingImage);
-          console.log('Appending existing image:', existingImage);
+        
         }
         
         // Only send other fields if they have actual values (not empty strings)
         if (values.name && values.name.trim() !== '') {
           formData.append('name', values.name);
-          console.log('Appending name:', values.name);
+         
         }
         if (values.description && values.description.trim() !== '') {
           formData.append('description', values.description);
-          console.log('Appending description:', values.description);
+         
         }
         if (values.color && values.color.trim() !== '') {
           formData.append('color', values.color);
-          console.log('Appending color:', values.color);
+       
         }
         if (values.icon && values.icon.trim() !== '') {
           formData.append('icon', values.icon);
-          console.log('Appending icon:', values.icon);
+          
         }
         
         // Log all FormData entries
-        console.log('FormData entries:');
-        for (let [key, value] of formData.entries()) {
-          console.log(`${key}:`, value);
-        }
+    
+    
         
         // If no data to update, show message
         if (formData.entries().next().done) {
@@ -166,15 +185,14 @@ const ProductManagement = () => {
           setLoading(false);
           return;
         }
-        
-        console.log('Sending PUT request to:', `/categories/${editingCategory.id}`);
+       
         // Add _method field for Laravel PUT support with FormData
         formData.append('_method', 'PUT');
-        console.log('Added _method: PUT to FormData');
+        
         const response = await api.post(`/categories/${editingCategory.id}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        console.log('Category update response:', response);
+      
         message.success('Category updated successfully');
       } else {
         // For new categories, all fields are required
@@ -197,10 +215,8 @@ const ProductManagement = () => {
           formData.append('image', imageFile);
         }
         
-        console.log('Creating new category with FormData:');
-        for (let [key, value] of formData.entries()) {
-          console.log(`${key}:`, value);
-        }
+     
+    
         
         await api.post('/categories', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
@@ -266,7 +282,7 @@ const ProductManagement = () => {
           return;
         }
         
-        console.log('Sending PUT request to:', `/products/${editingProduct.id}`);
+     
         // Add _method field for Laravel PUT support with FormData
         formData.append('_method', 'PUT');
         const response = await api.post(`/products/${editingProduct.id}`, formData, {
@@ -328,11 +344,23 @@ const ProductManagement = () => {
 
   const handleDeleteProduct = async (id) => {
     try {
-      await api.delete(`/products/${id}`);
+     
+      const response = await api.delete(`/products/${id}`);
+   
       message.success('Product deleted successfully');
       fetchProducts();
     } catch (error) {
-      message.error('Failed to delete product');
+      console.error('Delete error:', error);
+      console.error('Error response:', error.response?.data);
+      
+      // Show specific error message
+      if (error.response?.status === 404) {
+        message.error('Product not found - it may have been already deleted');
+      } else if (error.response?.data?.message) {
+        message.error(error.response.data.message);
+      } else {
+        message.error('Failed to delete product');
+      }
     }
   };
 
@@ -376,7 +404,7 @@ const ProductManagement = () => {
 
   const handleImageChange = (info) => {
     // Debug: log the info object
-    console.log('Image change info:', info);
+   
     
     // Handle both old and new Ant Design Upload structures
     let file = null;
@@ -400,7 +428,7 @@ const ProductManagement = () => {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        console.log('Image preview set:', e.target.result);
+       
         setImagePreview(e.target.result);
       };
       reader.readAsDataURL(file);
@@ -417,10 +445,11 @@ const ProductManagement = () => {
       title: 'Image',
       dataIndex: 'image',
       key: 'image',
+      width: screens.xs ? 50 : 60,
       render: (image) => (
         <Image
-          width={60}
-          height={60}
+          width={screens.xs ? 40 : 60}
+          height={screens.xs ? 40 : 60}
           src={image || '/placeholder-category.jpg'}
           style={{ objectFit: 'cover', borderRadius: 8 }}
         />
@@ -430,13 +459,15 @@ const ProductManagement = () => {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
-      render: (text) => <Text strong>{text}</Text>
+      render: (text) => <Text strong>{text}</Text>,
+      responsive: ['md']
     },
     {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
-      ellipsis: true
+      ellipsis: true,
+      responsive: ['lg']
     },
     {
       title: 'Color',
@@ -446,26 +477,41 @@ const ProductManagement = () => {
       render: (color) => (
         <div
           style={{
-            width: 20,
-            height: 20,
+            width: screens.xs ? 15 : 20,
+            height: screens.xs ? 15 : 20,
             backgroundColor: color,
             borderRadius: 4
           }}
         />
-      )
+      ),
+      responsive: ['sm']
     },
     {
       title: 'Actions',
       key: 'actions',
+      width: screens.xs ? 80 : 200,
       render: (_, record) => (
-        <Space>
+        <Space size={screens.xs ? 'small' : 'middle'} direction={screens.xs ? 'vertical' : 'horizontal'}>
           <Button
-            type="primary"
-            size="small"
+            style={{
+              backgroundColor: 'white',
+              color: 'black',
+              borderColor: 'black'
+            }}
+            size={screens.xs ? 'small' : 'middle'}
             icon={<EditOutlined />}
             onClick={() => editCategory(record)}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#f0f0f0';
+              e.target.style.borderColor = '#404040';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'white';
+              e.target.style.color = 'black';
+              e.target.style.borderColor = 'black';
+            }}
           >
-            Edit Category
+            {screens.xs ? '' : 'Edit Category'}
           </Button>
           <Popconfirm
             title="Are you sure you want to delete this category?"
@@ -476,10 +522,10 @@ const ProductManagement = () => {
             <Button
               type="primary"
               danger
-              size="small"
+              size={screens.xs ? 'small' : 'middle'}
               icon={<DeleteOutlined />}
             >
-              Delete Category
+              {screens.xs ? '' : 'Delete Category'}
             </Button>
           </Popconfirm>
         </Space>
@@ -492,10 +538,11 @@ const ProductManagement = () => {
       title: 'Image',
       dataIndex: 'image',
       key: 'image',
+      width: screens.xs ? 50 : 60,
       render: (image) => (
         <Image
-          width={60}
-          height={60}
+          width={screens.xs ? 40 : 60}
+          height={screens.xs ? 40 : 60}
           src={image || '/placeholder-product.jpg'}
           style={{ objectFit: 'cover', borderRadius: 8 }}
         />
@@ -505,13 +552,15 @@ const ProductManagement = () => {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
-      render: (text) => <Text strong>{text}</Text>
+      render: (text) => <Text strong>{text}</Text>,
+      responsive: ['sm']
     },
     {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
-      render: (category) => <Tag color={category?.color}>{category?.name}</Tag>
+      render: (category) => <Tag color={category?.color}>{category?.name}</Tag>,
+      responsive: ['md']
     },
     {
       title: 'Price',
@@ -519,7 +568,8 @@ const ProductManagement = () => {
       key: 'price',
       render: (price, record) => (
         <Text strong>₱{price}/{record.unit}</Text>
-      )
+      ),
+      responsive: ['sm']
     },
     {
       title: 'Status',
@@ -529,20 +579,35 @@ const ProductManagement = () => {
         <Tag color={available ? 'green' : 'red'}>
           {available ? 'Available' : 'Unavailable'}
         </Tag>
-      )
+      ),
+      responsive: ['md']
     },
     {
       title: 'Actions',
       key: 'actions',
+      width: screens.xs ? 80 : 200,
       render: (_, record) => (
-        <Space>
+        <Space size={screens.xs ? 'small' : 'middle'} direction={screens.xs ? 'vertical' : 'horizontal'}>
           <Button
-            type="primary"
-            size="small"
+            style={{
+              backgroundColor: 'white',
+              color: 'black',
+              borderColor: 'black'
+            }}
+            size={screens.xs ? 'small' : 'middle'}
             icon={<EditOutlined />}
             onClick={() => editProduct(record)}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#f0f0f0';
+              e.target.style.borderColor = '#404040';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'white';
+              e.target.style.color = 'black';
+              e.target.style.borderColor = 'black';
+            }}
           >
-            Edit Product
+            {screens.xs ? '' : 'Edit Product'}
           </Button>
           <Popconfirm
             title="Are you sure you want to delete this product?"
@@ -553,10 +618,10 @@ const ProductManagement = () => {
             <Button
               type="primary"
               danger
-              size="small"
+              size={screens.xs ? 'small' : 'middle'}
               icon={<DeleteOutlined />}
             >
-              Delete Product
+              {screens.xs ? '' : 'Delete Product'}
             </Button>
           </Popconfirm>
         </Space>
@@ -569,15 +634,15 @@ const ProductManagement = () => {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Title level={2}>Product Management</Title>
+    <div style={{ padding: screens.xs ? '12px' : '24px' }}>
+      <Title level={screens.xs ? 3 : 2}>Product Management</Title>
       
       <Tabs defaultActiveKey="categories">
         <TabPane tab="Categories" key="categories">
           <Card
             title="Category Management"
             extra={
-              <Space>
+              <Space direction={screens.xs ? 'vertical' : 'horizontal'} size={screens.xs ? 'small' : 'middle'}>
                 <Button
                   type="primary"
                   icon={<PlusOutlined />}
@@ -592,6 +657,7 @@ const ProductManagement = () => {
                     color: 'black',
                     borderColor: 'black'
                   }}
+                  size={screens.xs ? 'small' : 'middle'}
                   onMouseEnter={(e) => {
                     e.target.style.backgroundColor = '#1890ff';
                     e.target.style.color = 'white';
@@ -603,7 +669,7 @@ const ProductManagement = () => {
                     e.target.style.borderColor = 'black';
                   }}
                 >
-                  Add Category
+                  {screens.xs ? 'Add' : 'Add Category'}
                 </Button>
                 <Button
                   icon={<ReloadOutlined />}
@@ -616,8 +682,9 @@ const ProductManagement = () => {
                     color: refreshHovered ? 'white' : 'black',
                     borderColor: refreshHovered ? '#1890ff' : 'black'
                   }}
+                  size={screens.xs ? 'small' : 'middle'}
                 >
-                  Refresh
+                  {screens.xs ? '' : 'Refresh'}
                 </Button>
               </Space>
             }
@@ -627,6 +694,8 @@ const ProductManagement = () => {
               dataSource={categories}
               rowKey="id"
               loading={pageLoading}
+              scroll={{ x: screens.xs ? 400 : undefined }}
+              size={screens.xs ? 'small' : 'middle'}
             />
           </Card>
         </TabPane>
@@ -635,7 +704,7 @@ const ProductManagement = () => {
           <Card
             title="Product Management"
             extra={
-              <Space>
+              <Space direction={screens.xs ? 'vertical' : 'horizontal'} size={screens.xs ? 'small' : 'middle'}>
                 <Button
                   type="primary"
                   icon={<PlusOutlined />}
@@ -651,6 +720,7 @@ const ProductManagement = () => {
                     color: 'black',
                     borderColor: 'black'
                   }}
+                  size={screens.xs ? 'small' : 'middle'}
                   onMouseEnter={(e) => {
                     e.target.style.backgroundColor = '#1890ff';
                     e.target.style.color = 'white';
@@ -662,7 +732,7 @@ const ProductManagement = () => {
                     e.target.style.borderColor = 'black';
                   }}
                 >
-                  Add Product
+                  {screens.xs ? 'Add' : 'Add Product'}
                 </Button>
                 <Button
                   icon={<ReloadOutlined />}
@@ -675,242 +745,485 @@ const ProductManagement = () => {
                     color: refreshHovered ? 'white' : 'black',
                     borderColor: refreshHovered ? '#1890ff' : 'black'
                   }}
+                  size={screens.xs ? 'small' : 'middle'}
                 >
-                  Refresh
+                  {screens.xs ? '' : 'Refresh'}
                 </Button>
               </Space>
             }
           >
+            <Tabs
+              activeKey={selectedCategory}
+              onChange={handleCategoryChange}
+              type={screens.xs ? 'line' : 'card'}
+              size={screens.xs ? 'small' : 'middle'}
+              style={{ marginBottom: 16 }}
+              scrollable={screens.xs}
+            >
+              <TabPane 
+                tab={
+                  <span>
+                    <Tag color="blue">{screens.xs ? 'All' : 'All Products'}</Tag>
+                  </span>
+                } 
+                key="all" 
+              />
+              {categories.map(category => (
+                <TabPane 
+                  tab={
+                    <span>
+                      <Tag color={category.color}>{category.name}</Tag>
+                    </span>
+                  } 
+                  key={category.id} 
+                />
+              ))}
+            </Tabs>
             <Table
               columns={productColumns}
               dataSource={products}
               rowKey="id"
               loading={pageLoading}
+              scroll={{ x: screens.xs ? 500 : undefined }}
+              size={screens.xs ? 'small' : 'middle'}
             />
           </Card>
         </TabPane>
       </Tabs>
 
       {/* Category Modal */}
-      <Modal
-        title={editingCategory ? 'Edit Category' : 'Add Category'}
-        visible={categoryModalVisible}
-        onCancel={() => {
-          setCategoryModalVisible(false);
-          setEditingCategory(null);
-          form.resetFields();
-          setImagePreview(null);
-        }}
-        footer={null}
-        width={600}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleCategorySubmit}
+      {screens.xs ? (
+        <Drawer
+          title={editingCategory ? 'Edit Category' : 'Add Category'}
+          placement="bottom"
+          height="90%"
+          onClose={() => {
+            setCategoryModalVisible(false);
+            setEditingCategory(null);
+            form.resetFields();
+            setImagePreview(null);
+          }}
+          visible={categoryModalVisible}
         >
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="name"
-                label="Category Name"
-                rules={!editingCategory ? [{ required: true, message: 'Please input category name!' }] : []}
-              >
-                <Input placeholder="Enter category name" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="color"
-                label="Color"
-                rules={!editingCategory ? [{ required: true, message: 'Please select a color!' }] : []}
-              >
-                <Input type="color" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="description"
-            label="Description"
-            rules={!editingCategory ? [{ required: true, message: 'Please input description!' }] : []}
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleCategorySubmit}
           >
-            <Input.TextArea rows={3} placeholder="Enter category description" />
-          </Form.Item>
-
-          <Form.Item
-            name="image"
-            label="Category Image"
-          >
-            <Upload
-              beforeUpload={beforeUpload}
-              onChange={handleImageChange}
-              showUploadList={false}
-              accept="image/*"
-              multiple={false}
+            <Form.Item
+              name="name"
+              label="Category Name"
+              rules={!editingCategory ? [{ required: true, message: 'Please input category name!' }] : []}
             >
-              <Button icon={<UploadOutlined />}>Select Image</Button>
-            </Upload>
-          </Form.Item>
+              <Input placeholder="Enter category name" />
+            </Form.Item>
 
-          {imagePreview && (
-            <div style={{ marginBottom: 16, textAlign: 'center' }}>
-              <Image
-                width={200}
-                height={200}
-                src={imagePreview}
-                style={{ objectFit: 'cover', borderRadius: 8 }}
-              />
-            </div>
-          )}
+            <Form.Item
+              name="color"
+              label="Color"
+              rules={!editingCategory ? [{ required: true, message: 'Please select a color!' }] : []}
+            >
+              <Input type="color" />
+            </Form.Item>
 
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit" loading={loading} icon={<SaveOutlined />}>
-                {editingCategory ? 'Update' : 'Save'}
-              </Button>
-              <Button onClick={() => {
-                setCategoryModalVisible(false);
-                setEditingCategory(null);
-                form.resetFields();
-                setImagePreview(null);
-              }}>
-                Cancel
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
+            <Form.Item
+              name="description"
+              label="Description"
+              rules={!editingCategory ? [{ required: true, message: 'Please input description!' }] : []}
+            >
+              <Input.TextArea rows={3} placeholder="Enter category description" />
+            </Form.Item>
+
+            <Form.Item
+              name="image"
+              label="Category Image"
+            >
+              <Upload
+                beforeUpload={beforeUpload}
+                onChange={handleImageChange}
+                showUploadList={false}
+                accept="image/*"
+                multiple={false}
+              >
+                <Button icon={<UploadOutlined />} block>Select Image</Button>
+              </Upload>
+            </Form.Item>
+
+            {imagePreview && (
+              <div style={{ marginBottom: 16, textAlign: 'center' }}>
+                <Image
+                  width={screens.xs ? 150 : 200}
+                  height={screens.xs ? 150 : 200}
+                  src={imagePreview}
+                  style={{ objectFit: 'cover', borderRadius: 8 }}
+                />
+              </div>
+            )}
+
+            <Form.Item>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Button type="primary" htmlType="submit" loading={loading} icon={<SaveOutlined />} block>
+                  {editingCategory ? 'Update' : 'Save'}
+                </Button>
+                <Button onClick={() => {
+                  setCategoryModalVisible(false);
+                  setEditingCategory(null);
+                  form.resetFields();
+                  setImagePreview(null);
+                }} block>
+                  Cancel
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Drawer>
+      ) : (
+        <Modal
+          title={editingCategory ? 'Edit Category' : 'Add Category'}
+          visible={categoryModalVisible}
+          onCancel={() => {
+            setCategoryModalVisible(false);
+            setEditingCategory(null);
+            form.resetFields();
+            setImagePreview(null);
+          }}
+          footer={null}
+          width={screens.md ? 600 : '90%'}
+        >
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleCategorySubmit}
+          >
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="name"
+                  label="Category Name"
+                  rules={!editingCategory ? [{ required: true, message: 'Please input category name!' }] : []}
+                >
+                  <Input placeholder="Enter category name" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="color"
+                  label="Color"
+                  rules={!editingCategory ? [{ required: true, message: 'Please select a color!' }] : []}
+                >
+                  <Input type="color" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Form.Item
+              name="description"
+              label="Description"
+              rules={!editingCategory ? [{ required: true, message: 'Please input description!' }] : []}
+            >
+              <Input.TextArea rows={3} placeholder="Enter category description" />
+            </Form.Item>
+
+            <Form.Item
+              name="image"
+              label="Category Image"
+            >
+              <Upload
+                beforeUpload={beforeUpload}
+                onChange={handleImageChange}
+                showUploadList={false}
+                accept="image/*"
+                multiple={false}
+              >
+                <Button icon={<UploadOutlined />}>Select Image</Button>
+              </Upload>
+            </Form.Item>
+
+            {imagePreview && (
+              <div style={{ marginBottom: 16, textAlign: 'center' }}>
+                <Image
+                  width={200}
+                  height={200}
+                  src={imagePreview}
+                  style={{ objectFit: 'cover', borderRadius: 8 }}
+                />
+              </div>
+            )}
+
+            <Form.Item>
+              <Space>
+                <Button type="primary" htmlType="submit" loading={loading} icon={<SaveOutlined />}>
+                  {editingCategory ? 'Update' : 'Save'}
+                </Button>
+                <Button onClick={() => {
+                  setCategoryModalVisible(false);
+                  setEditingCategory(null);
+                  form.resetFields();
+                  setImagePreview(null);
+                }}>
+                  Cancel
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Modal>
+      )}
 
       {/* Product Modal */}
-      <Modal
-        title={editingProduct ? 'Edit Product' : 'Add Product'}
-        visible={productModalVisible}
-        onCancel={() => {
-          setProductModalVisible(false);
-          setEditingProduct(null);
-          productForm.resetFields();
-          setImagePreview(null);
-        }}
-        footer={null}
-        width={600}
-      >
-        <Form
-          form={productForm}
-          layout="vertical"
-          onFinish={handleProductSubmit}
+      {screens.xs ? (
+        <Drawer
+          title={editingProduct ? 'Edit Product' : 'Add Product'}
+          placement="bottom"
+          height="90%"
+          onClose={() => {
+            setProductModalVisible(false);
+            setEditingProduct(null);
+            productForm.resetFields();
+            setImagePreview(null);
+          }}
+          visible={productModalVisible}
         >
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="name"
-                label="Product Name"
-                rules={!editingProduct ? [{ required: true, message: 'Please input product name!' }] : []}
-              >
-                <Input placeholder="Enter product name" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="category_id"
-                label="Category"
-                rules={!editingProduct ? [{ required: true, message: 'Please select a category!' }] : []}
-              >
-                <Select placeholder="Select category">
-                  {categories.map(category => (
-                    <Option key={category.id} value={category.id}>
-                      {category.name}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="price"
-                label="Price"
-                rules={!editingProduct ? [{ required: true, message: 'Please input price!' }] : []}
-              >
-                <Input type="number" placeholder="0.00" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="unit"
-                label="Unit"
-                rules={!editingProduct ? [{ required: true, message: 'Please input unit!' }] : []}
-              >
-                <Input placeholder="kg, pc, dozen, bunch" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="description"
-            label="Description"
+          <Form
+            form={productForm}
+            layout="vertical"
+            onFinish={handleProductSubmit}
           >
-            <Input.TextArea rows={3} placeholder="Enter product description" />
-          </Form.Item>
-
-          <Form.Item
-            name="available"
-            label="Availability"
-            valuePropName="checked"
-            initialValue={true}
-          >
-            <Switch 
-              checkedChildren="Available" 
-              unCheckedChildren="Unavailable"
-              defaultChecked={true}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="image"
-            label="Product Image"
-          >
-            <Upload
-              beforeUpload={beforeUpload}
-              onChange={handleImageChange}
-              showUploadList={false}
-              accept="image/*"
-              multiple={false}
+            <Form.Item
+              name="name"
+              label="Product Name"
+              rules={!editingProduct ? [{ required: true, message: 'Please input product name!' }] : []}
             >
-              <Button icon={<UploadOutlined />}>Select Image</Button>
-            </Upload>
-          </Form.Item>
+              <Input placeholder="Enter product name" />
+            </Form.Item>
 
-          {imagePreview && (
-            <div style={{ marginBottom: 16, textAlign: 'center' }}>
-              <Image
-                width={200}
-                height={200}
-                src={imagePreview}
-                style={{ objectFit: 'cover', borderRadius: 8 }}
+            <Form.Item
+              name="category_id"
+              label="Category"
+              rules={!editingProduct ? [{ required: true, message: 'Please select a category!' }] : []}
+            >
+              <Select placeholder="Select category">
+                {categories.map(category => (
+                  <Option key={category.id} value={category.id}>
+                    {category.name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="price"
+                  label="Price"
+                  rules={!editingProduct ? [{ required: true, message: 'Please input price!' }] : []}
+                >
+                  <Input type="number" placeholder="0.00" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="unit"
+                  label="Unit"
+                  rules={!editingProduct ? [{ required: true, message: 'Please input unit!' }] : []}
+                >
+                  <Input placeholder="kg, pc, dozen, bunch" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Form.Item
+              name="description"
+              label="Description"
+            >
+              <Input.TextArea rows={3} placeholder="Enter product description" />
+            </Form.Item>
+
+            <Form.Item
+              name="available"
+              label="Availability"
+              valuePropName="checked"
+              initialValue={true}
+            >
+              <Switch 
+                checkedChildren="Available" 
+                unCheckedChildren="Unavailable"
+                defaultChecked={true}
               />
-            </div>
-          )}
+            </Form.Item>
 
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit" loading={loading} icon={<SaveOutlined />}>
-                {editingProduct ? 'Update' : 'Save'}
-              </Button>
-              <Button onClick={() => {
-                setProductModalVisible(false);
-                setEditingProduct(null);
-                productForm.resetFields();
-                setImagePreview(null);
-              }}>
-                Cancel
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
+            <Form.Item
+              name="image"
+              label="Product Image"
+            >
+              <Upload
+                beforeUpload={beforeUpload}
+                onChange={handleImageChange}
+                showUploadList={false}
+                accept="image/*"
+                multiple={false}
+              >
+                <Button icon={<UploadOutlined />} block>Select Image</Button>
+              </Upload>
+            </Form.Item>
+
+            {imagePreview && (
+              <div style={{ marginBottom: 16, textAlign: 'center' }}>
+                <Image
+                  width={screens.xs ? 150 : 200}
+                  height={screens.xs ? 150 : 200}
+                  src={imagePreview}
+                  style={{ objectFit: 'cover', borderRadius: 8 }}
+                />
+              </div>
+            )}
+
+            <Form.Item>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Button type="primary" htmlType="submit" loading={loading} icon={<SaveOutlined />} block>
+                  {editingProduct ? 'Update' : 'Save'}
+                </Button>
+                <Button onClick={() => {
+                  setProductModalVisible(false);
+                  setEditingProduct(null);
+                  productForm.resetFields();
+                  setImagePreview(null);
+                }} block>
+                  Cancel
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Drawer>
+      ) : (
+        <Modal
+          title={editingProduct ? 'Edit Product' : 'Add Product'}
+          visible={productModalVisible}
+          onCancel={() => {
+            setProductModalVisible(false);
+            setEditingProduct(null);
+            productForm.resetFields();
+            setImagePreview(null);
+          }}
+          footer={null}
+          width={screens.md ? 600 : '90%'}
+        >
+          <Form
+            form={productForm}
+            layout="vertical"
+            onFinish={handleProductSubmit}
+          >
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="name"
+                  label="Product Name"
+                  rules={!editingProduct ? [{ required: true, message: 'Please input product name!' }] : []}
+                >
+                  <Input placeholder="Enter product name" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="category_id"
+                  label="Category"
+                  rules={!editingProduct ? [{ required: true, message: 'Please select a category!' }] : []}
+                >
+                  <Select placeholder="Select category">
+                    {categories.map(category => (
+                      <Option key={category.id} value={category.id}>
+                        {category.name}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="price"
+                  label="Price"
+                  rules={!editingProduct ? [{ required: true, message: 'Please input price!' }] : []}
+                >
+                  <Input type="number" placeholder="0.00" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="unit"
+                  label="Unit"
+                  rules={!editingProduct ? [{ required: true, message: 'Please input unit!' }] : []}
+                >
+                  <Input placeholder="kg, pc, dozen, bunch" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Form.Item
+              name="description"
+              label="Description"
+            >
+              <Input.TextArea rows={3} placeholder="Enter product description" />
+            </Form.Item>
+
+            <Form.Item
+              name="available"
+              label="Availability"
+              valuePropName="checked"
+              initialValue={true}
+            >
+              <Switch 
+                checkedChildren="Available" 
+                unCheckedChildren="Unavailable"
+                defaultChecked={true}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="image"
+              label="Product Image"
+            >
+              <Upload
+                beforeUpload={beforeUpload}
+                onChange={handleImageChange}
+                showUploadList={false}
+                accept="image/*"
+                multiple={false}
+              >
+                <Button icon={<UploadOutlined />}>Select Image</Button>
+              </Upload>
+            </Form.Item>
+
+            {imagePreview && (
+              <div style={{ marginBottom: 16, textAlign: 'center' }}>
+                <Image
+                  width={200}
+                  height={200}
+                  src={imagePreview}
+                  style={{ objectFit: 'cover', borderRadius: 8 }}
+                />
+              </div>
+            )}
+
+            <Form.Item>
+              <Space>
+                <Button type="primary" htmlType="submit" loading={loading} icon={<SaveOutlined />}>
+                  {editingProduct ? 'Update' : 'Save'}
+                </Button>
+                <Button onClick={() => {
+                  setProductModalVisible(false);
+                  setEditingProduct(null);
+                  productForm.resetFields();
+                  setImagePreview(null);
+                }}>
+                  Cancel
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Modal>
+      )}
     </div>
   );
 };

@@ -57,12 +57,9 @@ const { Option } = Select;
 const VendorPaymentManagement = () => {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [paymentHistoryModal, setPaymentHistoryModal] = useState(false);
   const [bulkPaymentModal, setBulkPaymentModal] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
-  const [paymentHistory, setPaymentHistory] = useState([]);
   const [selectedRentals, setSelectedRentals] = useState([]);
-  const [rentalDetailsModal, setRentalDetailsModal] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [paymentForm] = Form.useForm();
   const [processingPayment, setProcessingPayment] = useState(false);
@@ -123,21 +120,7 @@ const VendorPaymentManagement = () => {
     }
   };
 
-  const fetchPaymentHistory = async (vendorId) => {
-    try {
-      const response = await api.get(`/vendor-payments/history/${vendorId}`);
-      setPaymentHistory(response.data.payments);
-      setSelectedVendor(response.data.vendor);
-      setPaymentHistoryModal(true);
-    } catch (error) {
-      message.error('Failed to fetch payment history');
-    }
-  };
 
-  const handleRentalDetails = (vendor) => {
-    setSelectedVendor(vendor);
-    setRentalDetailsModal(true);
-  };
 
   const handlePaySelectedMonths = (vendor) => {
     setSelectedVendorForMonthPayment(vendor);
@@ -963,8 +946,7 @@ const VendorPaymentManagement = () => {
         const totalDeposit = Math.max(0, totalMonthPayment - parseFloat(monthBalance.monthly_rate) || 0);
         monthDeposits[monthIndex] = totalDeposit > 0;
         
-        console.log(`Month ${monthIndex}: Total payments: ${totalMonthPayment}, Monthly rate: ${monthBalance.monthly_rate}, Deposit: ${totalDeposit}`);
-      });
+           });
       
       // Get all payments from all months
       monthlyBalances.forEach((monthBalance, monthIndex) => {
@@ -984,13 +966,12 @@ const VendorPaymentManagement = () => {
               has_deposit: monthDeposits[monthIndex], // Use calculated month deposit status
             });
             
-            console.log(`Payment ${individualPayment.payment_id}: Month ${monthIndex}, has_deposit: ${monthDeposits[monthIndex]}`);
-          });
+                });
         }
       });
     });
     
-    console.log('All payments with month deposit status:', allPayments);
+  
     return allPayments;
   };
 
@@ -1256,22 +1237,6 @@ const VendorPaymentManagement = () => {
                 onClick={() => handleMonthlyBreakdown(record)}
               />
             </Tooltip>
-            <Tooltip title="View Rental Details">
-              <Button
-                className="action-button black"
-                icon={<InfoCircleOutlined />}
-                size="small"
-                onClick={() => handleRentalDetails(record)}
-              />
-            </Tooltip>
-            <Tooltip title="View Payment History">
-              <Button
-                className="action-button black"
-                icon={<EyeOutlined />}
-                size="small"
-                onClick={() => fetchPaymentHistory(record.id)}
-              />
-            </Tooltip>
             <Tooltip title="Pay Now">
               <Button
                 className="action-button black"
@@ -1296,85 +1261,6 @@ const VendorPaymentManagement = () => {
               />
             </Tooltip>
           </Space>
-        );
-      },
-    },
-  ];
-
-  const paymentHistoryColumns = [
-    {
-      title: 'Date',
-      dataIndex: 'payment_date',
-      key: 'payment_date',
-      render: (date) => (
-        <Text className="payment-history-date">{fmtDate(date)}</Text>
-      ),
-    },
-    {
-      title: 'Stall',
-      key: 'stall',
-      render: (_, record) => (
-        <div className="payment-history-stall">
-          <div className="payment-history-stall-name">
-            {record.section_name} - {record.stall_number}
-          </div>
-          <Text className="payment-history-stall-rent">
-            {fmtMoney(record.daily_rent)}/day
-          </Text>
-        </div>
-      ),
-    },
-    {
-      title: 'Amount',
-      dataIndex: 'amount',
-      key: 'amount',
-      render: (amount) => (
-        <Text className="payment-history-amount">{fmtMoney(amount)}</Text>
-      ),
-    },
-    {
-      title: 'Type',
-      dataIndex: 'payment_type',
-      key: 'payment_type',
-      render: (type) => {
-        const typeClass = type.toLowerCase().replace(' ', '-');
-        return (
-          <Tag className={`payment-history-type-tag ${typeClass}`}>
-            {type.charAt(0).toUpperCase() + type.slice(1)}
-          </Tag>
-        );
-      },
-    },
-    {
-      title: 'Details',
-      key: 'details',
-      render: (_, record) => (
-        <div className="payment-history-details">
-          {record.missed_days > 0 && (
-            <div className="payment-history-detail-item">
-              <Text >Missed Days: </Text>
-              <Text>{record.missed_days}</Text>
-            </div>
-          )}
-          {record.advance_days > 0 && (
-            <div className="payment-history-detail-item">
-              <Text >Advance Days: </Text>
-              <Text>{record.advance_days}</Text>
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => {
-        const statusClass = status.toLowerCase();
-        return (
-          <Tag className={`payment-history-status-tag ${statusClass}`}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </Tag>
         );
       },
     },
@@ -1485,185 +1371,7 @@ const VendorPaymentManagement = () => {
         />
       </div>
 
-      {/* Payment History Modal */}
-      <Modal
-        className="vendor-modal"
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ClockCircleOutlined style={{ color: '#722ed1', fontSize: '20px' }} />
-            <span style={{ fontSize: '16px', fontWeight: 600 }}>
-              Payment History - {selectedVendor?.name}
-            </span>
-          </div>
-        }
-        open={paymentHistoryModal}
-        onCancel={() => setPaymentHistoryModal(false)}
-        footer={null}
-        width={1000}
-      >
-        <Table
-          className="payment-history-table"
-          columns={paymentHistoryColumns}
-          dataSource={paymentHistory}
-          rowKey="id"
-          pagination={{ pageSize: 10 }}
-          scroll={{ y: 400 }}
-        />
-      </Modal>
 
-      {/* Rental Details Modal */}
-      <Modal
-        className="vendor-modal"
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <InfoCircleOutlined style={{ color: '#1890ff', fontSize: '26px' }} />
-            <span style={{ fontSize: '24px', fontWeight: 600 }}>
-              Rental Details - {selectedVendor?.name}
-            </span>
-          </div>
-        }
-        open={rentalDetailsModal}
-        onCancel={() => setRentalDetailsModal(false)}
-        footer={null}
-        width={1000}
-      >
-        <div style={{ padding: '16px 0' }}>
-          {selectedVendor?.rentals?.map((rental) => (
-            <Card
-              key={rental.rental_id}
-              size="small"
-              style={{
-                marginBottom: '16px',
-                borderRadius: '8px',
-                border: '1px solid #d9d9d9',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
-              }}
-            >
-              <Row gutter={16}>
-                <Col span={8}>
-                  <div style={{ marginBottom: '12px' }}>
-                    <Text strong style={{ fontSize: '14px', color: '#262626' }}>
-                      <ShopOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
-                      Stall Information
-                    </Text>
-                    <div style={{ marginTop: '8px' }}>
-                      <div style={{ marginBottom: '4px' }}>
-                        <Text style={{ fontSize: '16px', color: '#262626' }} type="secondary">Section Name & Stall Number:</Text>
-                        <div style={{ fontWeight: 500, marginTop: '2px' }}>
-                          {rental.section_name} - {rental.stall_number}
-                        </div>
-                      </div>
-                      <div style={{ marginBottom: '4px' }}>
-                        <Text style={{ fontSize: '16px', color: '#262626' }} type="secondary">Status:</Text>
-                        <div style={{ marginTop: '2px' }}>
-                          <Tag color={getStatusColor(rental.status)} style={{ borderRadius: '6px' }}>
-                            {rental.status}
-                          </Tag>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Col>
-                <Col span={8}>
-                  <div style={{ marginBottom: '12px' }}>
-                    <Text strong style={{ fontSize: '14px', color: '#262626' }}>
-                      <MoneyCollectOutlined style={{ marginRight: '8px', color: '#52c41a' }} />
-                      Payment Details
-                    </Text>
-                    <div style={{ marginTop: '8px' }}>
-                      <div style={{ marginBottom: '4px' }}>
-                        <Text style={{ fontSize: '16px', color: '#262626' }} type="secondary">Daily Rent:</Text>
-                        <div style={{ fontWeight: 500, marginTop: '2px' }}>
-                          {fmtMoney(rental.daily_rent)}
-                        </div>
-                      </div>
-                      <div style={{ marginBottom: '4px' }}>
-                        <Text style={{ fontSize: '16px', color: '#262626' }} type="secondary">Monthly Rent:</Text>
-                        <div style={{ fontWeight: 500, marginTop: '2px' }}>
-                          {fmtMoney(rental.monthly_rent)}
-                        </div>
-                      </div>
-                      <div style={{ marginBottom: '4px' }}>
-                        <Text style={{ fontSize: '16px', color: '#262626' }} type="secondary">Current Month Balance:</Text>
-                        <div style={{
-                          fontWeight: 'bold',
-                          marginTop: '2px',
-                          color: '#ff4d4f'
-                        }}>
-                          {(() => {
-                            const currentMonth = new Date().getMonth();
-                            const monthlyBalances = rental.monthly_balances || [];
-                            const currentMonthBalance = monthlyBalances[currentMonth]?.balance || 0;
-                            return fmtMoney(currentMonthBalance);
-                          })()}
-                        </div>
-                      </div>
-                      <div style={{ marginBottom: '4px' }}>
-                        <Text style={{ fontSize: '16px', color: '#262626' }} type="secondary">Section:</Text>
-                        <div style={{ fontWeight: 500, marginTop: '2px' }}>
-                          <Tag color="blue" style={{ borderRadius: '6px' }}>
-                            {rental.section_name}
-                          </Tag>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Col>
-                <Col span={8}>
-                  <div style={{ marginBottom: '12px' }}>
-                    <Text strong style={{ fontSize: '14px', color: '#262626' }}>
-                      <CalendarTwoTone style={{ marginRight: '8px', color: '#722ed1' }} />
-                      Payment Information
-                    </Text>
-                    <div style={{ marginTop: '8px' }}>
-                      <div style={{ marginBottom: '4px' }}>
-                        <Text style={{ fontSize: '16px', color: '#262626' }} type="secondary">Missed Days:</Text>
-                        <div style={{ fontWeight: 500, marginTop: '2px' }}>
-                          {rental.missed_days} days
-                        </div>
-                      </div>
-                      <div style={{ marginBottom: '4px' }}>
-                        <Text style={{ fontSize: '16px', color: '#262626' }} type="secondary">Next Due Date:</Text>
-                        <div style={{ fontWeight: 500, marginTop: '2px' }}>
-                          {rental.next_due_date ? fmtDate(rental.next_due_date) : 'Not set'}
-                        </div>
-                      </div>
-                      <div style={{ marginBottom: '4px' }}>
-                        <Text style={{ fontSize: '16px', color: '#262626' }} type="secondary">Paid Today:</Text>
-                        <div style={{ marginTop: '2px' }}>
-                          {rental.paid_today ? (
-                            <Tag color="green" icon={<CheckCircleOutlined />} style={{ borderRadius: '6px' }}>
-                              Yes
-                            </Tag>
-                          ) : (
-                            <Tag color="default" style={{ borderRadius: '6px' }}>
-                              No
-                            </Tag>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Col>
-              </Row>
-              {rental.missed_days > 0 && (
-                <div style={{
-                  marginTop: '12px',
-                  padding: '8px 12px',
-                  backgroundColor: '#fff2f0',
-                  borderRadius: '6px',
-                  border: '1px solid #ffccc7'
-                }}>
-                  <Text type="secondary" style={{ fontSize: '15px', color: 'black' }}>
-                    <ExclamationCircleOutlined style={{ marginRight: '4px', color: '#ff4d4f' }} />
-                    This stall has {rental.missed_days} missed day(s) with total missed amount of {fmtMoney(rental.missed_days * rental.daily_rent)}
-                  </Text>
-                </div>
-              )}
-            </Card>
-          ))}
-        </div>
-      </Modal>
 
       {/* Bulk Payment Modal */}
       <Modal
@@ -2695,14 +2403,7 @@ const VendorPaymentManagement = () => {
             loading={processingPayment}
             disabled={!selectedPaymentForDeposit || !orNumber.trim() || selectedRentals.length === 0}
             onClick={async () => {
-              console.log('Selected payment:', selectedPaymentForDeposit);
-              console.log('Has deposit:', selectedPaymentForDeposit?.has_deposit);
-              console.log('Button disabled conditions:', {
-                noPayment: !selectedPaymentForDeposit,
-                noOrNumber: !orNumber.trim(),
-                noRentals: selectedRentals.length === 0,
-                noDeposit: !selectedPaymentForDeposit?.has_deposit
-              });
+         
               if (!selectedPaymentForDeposit) {
                 message.error('Please select a payment to consume deposit from');
                 return;
@@ -2751,9 +2452,7 @@ const VendorPaymentManagement = () => {
                   custom_amount: amountToConsume,
                 };
 
-                console.log('Payment data being sent to deployed backend:', paymentData);
-                console.log('Selected payment details:', selectedPaymentForDeposit);
-
+             
                 const response = await api.post(`/vendor-payments/consume-deposit/${selectedVendor.id}`, paymentData);
                 
                 if (response.data.success) {

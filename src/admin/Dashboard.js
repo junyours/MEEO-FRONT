@@ -69,6 +69,13 @@ import StallRateDashboard from "./StallRateDashboard";
 
 import PaymentManagement from "./PaymentManagement";
 
+// Event Management Components
+import EventActivityManagement from "./EventActivityManagement";
+import EventStallManagement from "./EventStallManagement";
+import EventPaymentManagement from "./EventPaymentManagement";
+import EventVendorManagement from "./EventVendorManagement";
+import EventSalesReporting from "./EventSalesReporting";
+
 import {
   ResponsiveContainer,
   BarChart,
@@ -110,7 +117,13 @@ const AdminDashboard = () => {
       'rental-report': 'rental-report',
       'estimated_collection': 'estimated_collection',
       'market-open-space-collections': 'market-open-space-collections',
-      'profile': 'profile'
+      'profile': 'profile',
+      // Event Management Routes
+      'event-activities': 'event-activities',
+      'event-stalls': 'event-stalls',
+      'event-payments': 'event-payments',
+      'event-vendors': 'event-vendors',
+      'event-sales-reports': 'event-sales-reports'
     };
     
     return pathToScreenMap[lastSegment] || 'dashboard';
@@ -321,7 +334,7 @@ const AdminDashboard = () => {
   const renderDashboard = () => (
     <div
       style={{
-        padding: "24px",
+        padding: window.innerWidth < 768 ? "16px" : window.innerWidth < 1024 ? "20px" : "24px",
         maxWidth: "100%",
         margin: "0 auto",
         background: backgroundColor,
@@ -331,12 +344,12 @@ const AdminDashboard = () => {
       {/* Header */}
       <div
         style={{
-          marginBottom: 32,
+          marginBottom: window.innerWidth < 768 ? 24 : 32,
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: window.innerWidth < 768 ? "center" : "space-between",
           alignItems: "center",
           flexWrap: "wrap",
-          gap: 16,
+          gap: window.innerWidth < 768 ? 12 : 16,
         }}
       >
         <div>
@@ -346,95 +359,98 @@ const AdminDashboard = () => {
               margin: 0,
               color: textPrimary,
               fontWeight: 600,
-              fontSize: 28,
+              fontSize: window.innerWidth < 768 ? 24 : window.innerWidth < 1024 ? 26 : 28,
               marginBottom: 4,
             }}
           >
-            Dashboard Overview
+            {window.innerWidth < 768 ? 'Dashboard' : 'Dashboard Overview'}
           </Title>
-          <Text style={{ color: textSecondary, fontSize: 14 }}>
-            Municipal Economic Enterprise Office - Market Management System
-          </Text>
+          {window.innerWidth >= 768 && (
+            <Text style={{ color: textSecondary, fontSize: 14 }}>
+              Municipal Economic Enterprise Office - Market Management System
+            </Text>
+          )}
         </div>
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 12,
+            gap: window.innerWidth < 768 ? 8 : 12,
             background: cardBackground,
-            padding: "12px 16px",
+            padding: window.innerWidth < 768 ? "10px 12px" : "12px 16px",
             borderRadius: 8,
             border: "1px solid #e2e8f0",
             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
-          <FiCalendar style={{ color: primaryColor, fontSize: 16 }} />
-          <Text style={{ color: textSecondary, fontSize: 14, fontWeight: 500 }}>
-            {new Date().getFullYear()}
-          </Text>
+          <FiCalendar style={{ color: primaryColor, fontSize: window.innerWidth < 768 ? 14 : 16 }} />
+          {window.innerWidth >= 768 && (
+            <Text style={{ color: textSecondary, fontSize: window.innerWidth < 768 ? 12 : 14, fontWeight: 500 }}>
+              {new Date().getFullYear()}
+            </Text>
+          )}
         </div>
       </div>
 
       {/* Statistics Overview */}
-      <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
-        <Col xs={24} sm={12} lg={6}>
+      <Row gutter={window.innerWidth < 768 ? [16, 16] : [24, 24]} style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
+        <Col xs={24} sm={12} md={8} lg={6} xl={4}>
           <StatCard
             title="Available Stalls"
             value={stats.availableStalls}
             icon={<FaStore />}
             color="#10b981"
             targetView="market-section-stalls"
-            subtitle="total available"
+            subtitle={window.innerWidth < 768 ? "Available" : "total available"}
           />
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} md={8} lg={6} xl={4}>
           <StatCard
             title="Rented Stalls"
             value={stats.rentedStalls}
             icon={<FaStore />}
             color="#f59e0b"
             targetView="market-section-stalls"
-            subtitle="currently occupied"
+            subtitle={window.innerWidth < 768 ? "Rented" : "currently occupied"}
           />
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} md={8} lg={6} xl={4}>
           <StatCard
             title="Active Vendors"
             value={stats.vendors}
             icon={<FaUsers />}
             color="#3b82f6"
             targetView="vendor-management"
-            subtitle="registered vendors"
+            subtitle={window.innerWidth < 768 ? "Vendors" : "registered vendors"}
           />
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} md={8} lg={6} xl={4}>
           <StatCard
             title="Active Rentals"
             value={stats.rentedStalls}
             icon={<FaClipboardList />}
             color="#8b5cf6"
             targetView="vendor-management"
-            subtitle="active contracts"
+            subtitle={window.innerWidth < 768 ? "Rentals" : "active contracts"}
           />
         </Col>
       </Row>
 
       {/* Revenue Overview */}
-      <div style={{ marginBottom: 32 }}>
+      <div style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
         <Title
           level={3}
           style={{
             margin: 0,
             color: textPrimary,
-            fontWeight: 600,
-            fontSize: 20,
-            marginBottom: 16,
+            marginBottom: window.innerWidth < 768 ? 12 : 16,
+            fontSize: window.innerWidth < 768 ? 20 : 24,
           }}
         >
-         Revenue Projections Analytics
+         {window.innerWidth < 768 ? 'Revenue Analytics' : 'Revenue Projections Analytics'}
         </Title>
       </div>
-      <Row gutter={[20, 20]} style={{ marginBottom: 32 }}>
+      <Row gutter={window.innerWidth < 768 ? [16, 16] : [20, 20]} style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card
             hoverable
@@ -725,18 +741,17 @@ const AdminDashboard = () => {
       </Row>
 
       {/* Performance Analytics */}
-      <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
-        <Col xs={24} lg={16}>
+      <Row gutter={window.innerWidth < 768 ? [16, 16] : [24, 24]} style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
+        <Col xs={24} lg={16} xl={12}>
           <Card
             hoverable
+            title={window.innerWidth < 768 ? 'Performance' : 'Performance Analytics'}
             style={{
-              borderRadius: 12,
-              border: "1px solid #e2e8f0",
-              background: cardBackground,
               height: "100%",
+              background: cardBackground,
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
-            bodyStyle={{ padding: 24 }}
+            bodyStyle={{ padding: window.innerWidth < 768 ? 16 : 24 }}
           >
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
@@ -999,7 +1014,7 @@ const AdminDashboard = () => {
       </Row>
 
       {/* Financial Summary */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
+      <Row gutter={window.innerWidth < 768 ? [12, 12] : [16, 16]} style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card
             hoverable
@@ -1220,22 +1235,20 @@ const AdminDashboard = () => {
       </Row>
 
       {/* Section Statistics and Department Income */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
-        <Col xs={24} lg={12}>
+      <Row gutter={window.innerWidth < 768 ? [12, 12] : [16, 16]} style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
+        <Col xs={24} lg={12} xl={8}>
           <Card
             title={
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <FaChartLine style={{ color: primaryColor }} />
-                <span>Section Performance Overview</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <FiPieChart style={{ color: primaryColor, fontSize: window.innerWidth < 768 ? 14 : 16 }} />
+                <Text strong style={{ fontSize: window.innerWidth < 768 ? 14 : 16 }}>{window.innerWidth < 768 ? 'Sections' : 'Section Statistics'}</Text>
               </div>
             }
             style={{
-              borderRadius: 12,
-              border: "1px solid #e2e8f0",
               background: cardBackground,
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
-            bodyStyle={{ padding: 16 }}
+            bodyStyle={{ padding: window.innerWidth < 768 ? 12 : 16 }}
           >
             <div style={{ maxHeight: 400, overflowY: "auto" }}>
               {sectionStats.map((section, index) => (
@@ -1487,6 +1500,22 @@ case "stall-rate-dashboard":
 
 case "payment-management":
   return <PaymentManagement />;
+
+    // Event Management Screens
+    case "event-activities":
+      return <EventActivityManagement />;
+    
+    case "event-stalls":
+      return <EventStallManagement />;
+    
+    case "event-payments":
+      return <EventPaymentManagement />;
+    
+    case "event-vendors":
+      return <EventVendorManagement />;
+    
+    case "event-sales-reports":
+      return <EventSalesReporting />;
 
     default:
       return renderDashboard();

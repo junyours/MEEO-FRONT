@@ -166,7 +166,7 @@
           yearlyTotal += d.total_amount;
 
           const parsed = dayjs(d.day_label.replace(/\(.+\)\s/, ""), "MMM D");
-          if (parsed.isValid()) {
+          if (parsed && parsed.isValid()) {
             const fullDate = parsed.year(dayjs().year()).format("YYYY-MM-DD");
 
             if (fullDate === todayStr) todayTotal += d.total_amount;

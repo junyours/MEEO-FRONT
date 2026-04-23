@@ -62,7 +62,7 @@ import {
 
   DollarOutlined,
 
-  CalendarOutlined,
+  
 
   UserAddOutlined,
 
@@ -77,6 +77,14 @@ import {
   LineChartOutlined,
 
   ShoppingOutlined,
+
+  CalendarOutlined,
+
+  DollarCircleOutlined,
+
+  TeamOutlined,
+
+  
 
 } from "@ant-design/icons";
 
@@ -257,6 +265,19 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
 
       ],
 
+    },
+
+    {
+      key: "events",
+      icon: <CalendarOutlined />,
+      label: "Event Management",
+      children: [
+        { key: "event-activities", label: "Activities", icon: <CalendarOutlined /> },
+        { key: "event-stalls", label: "Event Stalls", icon: <ShopOutlined /> },
+        { key: "event-vendors", label: "Event Vendors", icon: <TeamOutlined /> },
+        { key: "event-payments", label: "Event Payments", icon: <DollarCircleOutlined /> },
+        { key: "event-sales-reports", label: "Sales Reports", icon: <BarChartOutlined /> },
+      ],
     },
 
   ];

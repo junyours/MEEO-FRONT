@@ -491,7 +491,11 @@ const CashTicketManagement = () => {
         render: (_, record) => (
           <Tooltip title={canEdit(record.date) ? "Edit Today's Collections" : "Cannot edit - not today"}>
             <Button
-              type="primary"
+              style={{
+                backgroundColor: 'white',
+                color: 'black',
+                borderColor: 'black'
+              }}
               size="small"
               icon={<EditOutlined />}
               className={canEdit(record.date) ? "btn-edit" : "btn-disabled"}
@@ -503,6 +507,16 @@ const CashTicketManagement = () => {
                 }
               }}
               disabled={!canEdit(record.date)}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f0f0f0';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = 'black';
+              }}
             >
               Edit
             </Button>
@@ -535,26 +549,68 @@ const CashTicketManagement = () => {
             </div>
             <div className="header-actions">
               <Button
+                style={{
+                  backgroundColor: 'white',
+                  color: 'black',
+                  borderColor: 'black'
+                }}
                 icon={<ReloadOutlined />}
                 onClick={() => {
                   fetchCashTicketTypes();
                   fetchData();
                 }}
-                className="btn-secondary"
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f0f0f0';
+                  e.target.style.color = 'black';
+                  e.target.style.borderColor = '#404040';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'white';
+                  e.target.style.color = 'black';
+                  e.target.style.borderColor = 'black';
+                }}
               >
                 Refresh
               </Button>
               <Button
+                style={{
+                  backgroundColor: 'white',
+                  color: 'black',
+                  borderColor: 'black'
+                }}
                 icon={<PlusOutlined />}
                 onClick={() => openTypeModal()}
-                className="btn-primary"
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f0f0f0';
+                  e.target.style.color = 'black';
+                  e.target.style.borderColor = '#404040';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'white';
+                  e.target.style.color = 'black';
+                  e.target.style.borderColor = 'black';
+                }}
               >
                 Add Type
               </Button>
               <Button
+                style={{
+                  backgroundColor: 'white',
+                  color: 'black',
+                  borderColor: 'black'
+                }}
                 icon={<FilePdfOutlined />}
                 onClick={exportToPDF}
-                className="btn-danger"
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f0f0f0';
+                  e.target.style.color = 'black';
+                  e.target.style.borderColor = '#404040';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'white';
+                  e.target.style.color = 'black';
+                  e.target.style.borderColor = 'black';
+                }}
               >
                 Export PDF
               </Button>
@@ -766,10 +822,45 @@ const CashTicketManagement = () => {
           <Divider />
           
           <div className="form-actions">
-            <Button onClick={() => setIsTypeModalVisible(false)}>
+            <Button 
+              style={{
+                backgroundColor: 'white',
+                color: 'black',
+                borderColor: 'black'
+              }}
+              onClick={() => setIsTypeModalVisible(false)}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f0f0f0';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = 'black';
+              }}
+            >
               Cancel
             </Button>
-            <Button type="primary" htmlType="submit" className="btn-primary">
+            <Button 
+              style={{
+                backgroundColor: 'white',
+                color: 'black',
+                borderColor: 'black'
+              }}
+              htmlType="submit" 
+              className="btn-primary"
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f0f0f0';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = 'black';
+              }}
+            >
               {editingType ? "Update" : "Create"}
             </Button>
           </div>
@@ -820,10 +911,45 @@ const CashTicketManagement = () => {
           <Divider />
           
           <div className="form-actions">
-            <Button onClick={() => setIsPaymentModalVisible(false)}>
+            <Button 
+              style={{
+                backgroundColor: 'white',
+                color: 'black',
+                borderColor: 'black'
+              }}
+              onClick={() => setIsPaymentModalVisible(false)}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f0f0f0';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = 'black';
+              }}
+            >
               Cancel
             </Button>
-            <Button type="primary" htmlType="submit" className="btn-primary">
+            <Button 
+              style={{
+                backgroundColor: 'white',
+                color: 'black',
+                borderColor: 'black'
+              }}
+              htmlType="submit" 
+              className="btn-primary"
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f0f0f0';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = 'black';
+              }}
+            >
               Save Collections
             </Button>
           </div>

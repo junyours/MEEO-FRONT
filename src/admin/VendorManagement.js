@@ -443,20 +443,46 @@ useEffect(() => {
         <div className={`${cssClasses.tableSection}-actions`}>
           <Tooltip title="View Details">
             <Button
-              type="text"
+              style={{
+                backgroundColor: 'white',
+                color: 'black',
+                borderColor: 'black'
+              }}
               size="small"
               icon={<EyeOutlined />}
               onClick={() => handleViewVendor(record)}
               className={`${cssClasses.button} ${cssClasses.button}-view`}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f0f0f0';
+                e.target.style.borderColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = 'black';
+              }}
             />
           </Tooltip>
           <Tooltip title="Edit Vendor">
             <Button
-              type="text"
+              style={{
+                backgroundColor: 'white',
+                color: 'black',
+                borderColor: 'black'
+              }}
               size="small"
               icon={<EditOutlined />}
               onClick={() => handleEditVendor(record)}
               className={`${cssClasses.button} ${cssClasses.button}-edit`}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f0f0f0';
+                e.target.style.borderColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = 'black';
+              }}
             />
           </Tooltip>
           <Tooltip title="Delete Vendor">
@@ -469,10 +495,23 @@ useEffect(() => {
               okButtonProps={{ danger: true }}
             >
               <Button
-                type="text"
+                style={{
+                  backgroundColor: 'white',
+                  color: 'black',
+                  borderColor: 'black'
+                }}
                 size="small"
                 icon={<DeleteOutlined />}
                 className={`${cssClasses.button} ${cssClasses.button}-delete`}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f0f0f0';
+                  e.target.style.borderColor = '#404040';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'white';
+                  e.target.style.color = 'black';
+                  e.target.style.borderColor = 'black';
+                }}
               />
             </Popconfirm>
           </Tooltip>
@@ -496,10 +535,23 @@ useEffect(() => {
             </p>
           </div>
           <Button
-            type="primary"
+            style={{
+              backgroundColor: 'white',
+              color: 'black',
+              borderColor: 'black'
+            }}
             icon={<PlusOutlined />}
             onClick={handleAddVendor}
             className={`${cssClasses.buttonPrimary}`}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#f0f0f0';
+              e.target.style.borderColor = '#404040';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'white';
+              e.target.style.color = 'black';
+              e.target.style.borderColor = 'black';
+            }}
           >
             Add New Vendor
           </Button>
@@ -604,25 +656,67 @@ useEffect(() => {
             </Select>
             
             <Button
+              style={{
+                backgroundColor: 'white',
+                color: 'black',
+                borderColor: 'black'
+              }}
               icon={<ReloadOutlined />}
               onClick={() => fetchVendors()}
               className={cssClasses.button}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f0f0f0';
+                e.target.style.borderColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = 'black';
+              }}
             >
               Refresh
             </Button>
             
             <Button
+              style={{
+                backgroundColor: 'white',
+                color: 'black',
+                borderColor: 'black'
+              }}
               icon={<FilePdfOutlined />}
               onClick={handleExportPDF}
               className={`${cssClasses.button} ${cssClasses.button}-pdf`}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f0f0f0';
+                e.target.style.borderColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = 'black';
+              }}
             >
               Export PDF
             </Button>
             
             <Button
+              style={{
+                backgroundColor: 'white',
+                color: 'black',
+                borderColor: 'black'
+              }}
               icon={<FilterOutlined />}
               onClick={handleReset}
               className={cssClasses.button}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f0f0f0';
+                e.target.style.borderColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = 'black';
+              }}
             >
               Reset
             </Button>
@@ -785,18 +879,45 @@ useEffect(() => {
 
           <div className={`${cssClasses.modal}-form-actions`}>
             <Button 
+              style={{
+                backgroundColor: 'white',
+                color: 'black',
+                borderColor: 'black'
+              }}
               size="large"
               onClick={() => setModalVisible(false)}
               className={cssClasses.button}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f0f0f0';
+                e.target.style.borderColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = 'black';
+              }}
             >
               Cancel
             </Button>
             <Button 
-              type="primary" 
+              style={{
+                backgroundColor: 'white',
+                color: 'black',
+                borderColor: 'black'
+              }}
               htmlType="submit" 
               loading={loading}
               size="large"
               className={cssClasses.buttonPrimary}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f0f0f0';
+                e.target.style.borderColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.color = 'black';
+                e.target.style.borderColor = 'black';
+              }}
             >
               {editingVendor ? 'Update Vendor' : 'Create Vendor'}
             </Button>
@@ -825,6 +946,20 @@ useEffect(() => {
             size="large"
             onClick={() => setDetailModalVisible(false)}
             className={cssClasses.button}
+            style={{
+              backgroundColor: 'white',
+              color: 'black',
+              borderColor: 'black'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#f0f0f0';
+              e.target.style.borderColor = '#404040';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'white';
+              e.target.style.color = 'black';
+              e.target.style.borderColor = 'black';
+            }}
           >
             Close
           </Button>

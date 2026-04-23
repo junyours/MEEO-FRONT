@@ -1,0 +1,284 @@
+/* Event Activity Management - Ant Design Enhanced Styles */
+.event-activity-management {
+    padding: 24px;
+    background: #f5f5f5;
+    min-height: 100vh;
+}
+
+/* Tablet Styles */
+@media (max-width: 1024px) {
+    .event-activity-management {
+        padding: 16px;
+    }
+    
+    .ant-card-head-title {
+        font-size: 14px;
+    }
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+    .event-activity-management {
+        padding: 10px;
+    }
+    
+    .ant-card {
+        margin-bottom: 12px;
+    }
+    
+    .ant-card-head-title {
+        font-size: 12px;
+    }
+    
+    .ant-card-actions > li > span {
+        padding: 4px 8px;
+    }
+}
+
+/* Small Mobile Styles */
+@media (max-width: 480px) {
+    .event-activity-management {
+        padding: 5px;
+    }
+    
+    .ant-card {
+        margin-bottom: 8px;
+    }
+    
+    .ant-card-head-title {
+        font-size: 11px;
+    }
+    
+    .ant-card-actions > li > span {
+        padding: 2px 6px;
+    }
+}
+
+/* Custom card hover effects */
+.ant-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+}
+
+.ant-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+/* Card title styling */
+.ant-card-head-title {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+/* Action buttons styling */
+.ant-card-actions > li > span {
+    transition: all 0.3s ease;
+}
+
+.ant-card-actions > li > span:hover {
+    transform: scale(1.1);
+}
+
+/* Status tag styling */
+.ant-tag {
+    font-weight: 500;
+    border-radius: 12px;
+    padding: 2px 8px;
+}
+
+/* Statistic styling */
+.ant-statistic-title {
+    font-size: 12px;
+    color: #8c8c8c;
+    font-weight: 500;
+}
+
+.ant-statistic-content {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Modal enhancements */
+.ant-modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px 8px 0 0;
+}
+
+.ant-modal-title {
+    color: white;
+    font-weight: 600;
+}
+
+.ant-modal-close {
+    color: white;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.ant-modal-close:hover {
+    opacity: 1;
+}
+
+/* Form styling */
+.ant-form-item-label > label {
+    font-weight: 500;
+    color: #262626;
+}
+
+/* Button enhancements */
+.ant-btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.ant-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ant-btn-primary {
+    background: linear-gradient(135deg, #1890ff, #096dd9);
+    border: none;
+}
+
+.ant-btn-primary:hover {
+    background: linear-gradient(135deg, #40a9ff, #1890ff);
+}
+
+/* Input styling */
+.ant-input-affix-wrapper {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.ant-input-affix-wrapper:hover {
+    border-color: #40a9ff;
+}
+
+.ant-input-affix-wrapper:focus {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* Select styling */
+.ant-select-selector {
+    border-radius: 8px !important;
+    transition: all 0.3s ease;
+}
+
+.ant-select-focused .ant-select-selector {
+    border-color: #1890ff !important;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+/* DatePicker styling */
+.ant-picker {
+    border-radius: 8px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.ant-picker:hover {
+    border-color: #40a9ff;
+}
+
+.ant-picker-focused {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* Loading overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .event-activity-management {
+        padding: 16px;
+    }
+    
+    .ant-card {
+        margin-bottom: 16px;
+    }
+    
+    .ant-modal {
+        margin: 16px;
+        max-width: calc(100vw - 32px);
+    }
+}
+
+@media (max-width: 480px) {
+    .event-activity-management {
+        padding: 12px;
+    }
+    
+    .ant-statistic-title {
+        font-size: 11px;
+    }
+    
+    .ant-statistic-content {
+        font-size: 14px;
+    }
+}
+
+/* Custom animations */
+@keyframes slideInUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.ant-card {
+    animation: slideInUp 0.5s ease-out;
+}
+
+/* Empty state styling */
+.ant-empty {
+    padding: 48px 24px;
+}
+
+.ant-empty-description {
+    color: #8c8c8c;
+    font-size: 14px;
+}
+
+/* Success message styling */
+.ant-message-success {
+    background: linear-gradient(135deg, #52c41a, #389e0d);
+    border-radius: 6px;
+}
+
+/* Error message styling */
+.ant-message-error {
+    background: linear-gradient(135deg, #ff4d4f, #cf1322);
+    border-radius: 6px;
+}
+
+/* Popconfirm styling */
+.ant-popconfirm-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.ant-popconfirm .ant-btn {
+    border-radius: 6px;
+}
