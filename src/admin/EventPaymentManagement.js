@@ -35,6 +35,9 @@ const EventPaymentManagement = () => {
     });
     const [availableStalls, setAvailableStalls] = useState([]);
     const [activityVendors, setActivityVendors] = useState([]);
+    const [activitiesLoading, setActivitiesLoading] = useState(false);
+    const [vendorsLoading, setVendorsLoading] = useState(false);
+    const [stallsLoading, setStallsLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterActivity, setFilterActivity] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
@@ -67,10 +70,13 @@ const EventPaymentManagement = () => {
 
     const fetchActivities = async () => {
         try {
+            setActivitiesLoading(true);
             const response = await api.get('/event-activities');
             setActivities(response.data.activities.data);
         } catch (error) {
             console.error('Error fetching activities:', error);
+        } finally {
+            setActivitiesLoading(false);
         }
     };
 
@@ -85,23 +91,27 @@ const EventPaymentManagement = () => {
 
     const fetchVendorsByActivity = async (activityId) => {
         try {
+            setVendorsLoading(true);
             const response = await api.get(`/event-payments/vendors/${activityId}`);
             setActivityVendors(response.data.vendors || []);
         } catch (error) {
             console.error('Error fetching vendors for activity:', error);
             setActivityVendors([]);
+        } finally {
+            setVendorsLoading(false);
         }
     };
 
     const fetchStallsByVendorAndActivity = async (activityId, vendorId) => {
         try {
-           
+            setStallsLoading(true);
             const response = await api.get(`/event-payments/stalls/${activityId}/${vendorId}`);
-           
             setAvailableStalls(response.data.stalls || []);
         } catch (error) {
             console.error('Error fetching stalls for vendor:', error);
             setAvailableStalls([]);
+        } finally {
+            setStallsLoading(false);
         }
     };
 
@@ -165,6 +175,26 @@ const EventPaymentManagement = () => {
         setEditingPayment(null);
         setAvailableStalls([]);
         setActivityVendors([]);
+        setActivitiesLoading(false);
+        setVendorsLoading(false);
+        setStallsLoading(false);
+    };
+
+    const getSelectedActivity = () => {
+        return activities.find(activity => activity.id === formData.activity_id);
+    };
+
+    const disabledDate = (current) => {
+        if (!current || !formData.activity_id) return false;
+        
+        const selectedActivity = getSelectedActivity();
+        if (!selectedActivity) return false;
+        
+        const startDate = moment(selectedActivity.start_date);
+        const endDate = moment(selectedActivity.end_date);
+        
+        // Disable dates before start date and after end date
+        return current && (current < startDate.startOf('day') || current > endDate.endOf('day'));
     };
 
     const filteredPayments = payments.filter(payment => {
@@ -471,13 +501,33 @@ const EventPaymentManagement = () => {
                     >
                         <Select
                             placeholder="Select Activity"
+                            loading={activitiesLoading}
                             onChange={(value) => {
-                                setFormData({
+                                const newFormData = {
                                     ...formData, 
                                     activity_id: value, 
                                     event_vendor_id: '',
                                     stall_id: ''
-                                });
+                                };
+                                
+                                // Reset payment date if it's outside the new activity's date range
+                                if (value && formData.payment_date) {
+                                    const selectedActivity = activities.find(activity => activity.id === value);
+                                    if (selectedActivity) {
+                                        const paymentDate = moment(formData.payment_date);
+                                        const startDate = moment(selectedActivity.start_date);
+                                        const endDate = moment(selectedActivity.end_date);
+                                        
+                                        if (paymentDate < startDate.startOf('day') || paymentDate > endDate.endOf('day')) {
+                                            newFormData.payment_date = '';
+                                        }
+                                    }
+                                } else if (!value) {
+                                    newFormData.payment_date = '';
+                                }
+                                
+                                setFormData(newFormData);
+                                
                                 if (value) {
                                     fetchVendorsByActivity(value);
                                 } else {
@@ -501,6 +551,7 @@ const EventPaymentManagement = () => {
                     >
                         <Select
                             placeholder="Select Vendor"
+                            loading={vendorsLoading}
                             onChange={(value) => {
                                
                                 setFormData({
@@ -515,6 +566,7 @@ const EventPaymentManagement = () => {
                                 }
                             }}
                             disabled={!formData.activity_id}
+                            notFoundContent={vendorsLoading ? "Loading vendors..." : "No vendors available for this activity"}
                         >
                             {activityVendors.map(vendor => (
                                 <Option key={vendor.id} value={vendor.id}>
@@ -531,8 +583,10 @@ const EventPaymentManagement = () => {
                     >
                         <Select
                             placeholder="Select Stall"
+                            loading={stallsLoading}
                             onChange={(value) => setFormData({...formData, stall_id: value})}
                             disabled={!formData.event_vendor_id}
+                            notFoundContent={stallsLoading ? "Loading stalls..." : "No stalls available for this vendor"}
                         >
                             {availableStalls.map(stall => (
                                 <Option key={stall.id} value={stall.id}>
@@ -570,6 +624,8 @@ const EventPaymentManagement = () => {
                                 <DatePicker
                                     style={{ width: '100%' }}
                                     onChange={(date, dateString) => setFormData({...formData, payment_date: dateString})}
+                                    disabledDate={disabledDate}
+                                    placeholder={formData.activity_id ? "Select payment date" : "Select activity first"}
                                 />
                             </Form.Item>
                         </Col>

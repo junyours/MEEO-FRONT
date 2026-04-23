@@ -126,18 +126,16 @@ const EventStallManagement = () => {
             // Fetch from event_vendors table since vendor_details is for market only
             const response = await api.get('/event-vendors');
         
-            
-            // Extract vendors from paginated response: response.data.vendors.data
+            // Extract vendors from response - now non-paginated
             let vendorsData = [];
-            if (response.data && response.data.vendors && Array.isArray(response.data.vendors.data)) {
-                vendorsData = response.data.vendors.data;
+            if (Array.isArray(response.data.vendors)) {
+                vendorsData = response.data.vendors;
             } else if (Array.isArray(response.data)) {
                 vendorsData = response.data;
             } else if (response.data && Array.isArray(response.data.data)) {
                 vendorsData = response.data.data;
             }
             
-         
             setVendors(vendorsData);
         } catch (error) {
             console.error('Error fetching event vendors:', error);
@@ -773,9 +771,12 @@ const EventStallManagement = () => {
                             <Select
                                 placeholder="Choose a vendor"
                                 showSearch
-                                filterOption={(input, option) =>
-                                    option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                                }
+                                filterOption={(input, option) => {
+                                    const vendor = vendors.find(v => v.id === option.value);
+                                    if (!vendor) return false;
+                                    const fullName = `${vendor.first_name || ''} ${vendor.middle_name || ''} ${vendor.last_name || ''}`.trim();
+                                    return fullName.toLowerCase().includes(input.toLowerCase());
+                                }}
                             >
                                 {!Array.isArray(vendors) || vendors.length === 0 ? (
                                     <Select.Option disabled>No vendors available</Select.Option>

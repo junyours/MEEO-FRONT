@@ -469,7 +469,7 @@ const AvailableProducts = () => {
                     >
                       <div style={{
                         ...styles.card.categoryHeader,
-                        backgroundImage: `url(${category.image || '/placeholder-category.jpg'})`
+                        backgroundImage: `url(${category.image })`
                       }}>
                         <div style={styles.card.categoryOverlay}>
                           <div style={{ ...styles.card.icon, color: category.color }}>
@@ -535,7 +535,7 @@ const AvailableProducts = () => {
                           >
                             <div style={{
                               ...styles.card.productHeader,
-                              backgroundImage: `url(${product.image || '/placeholder-product.jpg'})`,
+                              backgroundImage: `url(${product.image })`,
                               backgroundSize: "cover",
                               backgroundPosition: "center"
                             }}>
@@ -547,7 +547,7 @@ const AvailableProducts = () => {
                               <div style={styles.card.productItem}>
                                 <div style={styles.card.productInfo}>
                                   <img
-                                    src={product.image || '/placeholder-product.jpg'}
+                                    src={product.image }
                                     alt={product.name}
                                     style={styles.card.productImage}
                                   />

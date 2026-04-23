@@ -93,7 +93,7 @@ const Homepage = () => {
     api
       .get("/sections/available-stalls")
       .then((res) => {
-        console.log('API Response:', res); // Debug log
+        
         setSections(res.data.data || res.data || []); // Handle nested data structure
         setLoading(false);
       })

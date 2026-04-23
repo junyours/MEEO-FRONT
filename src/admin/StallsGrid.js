@@ -858,9 +858,12 @@ const AssignVendorForm = ({ stall, vendors, activity, onSuccess }) => {
                     onChange={(value) => setFormData({...formData, vendor_id: value})}
                     placeholder="Choose a vendor..."
                     showSearch
-                    filterOption={(input, option) =>
-                        option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                    }
+                    filterOption={(input, option) => {
+                        const vendor = vendors.find(v => v.id === option.value);
+                        if (!vendor) return false;
+                        const fullName = `${vendor.first_name || ''} ${vendor.middle_name || ''} ${vendor.last_name || ''}`.trim();
+                        return fullName.toLowerCase().includes(input.toLowerCase());
+                    }}
                 >
                     {vendors.map(vendor => (
                         <Select.Option key={vendor.id} value={vendor.id}>
