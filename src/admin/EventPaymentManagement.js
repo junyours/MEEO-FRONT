@@ -38,10 +38,12 @@ const EventPaymentManagement = () => {
     const [activitiesLoading, setActivitiesLoading] = useState(false);
     const [vendorsLoading, setVendorsLoading] = useState(false);
     const [stallsLoading, setStallsLoading] = useState(false);
+    const [form] = Form.useForm();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterActivity, setFilterActivity] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
+    const [existingPaymentDates, setExistingPaymentDates] = useState([]);
 
     useEffect(() => {
         fetchPayments();
@@ -60,7 +62,7 @@ const EventPaymentManagement = () => {
             if (dateRange.to) params.append('date_to', dateRange.to);
             
             const response = await api.get(`/event-payments?${params.toString()}`);
-            setPayments(response.data.payments.data);
+            setPayments(response.data.payments || []);
         } catch (error) {
             console.error('Error fetching payments:', error);
         } finally {
@@ -72,7 +74,7 @@ const EventPaymentManagement = () => {
         try {
             setActivitiesLoading(true);
             const response = await api.get('/event-activities');
-            setActivities(response.data.activities.data);
+            setActivities(response.data.activities || []);
         } catch (error) {
             console.error('Error fetching activities:', error);
         } finally {
@@ -83,7 +85,7 @@ const EventPaymentManagement = () => {
     const fetchVendors = async () => {
         try {
             const response = await api.get('/event-vendors');
-            setVendors(response.data.vendors?.data || []);
+            setVendors(response.data.vendors || []);
         } catch (error) {
             console.error('Error fetching vendors:', error);
         }
@@ -115,16 +117,40 @@ const EventPaymentManagement = () => {
         }
     };
 
+    const fetchExistingPaymentDates = async (activityId, vendorId, stallId) => {
+        if (!activityId || !vendorId || !stallId) {
+            setExistingPaymentDates([]);
+            return;
+        }
+
+        try {
+            const params = new URLSearchParams({
+                activity_id: activityId,
+                event_vendor_id: vendorId,
+                stall_id: stallId
+            });
+            
+            const response = await api.get(`/event-payments/existing-dates?${params.toString()}`);
+            setExistingPaymentDates(response.data.existing_dates || []);
+        } catch (error) {
+            console.error('Error fetching existing payment dates:', error);
+            setExistingPaymentDates([]);
+        }
+    };
+
     const handleSubmit = async (values) => {
         try {
             if (editingPayment) {
                 await api.put(`/event-payments/${editingPayment.id}`, values);
+                fetchPayments();
+                resetForm();
+                setShowModal(false);
             } else {
                 await api.post('/event-payments', values);
+                fetchPayments();
+                resetForm();
+                setShowModal(false);
             }
-            fetchPayments();
-            resetForm();
-            setShowModal(false);
         } catch (error) {
             console.error('Error saving payment:', error);
         }
@@ -141,6 +167,12 @@ const EventPaymentManagement = () => {
             or_number: payment.or_number
         };
         setFormData(formDataValues);
+        
+        // Fetch existing payment dates for the current selection
+        if (payment.activity_id && payment.event_vendor_id && payment.stall_id) {
+            fetchExistingPaymentDates(payment.activity_id, payment.event_vendor_id, payment.stall_id);
+        }
+        
         setShowModal(true);
     };
 
@@ -175,9 +207,12 @@ const EventPaymentManagement = () => {
         setEditingPayment(null);
         setAvailableStalls([]);
         setActivityVendors([]);
+        setExistingPaymentDates([]);
         setActivitiesLoading(false);
         setVendorsLoading(false);
         setStallsLoading(false);
+        // Reset Ant Design Form
+        form.resetFields();
     };
 
     const getSelectedActivity = () => {
@@ -194,7 +229,21 @@ const EventPaymentManagement = () => {
         const endDate = moment(selectedActivity.end_date);
         
         // Disable dates before start date and after end date
-        return current && (current < startDate.startOf('day') || current > endDate.endOf('day'));
+        const outsideRange = current && (current < startDate.startOf('day') || current > endDate.endOf('day'));
+        
+        // Check if this date already has a payment for the same activity, vendor, and stall
+        const currentDateStr = current.format('YYYY-MM-DD');
+        const hasExistingPayment = existingPaymentDates.includes(currentDateStr);
+        
+        // For editing, allow the original payment date
+        if (editingPayment && editingPayment.payment_date) {
+            const originalDateStr = moment(editingPayment.payment_date).format('YYYY-MM-DD');
+            if (currentDateStr === originalDateStr) {
+                return outsideRange;
+            }
+        }
+        
+        return outsideRange || hasExistingPayment;
     };
 
     const filteredPayments = payments.filter(payment => {
@@ -487,6 +536,7 @@ const EventPaymentManagement = () => {
                 width={600}
             >
                 <Form
+                    form={form}
                     onFinish={handleSubmit}
                     layout="vertical"
                     initialValues={{
@@ -528,6 +578,9 @@ const EventPaymentManagement = () => {
                                 
                                 setFormData(newFormData);
                                 
+                                // Clear existing payment dates when activity changes
+                                setExistingPaymentDates([]);
+                                
                                 if (value) {
                                     fetchVendorsByActivity(value);
                                 } else {
@@ -559,6 +612,8 @@ const EventPaymentManagement = () => {
                                     event_vendor_id: value,
                                     stall_id: ''
                                 });
+                                // Clear existing payment dates when vendor changes
+                                setExistingPaymentDates([]);
                                 if (value && formData.activity_id) {
                                     fetchStallsByVendorAndActivity(formData.activity_id, value);
                                 } else {
@@ -584,7 +639,15 @@ const EventPaymentManagement = () => {
                         <Select
                             placeholder="Select Stall"
                             loading={stallsLoading}
-                            onChange={(value) => setFormData({...formData, stall_id: value})}
+                            onChange={(value) => {
+                                setFormData({...formData, stall_id: value});
+                                // Fetch existing payment dates when stall is selected
+                                if (value && formData.activity_id && formData.event_vendor_id) {
+                                    fetchExistingPaymentDates(formData.activity_id, formData.event_vendor_id, value);
+                                } else {
+                                    setExistingPaymentDates([]);
+                                }
+                            }}
                             disabled={!formData.event_vendor_id}
                             notFoundContent={stallsLoading ? "Loading stalls..." : "No stalls available for this vendor"}
                         >

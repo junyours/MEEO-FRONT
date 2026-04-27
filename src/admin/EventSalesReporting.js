@@ -3,7 +3,7 @@ import api from '../Api';
 import LoadingOverlay from './Loading';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { Space, Button, Table, Card, Typography, Select, Row, Col, Statistic, Modal, Form, Input, InputNumber, message, Tag, Spin, Empty, Popconfirm, Tabs } from 'antd';
+import { Space, Button, Table, Card, Typography, Select, Row, Col, Statistic, Modal, Form, Input, InputNumber, message, Tag, Spin, Empty, Popconfirm, Tabs, Checkbox } from 'antd';
 import { PlusOutlined, SyncOutlined, HistoryOutlined, ShopOutlined, DollarOutlined, LineChartOutlined, TrophyOutlined, CloseOutlined, SearchOutlined, EditOutlined, DeleteOutlined, UserOutlined, FilePdfOutlined } from '@ant-design/icons';
 import './EventSalesReporting.css';
 
@@ -44,8 +44,12 @@ const EventSalesReporting = () => {
     });
     const [availableVendors, setAvailableVendors] = useState([]);
     const [availableStalls, setAvailableStalls] = useState([]);
+    const [existingReportDates, setExistingReportDates] = useState([]);
     const [editingReport, setEditingReport] = useState(null);
     const [editingRecord, setEditingRecord] = useState(null);
+    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+    const [deleteModalData, setDeleteModalData] = useState({ vendor: null, reports: [], selectedReports: [] });
+    const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
 
     // Helper function to format amount with commas and 2 decimal places
     const formatAmount = (amount) => {
@@ -243,7 +247,7 @@ const EventSalesReporting = () => {
     const fetchActivities = async () => {
         try {
             const response = await api.get('/event-activities');
-            setActivities(response.data.activities.data);
+            setActivities(response.data.activities || []);
         } catch (error) {
             console.error('Error fetching activities:', error);
         }
@@ -278,8 +282,8 @@ const EventSalesReporting = () => {
 
     const fetchVendors = async (activityId) => {
         try {
-            const response = await api.get(`/event-vendors?activity_id=${activityId}`);
-            setAvailableVendors(response.data.vendors.data || []);
+            const response = await api.get(`/event-vendors/activity/${activityId}`);
+            setAvailableVendors(response.data.vendors || []);
         } catch (error) {
             console.error('Error fetching vendors:', error);
         }
@@ -291,6 +295,141 @@ const EventSalesReporting = () => {
             setAvailableStalls(response.data.stalls || []);
         } catch (error) {
             console.error('Error fetching stalls:', error);
+        }
+    };
+
+    const fetchVendorReportDates = async (activityId, vendorId) => {
+        try {
+            const response = await api.get(`/event-sales/vendor/${activityId}/${vendorId}/report-dates`);
+            const reports = response.data.reports || [];
+            setExistingReportDates(reports);
+        } catch (error) {
+            console.error('Error fetching vendor report dates:', error);
+            setExistingReportDates([]);
+        }
+    };
+
+    const deleteSalesReportByDay = async (activityId, vendorId, reportDate) => {
+        try {
+            await api.delete('/event-sales/reports/by-day', {
+                data: {
+                    activity_id: activityId,
+                    vendor_id: vendorId,
+                    report_date: reportDate
+                }
+            });
+            
+            // Refresh the data
+            fetchSalesReport();
+            fetchVendorReportDates(activityId, vendorId);
+            
+            message.success('Sales report deleted successfully');
+        } catch (error) {
+            console.error('Error deleting sales report:', error);
+            message.error('Failed to delete sales report');
+        }
+    };
+
+    const showDeleteModal = async (vendorId, activityId) => {
+        try {
+            const response = await api.get(`/event-sales/vendor/${activityId}/${vendorId}/report-dates`);
+            const reports = response.data.reports || [];
+            
+            // Create a simple vendor object from the first report or use fallback
+            let vendor = null;
+            if (reports.length > 0) {
+                // Extract vendor info from the first report
+                vendor = {
+                    id: vendorId,
+                    first_name: 'Vendor',
+                    last_name: `ID: ${vendorId}`
+                };
+            } else {
+                // Fallback vendor object
+                vendor = {
+                    id: vendorId,
+                    first_name: 'Vendor',
+                    last_name: `ID: ${vendorId}`
+                };
+            }
+            
+            setDeleteModalData({
+                vendor: vendor,
+                reports: reports,
+                selectedReports: []
+            });
+            setDeleteModalVisible(true);
+        } catch (error) {
+            console.error('Error fetching vendor reports for delete:', error);
+            message.error('Failed to fetch vendor reports');
+        }
+    };
+
+    const handleDeleteReportSelection = (reportDate, checked) => {
+        setDeleteModalData(prev => ({
+            ...prev,
+            selectedReports: checked 
+                ? [...prev.selectedReports, reportDate]
+                : prev.selectedReports.filter(date => date !== reportDate)
+        }));
+    };
+
+    const handleDeleteSelectedReports = () => {
+        if (deleteModalData.selectedReports.length === 0) {
+            message.warning('Please select at least one report to delete');
+            return;
+        }
+
+        // Show confirmation modal
+        setConfirmDeleteVisible(true);
+    };
+
+    const confirmDeleteReports = async () => {
+        try {
+            for (const reportDate of deleteModalData.selectedReports) {
+                // Format the date to YYYY-MM-DD format (remove timezone)
+                const formattedDate = reportDate.includes('T') 
+                    ? reportDate.split('T')[0] 
+                    : reportDate;
+                    
+                // Find the stall that belongs to this vendor
+                const allReportsResponse = await api.get('/event-sales/activity/' + selectedActivity);
+                const allReports = allReportsResponse.data.sales_data || [];
+                
+                const targetStall = allReports.find(report => report.vendor_id === deleteModalData.vendor.id);
+                
+                if (targetStall && targetStall.stall_id) {
+                    // Get all reports for this stall
+                    const stallResponse = await api.get(`/event-sales/stall/${targetStall.stall_id}/history`);
+                    const stallReports = stallResponse.data || {};
+                    
+                    // Find the report matching our date
+                    const targetReport = stallReports.sales_history?.find(report => {
+                        const reportDate = new Date(report.report_date).toISOString().split('T')[0];
+                        return reportDate === formattedDate;
+                    });
+                    
+                    if (targetReport && targetReport.id) {
+                        await api.delete(`/event-sales/reports/${targetReport.id}`);
+                    } else {
+                        throw new Error('No report found for the specified date');
+                    }
+                } else {
+                    throw new Error('No stall found for this vendor');
+                }
+            }
+            
+            // Refresh the data
+            fetchSalesReport();
+            fetchVendorReportDates(selectedActivity, deleteModalData.vendor.id);
+            
+            setDeleteModalVisible(false);
+            setConfirmDeleteVisible(false);
+            message.success(`Successfully deleted ${deleteModalData.selectedReports.length} sales report(s)`);
+        } catch (error) {
+            console.error('Error deleting sales reports:', error);
+            console.error('Error details:', error.response?.data);
+            message.error('Failed to delete sales reports');
         }
     };
 
@@ -428,6 +567,7 @@ const EventSalesReporting = () => {
         const activity = activities.find(a => a.id === formData.activity_id);
         if (!activity) return [];
         
+                
         // Extract date part and parse as local date to avoid timezone issues
   
         // Handle both date formats: "2026-04-07 00:00:00" and "2026-04-07T00:00:00.000000Z"
@@ -465,14 +605,41 @@ const EventSalesReporting = () => {
                 year: 'numeric' 
             }).replace(/(\w+), (\d+), (\d+)/, '$1,$2,$3');
     
+            // Check if this date already has a report for the selected vendor
+            const hasExistingReport = existingReportDates.some(report => {
+                // Handle timezone conversion properly
+                let reportDateISO;
+                if (report.report_date.includes('T')) {
+                    // If it's a datetime string, convert to local date
+                    const reportDate = new Date(report.report_date);
+                    // Get the local date in YYYY-MM-DD format
+                    reportDateISO = reportDate.getFullYear() + '-' + 
+                        String(reportDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(reportDate.getDate()).padStart(2, '0');
+                } else {
+                    // If it's already a date string, use as is
+                    reportDateISO = report.report_date;
+                }
+                
+                // Additional check: ensure report date is within activity range
+                const reportDateObj = new Date(reportDateISO);
+                const startDateObj = new Date(startDateStr);
+                const endDateObj = new Date(endDateStr);
+                const isWithinRange = reportDateObj >= startDateObj && reportDateObj <= endDateObj;
+                
+                return reportDateISO === dateISO && isWithinRange;
+            });
+            
+            // Always include the day, but mark as disabled if it has an existing report
             days.push({
                 value: dateISO,
                 label: `Day ${dayNumber}`,
-                display: `Day ${dayNumber} (${formattedDate})`
+                display: hasExistingReport 
+                    ? `Day ${dayNumber} (${formattedDate}) - Sales Report Already Done`
+                    : `Day ${dayNumber} (${formattedDate})`,
+                disabled: hasExistingReport
             });
         }
-        
-     
         
         return days;
     };
@@ -1193,22 +1360,15 @@ const EventSalesReporting = () => {
                                                 >
                                                     {window.innerWidth < 768 ? '' : 'Edit'}
                                                 </Button>
-                                                <Popconfirm
-                                                    title="Are you sure you want to delete this sales report?"
-                                                    description="This action cannot be undone."
-                                                    onConfirm={() => handleDelete(record)}
-                                                    okText="Yes"
-                                                    cancelText="No"
-                                                >
-                                                    <Button
+                                                <Button
                                                         type="primary"
                                                         danger
                                                         size={window.innerWidth < 768 ? 'small' : 'middle'}
                                                         icon={<DeleteOutlined />}
+                                                        onClick={() => showDeleteModal(record.vendor_id, selectedActivity)}
                                                     >
-                                                        {window.innerWidth < 768 ? '' : 'Delete'}
+                                                        {window.innerWidth < 768 ? '' : 'Delete Reports'}
                                                     </Button>
-                                                </Popconfirm>
                                             </Space>
                                         ),
                                     },
@@ -1279,22 +1439,15 @@ const EventSalesReporting = () => {
                                                 >
                                                     {window.innerWidth < 768 ? '' : 'Edit'}
                                                 </Button>
-                                                <Popconfirm
-                                                    title="Are you sure you want to delete this sales report?"
-                                                    description="This action cannot be undone."
-                                                    onConfirm={() => handleDelete(record)}
-                                                    okText="Yes"
-                                                    cancelText="No"
-                                                >
-                                                    <Button
+                                                <Button
                                                         type="primary"
                                                         danger
                                                         size={window.innerWidth < 768 ? 'small' : 'middle'}
                                                         icon={<DeleteOutlined />}
+                                                        onClick={() => showDeleteModal(record.vendor_id, selectedActivity)}
                                                     >
-                                                        {window.innerWidth < 768 ? '' : 'Delete'}
+                                                        {window.innerWidth < 768 ? '' : 'Delete Reports'}
                                                     </Button>
-                                                </Popconfirm>
                                             </Space>
                                         ),
                                     },
@@ -1365,22 +1518,15 @@ const EventSalesReporting = () => {
                                                 >
                                                     {window.innerWidth < 768 ? '' : 'Edit'}
                                                 </Button>
-                                                <Popconfirm
-                                                    title="Are you sure you want to delete this sales report?"
-                                                    description="This action cannot be undone."
-                                                    onConfirm={() => handleDelete(record)}
-                                                    okText="Yes"
-                                                    cancelText="No"
-                                                >
-                                                    <Button
+                                                <Button
                                                         type="primary"
                                                         danger
                                                         size={window.innerWidth < 768 ? 'small' : 'middle'}
                                                         icon={<DeleteOutlined />}
+                                                        onClick={() => showDeleteModal(record.vendor_id, selectedActivity)}
                                                     >
-                                                        {window.innerWidth < 768 ? '' : 'Delete'}
+                                                        {window.innerWidth < 768 ? '' : 'Delete Reports'}
                                                     </Button>
-                                                </Popconfirm>
                                             </Space>
                                         ),
                                     },
@@ -1451,7 +1597,8 @@ const EventSalesReporting = () => {
                         <Select
                             value={formData.activity_id}
                             onChange={(value) => {
-                                setFormData({...formData, activity_id: value, vendor_id: '', stall_id: ''});
+                                setFormData({...formData, activity_id: value, vendor_id: '', stall_id: '', report_day: ''});
+                                setExistingReportDates([]);
                                 if (value) {
                                     fetchVendors(value);
                                 }
@@ -1474,13 +1621,26 @@ const EventSalesReporting = () => {
                         <Select
                             value={formData.vendor_id}
                             onChange={(value) => {
-                                setFormData({...formData, vendor_id: value, stall_id: ''});
+                                setFormData({...formData, vendor_id: value, stall_id: '', report_day: ''});
                                 if (value && formData.activity_id) {
                                     fetchAvailableStalls(formData.activity_id, value);
+                                    fetchVendorReportDates(formData.activity_id, value);
+                                } else {
+                                    setExistingReportDates([]);
                                 }
                             }}
                             placeholder="Select Vendor"
                             disabled={!formData.activity_id}
+                            showSearch
+                            filterOption={(input, option) => {
+                                const vendor = availableVendors.find(v => v.id === option.value);
+                                if (!vendor) return false;
+                                
+                                const fullName = `${vendor.first_name} ${vendor.middle_name || ''} ${vendor.last_name}`.toLowerCase();
+                                const searchInput = input.toLowerCase();
+                                
+                                return fullName.includes(searchInput);
+                            }}
                         >
                             {availableVendors.map(vendor => (
                                 <Option key={vendor.id} value={vendor.id}>
@@ -1522,7 +1682,15 @@ const EventSalesReporting = () => {
                             disabled={!formData.activity_id}
                         >
                             {getDayOptions().map(day => (
-                                <Option key={day.value} value={day.value}>
+                                <Option 
+                                    key={day.value} 
+                                    value={day.value}
+                                    disabled={day.disabled}
+                                    style={{ 
+                                        color: day.disabled ? '#999' : 'inherit',
+                                        backgroundColor: day.disabled ? '#f5f5f5' : 'inherit'
+                                    }}
+                                >
                                     {day.display}
                                 </Option>
                             ))}
@@ -1843,6 +2011,144 @@ const EventSalesReporting = () => {
                         </Button>
                     </Form.Item>
                 </Form>
+            </Modal>
+
+            {/* Delete Reports Modal */}
+            <Modal
+                title={`Delete Sales Reports - ${deleteModalData.vendor ? `${deleteModalData.vendor.first_name} ${deleteModalData.vendor.last_name}` : ''}`}
+                visible={deleteModalVisible}
+                onCancel={() => setDeleteModalVisible(false)}
+                footer={[
+                    <Button key="cancel" onClick={() => setDeleteModalVisible(false)}>
+                        Cancel
+                    </Button>,
+                    <Button 
+                        key="delete" 
+                        type="primary" 
+                        danger 
+                        onClick={handleDeleteSelectedReports}
+                        disabled={deleteModalData.selectedReports.length === 0}
+                    >
+                        Delete Selected ({deleteModalData.selectedReports.length})
+                    </Button>
+                ]}
+                width={600}
+            >
+                <div style={{ marginBottom: 16 }}>
+                    <p>Select the sales reports you want to delete:</p>
+                </div>
+                
+                {deleteModalData.reports.length > 0 ? (
+                    <div style={{ 
+                        border: '1px solid #d9d9d9', 
+                        borderRadius: '6px', 
+                        padding: '12px',
+                        maxHeight: '300px',
+                        overflowY: 'auto'
+                    }}>
+                        {deleteModalData.reports.map(report => (
+                            <div key={report.report_date} style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '8px 12px',
+                                backgroundColor: '#fff',
+                                border: '1px solid #e8e8e8',
+                                borderRadius: '4px',
+                                marginBottom: '6px'
+                            }}>
+                                <Checkbox
+                                    checked={deleteModalData.selectedReports.includes(report.report_date)}
+                                    onChange={(e) => handleDeleteReportSelection(report.report_date, e.target.checked)}
+                                >
+                                    Day {report.day_number} ({new Date(report.report_date).toLocaleDateString('en-US', { 
+                                        month: 'long', 
+                                        day: 'numeric', 
+                                        year: 'numeric' 
+                                    })})
+                                </Checkbox>
+                                <span style={{ color: '#666', fontSize: '12px' }}>
+                                    {report.stall_id ? `Stall ID: ${report.stall_id}` : ''}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div style={{ 
+                        textAlign: 'center', 
+                        padding: '40px 20px',
+                        color: '#999'
+                    }}>
+                        No sales reports found for this vendor.
+                    </div>
+                )}
+            </Modal>
+
+            {/* Confirmation Modal */}
+            <Modal
+                title="Confirm Delete Sales Reports"
+                visible={confirmDeleteVisible}
+                onCancel={() => setConfirmDeleteVisible(false)}
+                footer={[
+                    <Button key="cancel" onClick={() => setConfirmDeleteVisible(false)}>
+                        Cancel
+                    </Button>,
+                    <Button 
+                        key="delete" 
+                        type="primary" 
+                        danger 
+                        onClick={confirmDeleteReports}
+                    >
+                        Confirm Delete
+                    </Button>
+                ]}
+                width={600}
+            >
+                <div style={{ marginBottom: 16 }}>
+                    <p>Are you sure you want to delete the following sales reports?</p>
+                    <p style={{ color: '#ff4d4f', fontWeight: 'bold' }}>
+                        This action cannot be undone.
+                    </p>
+                </div>
+                
+                <div style={{ 
+                    border: '1px solid #ffccc7', 
+                    borderRadius: '6px', 
+                    padding: '12px',
+                    backgroundColor: '#fff2f0',
+                    maxHeight: '200px',
+                    overflowY: 'auto'
+                }}>
+                    <div style={{ marginBottom: 8, fontWeight: 'bold', color: '#ff4d4f' }}>
+                        Reports to be deleted ({deleteModalData.selectedReports.length}):
+                    </div>
+                    {deleteModalData.selectedReports.map(reportDate => {
+                        const report = deleteModalData.reports.find(r => r.report_date === reportDate);
+                        return (
+                            <div key={reportDate} style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '6px 12px',
+                                backgroundColor: '#fff',
+                                border: '1px solid #ffccc7',
+                                borderRadius: '4px',
+                                marginBottom: '4px'
+                            }}>
+                                <span>
+                                    Day {report?.day_number || 'N/A'} ({new Date(reportDate).toLocaleDateString('en-US', { 
+                                        month: 'long', 
+                                        day: 'numeric', 
+                                        year: 'numeric' 
+                                    })})
+                                </span>
+                                <span style={{ color: '#ff4d4f', fontSize: '12px', fontWeight: 'bold' }}>
+                                    {report?.stall_id ? `Stall ${report.stall_id}` : ''}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
             </Modal>
         
         {loading && <LoadingOverlay message="Loading Sales Reports..." />}
