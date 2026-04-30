@@ -605,6 +605,16 @@ const EventPaymentManagement = () => {
                         <Select
                             placeholder="Select Vendor"
                             loading={vendorsLoading}
+                            showSearch
+                            filterOption={(input, option) => {
+                                const vendor = activityVendors.find(v => v.id === option.value);
+                                if (!vendor) return false;
+                                
+                                const fullName = `${vendor.first_name} ${vendor.middle_name || ''} ${vendor.last_name}`.toLowerCase();
+                                const searchInput = input.toLowerCase();
+                                
+                                return fullName.includes(searchInput);
+                            }}
                             onChange={(value) => {
                                
                                 setFormData({
@@ -625,7 +635,7 @@ const EventPaymentManagement = () => {
                         >
                             {activityVendors.map(vendor => (
                                 <Option key={vendor.id} value={vendor.id}>
-                                    {vendor.first_name} {vendor.last_name}
+                                    {vendor.first_name} {vendor.middle_name ? vendor.middle_name + ' ' : ''}{vendor.last_name}
                                 </Option>
                             ))}
                         </Select>

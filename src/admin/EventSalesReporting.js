@@ -4,7 +4,7 @@ import LoadingOverlay from './Loading';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Space, Button, Table, Card, Typography, Select, Row, Col, Statistic, Modal, Form, Input, InputNumber, message, Tag, Spin, Empty, Popconfirm, Tabs, Checkbox } from 'antd';
-import { PlusOutlined, SyncOutlined, HistoryOutlined, ShopOutlined, DollarOutlined, LineChartOutlined, TrophyOutlined, CloseOutlined, SearchOutlined, EditOutlined, DeleteOutlined, UserOutlined, FilePdfOutlined } from '@ant-design/icons';
+import { PlusOutlined, SyncOutlined, HistoryOutlined, ShopOutlined, DollarOutlined, LineChartOutlined, TrophyOutlined, CloseOutlined, SearchOutlined, EditOutlined, DeleteOutlined, UserOutlined, FilePdfOutlined, ArrowUpOutlined, ArrowDownOutlined, CalendarOutlined, HomeOutlined, StarOutlined } from '@ant-design/icons';
 import './EventSalesReporting.css';
 
 // Make sure autoTable is available on jsPDF instance
@@ -50,6 +50,9 @@ const EventSalesReporting = () => {
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [deleteModalData, setDeleteModalData] = useState({ vendor: null, reports: [], selectedReports: [] });
     const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
+    const [vendorSearchText, setVendorSearchText] = useState('');
+    const [selectedDay, setSelectedDay] = useState('');
+    const [daySalesDetails, setDaySalesDetails] = useState(null);
 
     // Helper function to format amount with commas and 2 decimal places
     const formatAmount = (amount) => {
@@ -59,6 +62,108 @@ const EventSalesReporting = () => {
         const num = parseFloat(amount);
         if (isNaN(num)) return '-';
         return `P${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    // Function to filter sales data by vendor name
+    const filterSalesDataByVendor = (data, searchText) => {
+        if (!searchText || searchText.trim() === '') {
+            return data;
+        }
+        
+        const searchLower = searchText.toLowerCase().trim();
+        return data.filter(stall => 
+            stall.vendor_name && stall.vendor_name.toLowerCase().includes(searchLower)
+        );
+    };
+
+    // Function to analyze sales for a specific day
+    const analyzeDaySales = (data, dayNumber) => {
+        if (!data || !dayNumber) {
+            return null;
+        }
+
+        const dayKey = `day${dayNumber}_income`;
+        let lowest = { amount: null, vendor_name: '', stall_number: '' };
+        let highest = { amount: null, vendor_name: '', stall_number: '' };
+
+        data.forEach(stall => {
+            const dayIncome = parseFloat(stall[dayKey]) || 0;
+            
+            // Skip zero values for lowest unless all are zero
+            if (dayIncome > 0) {
+                if (lowest.amount === null || dayIncome < lowest.amount) {
+                    lowest = {
+                        amount: dayIncome,
+                        vendor_name: stall.vendor_name || 'N/A',
+                        stall_number: stall.stall_number || 'N/A'
+                    };
+                }
+                
+                if (highest.amount === null || dayIncome > highest.amount) {
+                    highest = {
+                        amount: dayIncome,
+                        vendor_name: stall.vendor_name || 'N/A',
+                        stall_number: stall.stall_number || 'N/A'
+                    };
+                }
+            }
+        });
+
+        // Handle case where all sales are zero
+        if (lowest.amount === null && data.length > 0) {
+            const firstStall = data[0];
+            lowest = {
+                amount: 0,
+                vendor_name: firstStall.vendor_name || 'N/A',
+                stall_number: firstStall.stall_number || 'N/A'
+            };
+        }
+
+        if (highest.amount === null && data.length > 0) {
+            highest = {
+                amount: 0,
+                vendor_name: data[0].vendor_name || 'N/A',
+                stall_number: data[0].stall_number || 'N/A'
+            };
+        }
+
+        return { lowest, highest };
+    };
+
+    // Function to get day options for the selector
+    const getDaySelectorOptions = () => {
+        if (!selectedActivity) return [];
+        
+        const activity = activities.find(a => a.id === selectedActivity);
+        if (!activity) return [];
+        
+        const startDate = new Date(activity.start_date);
+        const endDate = new Date(activity.end_date);
+        const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        
+        const options = [];
+        for (let day = 1; day <= totalDays; day++) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + (day - 1));
+            
+            options.push({
+                value: day.toString(),
+                label: `Day ${day} - ${currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+            });
+        }
+        
+        return options;
+    };
+
+    // Handle day selection change
+    const handleDayChange = (day) => {
+        setSelectedDay(day);
+        if (day && salesData.length > 0) {
+            const details = analyzeDaySales(salesData, day);
+            setDaySalesDetails(details);
+        } else {
+            setDaySalesDetails(null);
+        }
     };
 
     // Helper function to format date period
@@ -116,11 +221,71 @@ const EventSalesReporting = () => {
         return tables;
     };
 
+    // Helper function to check if content fits on current page
+    const checkPageBreak = (doc, yPosition, requiredHeight, isFirstSection = false) => {
+        const pageHeight = doc.internal.pageSize.height;
+        const currentPage = doc.internal.getNumberOfPages();
+        const isOnFirstPage = currentPage === 1;
+        
+        // For first page, be more lenient - allow content closer to bottom
+        const bottomMargin = isOnFirstPage && isFirstSection ? 10 : 20;
+        const threshold = pageHeight - bottomMargin;
+        
+        return yPosition + requiredHeight > threshold;
+    };
+
+    // Helper function to add page with header
+    const addPageWithHeader = (doc, activity, sectionTitle = null, isContinuation = false) => {
+        doc.addPage();
+        let yPosition = 15;
+        
+        // Repeat main title
+        doc.setFontSize(16);
+        doc.text('Event Sales Report', 105, yPosition, { align: 'center' });
+        yPosition += 8;
+        
+        // Repeat activity info
+        doc.setFontSize(9);
+        doc.text(`${activity.name} - Continued`, 105, yPosition, { align: 'center' });
+        yPosition += 10;
+        
+        // Add section title if provided
+        if (sectionTitle) {
+            doc.setFontSize(14);
+            const title = isContinuation ? `${sectionTitle} (Continued)` : sectionTitle;
+            doc.text(title, 15, yPosition);
+            yPosition += 10;
+        }
+        
+        return yPosition;
+    };
+
+    // Helper function to calculate actual table height
+    const calculateTableHeight = (data) => {
+        const baseCellHeight = 6;
+        let totalHeight = baseCellHeight; // Header height
+        
+        data.forEach(row => {
+            let rowHeight = baseCellHeight;
+            const productsText = row[2];
+            if (productsText && typeof productsText === 'string' && productsText.includes(',')) {
+                const products = productsText.split(',').map(p => p.trim()).filter(p => p);
+                const numProducts = products.length;
+                rowHeight = Math.max(baseCellHeight, 3 + (numProducts - 1) * 2.5);
+            }
+            totalHeight += rowHeight;
+        });
+        
+        return totalHeight;
+    };
+
     // Helper function for drawing tables with borders - completely redesigned
     const drawTable = (doc, startY, headers, data) => {
         let currentY = startY;
         const baseCellHeight = 6; // Base height for single-line cells
         const cellPadding = 2;
+        const pageHeight = doc.internal.pageSize.height;
+        const pageBottomLimit = 270; // Safe bottom limit for drawing
         
         // Calculate dynamic column widths with better distribution
         const totalColumns = headers.length;
@@ -155,7 +320,7 @@ const EventSalesReporting = () => {
         currentY += baseCellHeight;
         
         // Draw data rows
-        data.forEach(row => {
+        data.forEach((row, rowIndex) => {
             xPos = 15;
             
             // Calculate row height based on products content only
@@ -166,6 +331,30 @@ const EventSalesReporting = () => {
                 const numProducts = products.length;
                 // Compact spacing: 2.5 units per product line
                 rowHeight = Math.max(baseCellHeight, 3 + (numProducts - 1) * 2.5);
+            }
+            
+            // Check if row will fit on current page, if not add new page
+            if (currentY + rowHeight > pageBottomLimit) {
+                doc.addPage();
+                currentY = 20;
+                
+                // Repeat headers on new page
+                let xPos = 15;
+                headers.forEach((header, index) => {
+                    const width = columnWidths[index];
+                    doc.setFillColor(240, 240, 240);
+                    doc.rect(xPos, currentY, width, baseCellHeight, 'F');
+                    doc.rect(xPos, currentY, width, baseCellHeight, 'S');
+                    doc.setFontSize(7);
+                    doc.setFont('helvetica', 'bold');
+                    
+                    // Center header text
+                    const headerWidth = doc.getTextWidth(header);
+                    const headerX = xPos + (width - headerWidth) / 2;
+                    doc.text(header, headerX, currentY + baseCellHeight - 2);
+                    xPos += width;
+                });
+                currentY += baseCellHeight;
             }
             
             // Draw each cell
@@ -857,21 +1046,29 @@ const EventSalesReporting = () => {
             const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
             
             // Add title
-            doc.setFontSize(20);
-            doc.text('Event Sales Report', 105, 20, { align: 'center' });
+            doc.setFontSize(18);
+            doc.text('Event Sales Report', 105, 15, { align: 'center' });
             
-            // Add activity info
-            doc.setFontSize(12);
-            doc.text(`Activity: ${activity.name}`, 15, 35);
-            doc.setFontSize(10);
-            doc.text(`Location: ${activity.location}`, 15, 45);
-            doc.text(`Period: ${formatDatePeriod(activity.start_date, activity.end_date)}`, 15, 55);
+            // Add activity info with reduced spacing
+            doc.setFontSize(11);
+            doc.text(`Activity: ${activity.name}`, 15, 28);
+            doc.setFontSize(9);
+            doc.text(`Location: ${activity.location}`, 15, 36);
+            doc.text(`Period: ${formatDatePeriod(activity.start_date, activity.end_date)}`, 15, 44);
             
-            let yPosition = 70;
+            let yPosition = 52; // Reduced initial yPosition
             
-            // Fixed Stalls Table with borders
+            // Fixed Stalls Table with borders - SORT by stall number
             const fixedStalls = salesData.filter(stall => !stall.is_ambulant || stall.is_ambulant === false || stall.is_ambulant === 0);
             if (fixedStalls.length > 0) {
+                // Sort fixed stalls by stall number in ascending order
+                fixedStalls.sort((a, b) => {
+                    const stallNumA = parseInt(a.stall_number) || 0;
+                    const stallNumB = parseInt(b.stall_number) || 0;
+                    return stallNumA - stallNumB;
+                });
+                
+                // Add title - always on first page
                 doc.setFontSize(14);
                 doc.text('Fixed Stalls', 15, yPosition);
                 yPosition += 10;
@@ -906,30 +1103,27 @@ const EventSalesReporting = () => {
                 
                 // Draw each fixed stalls table chunk
                 fixedTables.forEach((table, index) => {
-                    // Dynamic page-break check based on estimated table height
-                    const estimatedTableHeight = table.data.length * 8 + 20; // Estimate: 8 units per row + headers + spacing
-                    const pageHeight = doc.internal.pageSize.height;
-                    const bottomMargin = 30;
-                    
-                    if (yPosition + estimatedTableHeight > pageHeight - bottomMargin) {
+                    // Simple approach: if we're past line 240, always start new page
+                    if (yPosition > 240) {
                         doc.addPage();
                         yPosition = 20;
+                        
+                        // Add section title on continuation page
+                        doc.setFontSize(14);
+                        doc.text('Fixed Stalls (Continued)', 15, yPosition);
+                        yPosition += 10;
                     }
                     
-                    // Add table title if multiple chunks
+                    // Add sub-title only for multi-chunk tables
                     if (fixedTables.length > 1) {
                         doc.setFontSize(12);
-                        doc.text(`Fixed Stalls - Days ${index * 5 + 1}-${Math.min((index + 1) * 5, totalDays)}`, 15, yPosition);
+                        doc.text(`Days ${index * 5 + 1}-${Math.min((index + 1) * 5, totalDays)}`, 15, yPosition);
                         yPosition += 8;
-                    } else {
-                        doc.setFontSize(14);
-                        doc.text('Fixed Stalls', 15, yPosition);
-                        yPosition += 10;
                     }
                     
                     // Draw table chunk
                     yPosition = drawTable(doc, yPosition, table.headers, table.data);
-                    yPosition += 12; // Spacing between tables
+                    yPosition += 8; // Reduced spacing
                 });
                 
                 yPosition += 15;
@@ -938,12 +1132,16 @@ const EventSalesReporting = () => {
             // Ambulant Stalls Table with borders
             const ambulantStalls = salesData.filter(stall => stall.is_ambulant === true || stall.is_ambulant === 1);
             if (ambulantStalls.length > 0) {
-                // Check if we need a new page
-                if (yPosition > 200) {
+                // Simple check: add title on current page if there's reasonable space
+                const pageHeight = doc.internal.pageSize.height;
+                const remainingSpace = pageHeight - yPosition;
+                
+                if (remainingSpace < 50) { // If less than 50 units, go to new page
                     doc.addPage();
                     yPosition = 20;
                 }
                 
+                // Add title
                 doc.setFontSize(14);
                 doc.text('Ambulant Stalls', 15, yPosition);
                 yPosition += 10;
@@ -978,41 +1176,41 @@ const EventSalesReporting = () => {
                 
                 // Draw each ambulant stalls table chunk
                 ambulantTables.forEach((table, index) => {
-                    // Dynamic page-break check based on estimated table height
-                    const estimatedTableHeight = table.data.length * 8 + 20; // Estimate: 8 units per row + headers + spacing
-                    const pageHeight = doc.internal.pageSize.height;
-                    const bottomMargin = 30;
-                    
-                    if (yPosition + estimatedTableHeight > pageHeight - bottomMargin) {
+                    // Simple approach: if we're past line 240, always start new page
+                    if (yPosition > 240) {
                         doc.addPage();
                         yPosition = 20;
+                        
+                        // Add section title on continuation page
+                        doc.setFontSize(14);
+                        doc.text('Ambulant Stalls (Continued)', 15, yPosition);
+                        yPosition += 10;
                     }
                     
-                    // Add table title if multiple chunks
+                    // Add sub-title only for multi-chunk tables
                     if (ambulantTables.length > 1) {
                         doc.setFontSize(12);
-                        doc.text(`Ambulant Stalls - Days ${index * 5 + 1}-${Math.min((index + 1) * 5, totalDays)}`, 15, yPosition);
+                        doc.text(`Days ${index * 5 + 1}-${Math.min((index + 1) * 5, totalDays)}`, 15, yPosition);
                         yPosition += 8;
-                    } else {
-                        doc.setFontSize(14);
-                        doc.text('Ambulant Stalls', 15, yPosition);
-                        yPosition += 10;
                     }
                     
                     // Draw table chunk
                     yPosition = drawTable(doc, yPosition, table.headers, table.data);
-                    yPosition += 12; // Spacing between tables
+                    yPosition += 8; // Reduced spacing
                 });
                 
                 yPosition += 15;
             }
             
             // Daily Income Summary Table with borders
-            if (yPosition > 200) {
+            // Check if we need a new page before starting daily summary
+            const summaryTableHeight = (totalDays + 2) * 8 + 20; // More realistic height calculation
+            if (yPosition > 180) {
                 doc.addPage();
                 yPosition = 20;
             }
             
+            // Add title only once
             doc.setFontSize(14);
             doc.text('Daily Income Summary', 15, yPosition);
             yPosition += 10;
@@ -1211,80 +1409,411 @@ const EventSalesReporting = () => {
                 </Row>
             </Card>
 
+            {selectedActivity && salesData.length > 0 && (
+                <Card style={{ marginBottom: 24 }}>
+                    <Row gutter={[16, 16]} align="middle">
+                        <Col xs={24} sm={12} md={8} lg={6} xl={6}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <label style={{ fontSize: window.innerWidth < 768 ? '12px' : '14px', color: '#000000d9', fontWeight: 500 }}>
+                                    Search Vendor
+                                </label>
+                                <Input
+                                    placeholder="Type vendor name to search..."
+                                    value={vendorSearchText}
+                                    onChange={(e) => setVendorSearchText(e.target.value)}
+                                    prefix={<SearchOutlined />}
+                                    allowClear
+                                    size={window.innerWidth < 768 ? 'small' : 'middle'}
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+                        </Col>
+                        <Col xs={24} sm={12} md={8} lg={6} xl={6}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <label style={{ fontSize: window.innerWidth < 768 ? '12px' : '14px', color: '#000000d9', fontWeight: 500 }}>
+                                    Select Day for Analysis
+                                </label>
+                                <Select
+                                    value={selectedDay}
+                                    onChange={handleDayChange}
+                                    placeholder="Choose a day..."
+                                    style={{ width: '100%' }}
+                                    size={window.innerWidth < 768 ? 'small' : 'middle'}
+                                    allowClear
+                                >
+                                    {getDaySelectorOptions().map(option => (
+                                        <Option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </div>
+                        </Col>
+                        <Col xs={24} sm={24} md={8} lg={12} xl={12}>
+                            <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'flex-end',
+                                height: '100%',
+                                fontSize: window.innerWidth < 768 ? '12px' : '14px',
+                                color: '#666',
+                                flexWrap: 'wrap',
+                                gap: '8px'
+                            }}>
+                                {vendorSearchText && (
+                                    <span>
+                                        Found {filterSalesDataByVendor(salesData, vendorSearchText).length} of {salesData.length} vendors
+                                    </span>
+                                )}
+                                {selectedDay && daySalesDetails && (
+                                    <span style={{ marginLeft: vendorSearchText ? '8px' : '0' }}>
+                                        Day {selectedDay} Analysis Available
+                                    </span>
+                                )}
+                            </div>
+                        </Col>
+                    </Row>
+                </Card>
+            )}
+
             {selectedActivity && summary && (
-                <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-                    <Col xs={24} sm={12} md={12} lg={6} xl={6}>
-                        <Card 
-                            style={{ 
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                border: 'none',
-                                borderRadius: '12px',
-                                boxShadow: '0 4px 20px rgba(102, 126, 234, 0.15)'
-                            }}
-                        >
-                            <Statistic
-                                title={<span style={{ color: 'white', fontSize: window.innerWidth < 768 ? '12px' : '16px', fontWeight: 500 }}>Total Stalls</span>}
-                                value={summary.total_stalls || 0}
-                                valueStyle={{ color: 'white', fontSize: window.innerWidth < 768 ? '20px' : '32px', fontWeight: 'bold' }}
-                                prefix={<ShopOutlined style={{ color: 'white', fontSize: window.innerWidth < 768 ? '16px' : '24px', marginRight: '8px' }} />}
-                            />
-                        </Card>
-                    </Col>
-                    <Col xs={24} sm={12} md={12} lg={6} xl={6}>
-                        <Card 
-                            style={{ 
-                                background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
-                                border: 'none',
-                                borderRadius: '12px',
-                                boxShadow: '0 4px 20px rgba(82, 196, 26, 0.15)'
-                            }}
-                        >
-                            <Statistic
-                                title={<span style={{ color: 'white', fontSize: window.innerWidth < 768 ? '12px' : '16px', fontWeight: 500 }}>Total Sales</span>}
-                                value={summary.total_sales || 0}
-                                precision={2}
-                                prefix={<span style={{ color: 'white', fontSize: window.innerWidth < 768 ? '16px' : '24px', marginRight: '8px' }}>₱</span>}
-                                valueStyle={{ color: 'white', fontSize: window.innerWidth < 768 ? '20px' : '32px', fontWeight: 'bold' }}
-                            />
-                        </Card>
-                    </Col>
-                    <Col xs={24} sm={12} md={12} lg={6} xl={6}>
-                        <Card 
-                            style={{ 
-                                background: 'linear-gradient(135deg, #faad14 0%, #ffc53d 100%)',
-                                border: 'none',
-                                borderRadius: '12px',
-                                boxShadow: '0 4px 20px rgba(250, 173, 20, 0.15)'
-                            }}
-                        >
-                            <Statistic
-                                title={<span style={{ color: 'white', fontSize: window.innerWidth < 768 ? '12px' : '16px', fontWeight: 500 }}>Lowest Sales</span>}
-                                value={summary.lowest_sales || 0}
-                                precision={2}
-                                prefix={<span style={{ color: 'white', fontSize: window.innerWidth < 768 ? '16px' : '24px', marginRight: '8px' }}>₱</span>}
-                                valueStyle={{ color: 'white', fontSize: window.innerWidth < 768 ? '20px' : '32px', fontWeight: 'bold' }}
-                            />
-                        </Card>
-                    </Col>
-                    <Col xs={24} sm={12} md={12} lg={6} xl={6}>
-                        <Card 
-                            style={{ 
-                                background: 'linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%)',
-                                border: 'none',
-                                borderRadius: '12px',
-                                boxShadow: '0 4px 20px rgba(255, 77, 79, 0.15)'
-                            }}
-                        >
-                            <Statistic
-                                title={<span style={{ color: 'white', fontSize: window.innerWidth < 768 ? '12px' : '16px', fontWeight: 500 }}>Highest Sale</span>}
-                                value={summary.highest_sales || 0}
-                                precision={2}
-                                prefix={<span style={{ color: 'white', fontSize: window.innerWidth < 768 ? '16px' : '24px', marginRight: '8px' }}>₱</span>}
-                                valueStyle={{ color: 'white', fontSize: window.innerWidth < 768 ? '20px' : '32px', fontWeight: 'bold' }}
-                            />
-                        </Card>
-                    </Col>
-                </Row>
+                <div style={{ marginBottom: 24 }}>
+                    <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        marginBottom: 16, 
+                        gap: '8px'
+                    }}>
+                        <LineChartOutlined style={{ fontSize: '20px', color: '#262626' }} />
+                        <Title level={4} style={{ margin: 0, color: '#262626', fontWeight: 600 }}>
+                            Event Sales Overview
+                        </Title>
+                    </div>
+                    <Row gutter={[16, 16]}>
+                        <Col xs={24} sm={12} md={12} lg={6} xl={6}>
+                            <Card 
+                                style={{ 
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 8px 32px rgba(102, 126, 234, 0.25)',
+                                    transition: 'all 0.3s ease',
+                                    cursor: 'default'
+                                }}
+                                hoverable
+                            >
+                                <div style={{ color: 'white', textAlign: 'center' }}>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '32px' : '40px', 
+                                        fontWeight: 'bold', 
+                                        marginBottom: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px'
+                                    }}>
+                                        <ShopOutlined style={{ fontSize: window.innerWidth < 768 ? '28px' : '36px' }} />
+                                        {summary.total_stalls || 0}
+                                    </div>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '13px' : '15px', 
+                                        fontWeight: 500,
+                                        opacity: 0.95
+                                    }}>
+                                        Total Participating Stalls
+                                    </div>
+                                </div>
+                            </Card>
+                        </Col>
+                        <Col xs={24} sm={12} md={12} lg={6} xl={6}>
+                            <Card 
+                                style={{ 
+                                    background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 8px 32px rgba(82, 196, 26, 0.25)',
+                                    transition: 'all 0.3s ease',
+                                    cursor: 'default'
+                                }}
+                                hoverable
+                            >
+                                <div style={{ color: 'white', textAlign: 'center' }}>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '24px' : '32px', 
+                                        fontWeight: 'bold', 
+                                        marginBottom: '8px',
+                                        lineHeight: '1.2'
+                                    }}>
+                                        ₱{(summary.total_sales || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </div>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '13px' : '15px', 
+                                        fontWeight: 500,
+                                        opacity: 0.95
+                                    }}>
+                                        Total Revenue Generated
+                                    </div>
+                                </div>
+                            </Card>
+                        </Col>
+                        <Col xs={24} sm={12} md={12} lg={6} xl={6}>
+                            <Card 
+                                style={{ 
+                                    background: 'linear-gradient(135deg, #fa8c16 0%, #ffa940 100%)',
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 8px 32px rgba(250, 140, 22, 0.25)',
+                                    transition: 'all 0.3s ease',
+                                    cursor: 'default'
+                                }}
+                                hoverable
+                            >
+                                <div style={{ color: 'white', textAlign: 'center' }}>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '24px' : '32px', 
+                                        fontWeight: 'bold', 
+                                        marginBottom: '8px',
+                                        lineHeight: '1.2'
+                                    }}>
+                                        ₱{(summary.lowest_sales || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </div>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '13px' : '15px', 
+                                        fontWeight: 500,
+                                        opacity: 0.95,
+                                        marginBottom: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '6px'
+                                    }}>
+                                        <ArrowDownOutlined />
+                                        Lowest Sales Performance
+                                    </div>
+                                    {summary.lowest_sales_details && (
+                                        <div style={{ 
+                                            fontSize: window.innerWidth < 768 ? '10px' : '11px', 
+                                            opacity: 0.9, 
+                                            lineHeight: '1.4',
+                                            backgroundColor: 'rgba(255,255,255,0.1)',
+                                            padding: '6px 8px',
+                                            borderRadius: '6px'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                                                <UserOutlined style={{ fontSize: '10px' }} />
+                                                {summary.lowest_sales_details.vendor_name}
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <CalendarOutlined style={{ fontSize: '10px' }} />
+                                                {summary.lowest_sales_details.day} • {summary.lowest_sales_details.date}
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <HomeOutlined style={{ fontSize: '10px' }} />
+                                                Stall #{summary.lowest_sales_details.stall_number}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </Card>
+                        </Col>
+                        <Col xs={24} sm={12} md={12} lg={6} xl={6}>
+                            <Card 
+                                style={{ 
+                                    background: 'linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%)',
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 8px 32px rgba(255, 77, 79, 0.25)',
+                                    transition: 'all 0.3s ease',
+                                    cursor: 'default'
+                                }}
+                                hoverable
+                            >
+                                <div style={{ color: 'white', textAlign: 'center' }}>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '24px' : '32px', 
+                                        fontWeight: 'bold', 
+                                        marginBottom: '8px',
+                                        lineHeight: '1.2'
+                                    }}>
+                                        ₱{(summary.highest_sales || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </div>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '13px' : '15px', 
+                                        fontWeight: 500,
+                                        opacity: 0.95,
+                                        marginBottom: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '6px'
+                                    }}>
+                                        <ArrowUpOutlined />
+                                        Highest Sales Performance
+                                    </div>
+                                    {summary.highest_sales_details && (
+                                        <div style={{ 
+                                            fontSize: window.innerWidth < 768 ? '10px' : '11px', 
+                                            opacity: 0.9, 
+                                            lineHeight: '1.4',
+                                            backgroundColor: 'rgba(255,255,255,0.1)',
+                                            padding: '6px 8px',
+                                            borderRadius: '6px'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                                                <UserOutlined style={{ fontSize: '10px' }} />
+                                                {summary.highest_sales_details.vendor_name}
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <CalendarOutlined style={{ fontSize: '10px' }} />
+                                                {summary.highest_sales_details.day} • {summary.highest_sales_details.date}
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <HomeOutlined style={{ fontSize: '10px' }} />
+                                                Stall #{summary.highest_sales_details.stall_number}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </Card>
+                        </Col>
+                    </Row>
+                </div>
+            )}
+
+            {selectedDay && daySalesDetails && (
+                <div style={{ marginBottom: 24 }}>
+                    <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        marginBottom: 16, 
+                        gap: '8px'
+                    }}>
+                        <CalendarOutlined style={{ fontSize: '20px', color: '#262626' }} />
+                        <Title level={4} style={{ margin: 0, color: '#262626', fontWeight: 600 }}>
+                            Day {selectedDay} Performance Analysis
+                        </Title>
+                    </div>
+                    <Row gutter={[16, 16]}>
+                        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                            <Card 
+                                style={{ 
+                                    background: 'linear-gradient(135deg, #fa8c16 0%, #ffa940 100%)',
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 8px 32px rgba(250, 140, 22, 0.25)',
+                                    transition: 'all 0.3s ease',
+                                    cursor: 'default'
+                                }}
+                                hoverable
+                            >
+                                <div style={{ color: 'white', textAlign: 'center' }}>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '20px' : '28px', 
+                                        fontWeight: 'bold', 
+                                        marginBottom: '8px',
+                                        lineHeight: '1.2'
+                                    }}>
+                                        ₱{(daySalesDetails.lowest.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </div>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '13px' : '15px', 
+                                        fontWeight: 500,
+                                        opacity: 0.95,
+                                        marginBottom: '12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '6px'
+                                    }}>
+                                        <ArrowDownOutlined />
+                                        Lowest Sales for Day {selectedDay}
+                                    </div>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '11px' : '13px', 
+                                        opacity: 0.9, 
+                                        lineHeight: '1.5',
+                                        backgroundColor: 'rgba(255,255,255,0.15)',
+                                        padding: '10px 12px',
+                                        borderRadius: '8px',
+                                        textAlign: 'left'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                                            <UserOutlined style={{ marginRight: '8px', fontSize: '12px' }} />
+                                            <span style={{ fontWeight: 600 }}>{daySalesDetails.lowest.vendor_name}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                                            <HomeOutlined style={{ marginRight: '8px', fontSize: '12px' }} />
+                                            <span>Stall #{daySalesDetails.lowest.stall_number}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                            <LineChartOutlined style={{ marginRight: '8px', fontSize: '12px' }} />
+                                            <span>Requires performance improvement</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Card>
+                        </Col>
+                        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                            <Card 
+                                style={{ 
+                                    background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 8px 32px rgba(82, 196, 26, 0.25)',
+                                    transition: 'all 0.3s ease',
+                                    cursor: 'default'
+                                }}
+                                hoverable
+                            >
+                                <div style={{ color: 'white', textAlign: 'center' }}>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '20px' : '28px', 
+                                        fontWeight: 'bold', 
+                                        marginBottom: '8px',
+                                        lineHeight: '1.2'
+                                    }}>
+                                        ₱{(daySalesDetails.highest.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </div>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '13px' : '15px', 
+                                        fontWeight: 500,
+                                        opacity: 0.95,
+                                        marginBottom: '12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '6px'
+                                    }}>
+                                        <ArrowUpOutlined />
+                                        Highest Sales for Day {selectedDay}
+                                    </div>
+                                    <div style={{ 
+                                        fontSize: window.innerWidth < 768 ? '11px' : '13px', 
+                                        opacity: 0.9, 
+                                        lineHeight: '1.5',
+                                        backgroundColor: 'rgba(255,255,255,0.15)',
+                                        padding: '10px 12px',
+                                        borderRadius: '8px',
+                                        textAlign: 'left'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                                            <UserOutlined style={{ marginRight: '8px', fontSize: '12px' }} />
+                                            <span style={{ fontWeight: 600 }}>{daySalesDetails.highest.vendor_name}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                                            <HomeOutlined style={{ marginRight: '8px', fontSize: '12px' }} />
+                                            <span>Stall #{daySalesDetails.highest.stall_number}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                            <StarOutlined style={{ marginRight: '8px', fontSize: '12px' }} />
+                                            <span>Outstanding performance today</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Card>
+                        </Col>
+                    </Row>
+                </div>
             )}
 
             {!loading && salesData.length > 0 ? (
@@ -1293,9 +1822,14 @@ const EventSalesReporting = () => {
                         <TabPane tab="All Stalls" key="all">
                             <Title level={4} style={{ marginBottom: 16 }}>
                                 All Stalls Sales Reporting
+                                {vendorSearchText && (
+                                    <span style={{ fontSize: '14px', color: '#666', fontWeight: 'normal', marginLeft: '8px' }}>
+                                        ({filterSalesDataByVendor(salesData, vendorSearchText).length} results)
+                                    </span>
+                                )}
                             </Title>
                             <Table
-                                dataSource={salesData}
+                                dataSource={filterSalesDataByVendor(salesData, vendorSearchText)}
                                 rowKey={(record, index) => `${record.stall_id}-${index}`}
                                 pagination={{ 
                                     pageSize: window.innerWidth < 768 ? 5 : window.innerWidth < 1024 ? 8 : 10,
@@ -1378,9 +1912,14 @@ const EventSalesReporting = () => {
                         <TabPane tab="Fixed Stalls" key="fixed">
                             <Title level={4} style={{ marginBottom: 16 }}>
                                 Fixed Stalls Sales Reporting
+                                {vendorSearchText && (
+                                    <span style={{ fontSize: '14px', color: '#666', fontWeight: 'normal', marginLeft: '8px' }}>
+                                        ({filterSalesDataByVendor(salesData.filter(stall => !stall.is_ambulant || stall.is_ambulant === false || stall.is_ambulant === 0), vendorSearchText).length} results)
+                                    </span>
+                                )}
                             </Title>
                             <Table
-                                dataSource={salesData.filter(stall => !stall.is_ambulant || stall.is_ambulant === false || stall.is_ambulant === 0)}
+                                dataSource={filterSalesDataByVendor(salesData.filter(stall => !stall.is_ambulant || stall.is_ambulant === false || stall.is_ambulant === 0), vendorSearchText)}
                                 rowKey={(record, index) => `${record.stall_id}-${index}`}
                                 pagination={{ 
                                     pageSize: window.innerWidth < 768 ? 5 : window.innerWidth < 1024 ? 8 : 10,
@@ -1457,9 +1996,14 @@ const EventSalesReporting = () => {
                         <TabPane tab="Ambulant Stalls" key="ambulant">
                             <Title level={4} style={{ marginBottom: 16 }}>
                                 Ambulant Stalls Sales Reporting
+                                {vendorSearchText && (
+                                    <span style={{ fontSize: '14px', color: '#666', fontWeight: 'normal', marginLeft: '8px' }}>
+                                        ({filterSalesDataByVendor(salesData.filter(stall => stall.is_ambulant === true || stall.is_ambulant === 1), vendorSearchText).length} results)
+                                    </span>
+                                )}
                             </Title>
                             <Table
-                                dataSource={salesData.filter(stall => stall.is_ambulant === true || stall.is_ambulant === 1)}
+                                dataSource={filterSalesDataByVendor(salesData.filter(stall => stall.is_ambulant === true || stall.is_ambulant === 1), vendorSearchText)}
                                 rowKey={(record, index) => `ambulant-${record.stall_id}-${index}`}
                                 pagination={{ 
                                     pageSize: window.innerWidth < 768 ? 5 : window.innerWidth < 1024 ? 8 : 10,

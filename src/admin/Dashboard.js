@@ -96,6 +96,33 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
+  // Responsive state
+  const [screenSize, setScreenSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    isMobile: window.innerWidth < 768,
+    isTablet: window.innerWidth >= 768 && window.innerWidth < 1024,
+    isDesktop: window.innerWidth >= 1024,
+  });
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      setScreenSize({
+        width,
+        height,
+        isMobile: width < 768,
+        isTablet: width >= 768 && width < 1024,
+        isDesktop: width >= 1024,
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
   // Get screen from URL path or default to dashboard
   const getScreenFromURL = useCallback(() => {
     const pathSegments = location.pathname.split('/');
@@ -260,27 +287,31 @@ const AdminDashboard = () => {
       hoverable
       onClick={() => targetView && setActiveView(targetView)}
       style={{
-        borderRadius: 12,
+        borderRadius: screenSize.isMobile ? 8 : 12,
         border: "1px solid #e2e8f0",
         background: cardBackground,
         height: "100%",
         transition: "all 0.2s ease",
         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        cursor: targetView ? "pointer" : "default",
       }}
-      bodyStyle={{ padding: 20 }}
+      bodyStyle={{ 
+        padding: screenSize.isMobile ? 16 : 20,
+        minHeight: screenSize.isMobile ? 80 : 100,
+      }}
       className="stat-card"
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: screenSize.isMobile ? 12 : 16 }}>
         <div
           style={{
             background: color,
             color: "white",
-            borderRadius: 8,
-            padding: 12,
+            borderRadius: screenSize.isMobile ? 6 : 8,
+            padding: screenSize.isMobile ? 10 : 12,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 18,
+            fontSize: screenSize.isMobile ? 16 : 18,
             flexShrink: 0,
           }}
         >
@@ -289,7 +320,7 @@ const AdminDashboard = () => {
         <div style={{ flex: 1, minWidth: 0 }}>
           <Text
             style={{
-              fontSize: 12,
+              fontSize: screenSize.isMobile ? 10 : 12,
               color: textSecondary,
               fontWeight: 500,
               textTransform: "uppercase",
@@ -303,7 +334,7 @@ const AdminDashboard = () => {
           <Text
             strong
             style={{
-              fontSize: 24,
+              fontSize: screenSize.isMobile ? 18 : 24,
               color: textPrimary,
               fontVariantNumeric: "tabular-nums",
               lineHeight: 1.2,
@@ -316,7 +347,7 @@ const AdminDashboard = () => {
           {subtitle && (
             <Text
               style={{
-                fontSize: 11,
+                fontSize: screenSize.isMobile ? 9 : 11,
                 color: textSecondary,
                 fontWeight: 400,
                 display: "block",
@@ -393,8 +424,8 @@ const AdminDashboard = () => {
       </div>
 
       {/* Statistics Overview */}
-      <Row gutter={window.innerWidth < 768 ? [16, 16] : [24, 24]} style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
-        <Col xs={24} sm={12} md={8} lg={6} xl={4}>
+      <Row gutter={[window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 24, window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 24]} style={{ marginBottom: window.innerWidth < 768 ? 20 : 32 }}>
+        <Col xs={24} sm={12} md={12} lg={6} xl={6}>
           <StatCard
             title="Available Stalls"
             value={stats.availableStalls}
@@ -404,7 +435,7 @@ const AdminDashboard = () => {
             subtitle={window.innerWidth < 768 ? "Available" : "total available"}
           />
         </Col>
-        <Col xs={24} sm={12} md={8} lg={6} xl={4}>
+        <Col xs={24} sm={12} md={12} lg={6} xl={6}>
           <StatCard
             title="Rented Stalls"
             value={stats.rentedStalls}
@@ -414,7 +445,7 @@ const AdminDashboard = () => {
             subtitle={window.innerWidth < 768 ? "Rented" : "currently occupied"}
           />
         </Col>
-        <Col xs={24} sm={12} md={8} lg={6} xl={4}>
+        <Col xs={24} sm={12} md={12} lg={6} xl={6}>
           <StatCard
             title="Active Vendors"
             value={stats.vendors}
@@ -424,7 +455,7 @@ const AdminDashboard = () => {
             subtitle={window.innerWidth < 768 ? "Vendors" : "registered vendors"}
           />
         </Col>
-        <Col xs={24} sm={12} md={8} lg={6} xl={4}>
+        <Col xs={24} sm={12} md={12} lg={6} xl={6}>
           <StatCard
             title="Active Rentals"
             value={stats.rentedStalls}
@@ -450,8 +481,8 @@ const AdminDashboard = () => {
          {window.innerWidth < 768 ? 'Revenue Analytics' : 'Revenue Projections Analytics'}
         </Title>
       </div>
-      <Row gutter={window.innerWidth < 768 ? [16, 16] : [20, 20]} style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
-        <Col xs={24} sm={12} lg={6}>
+      <Row gutter={[window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 20, window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 20]} style={{ marginBottom: window.innerWidth < 768 ? 20 : 32 }}>
+        <Col xs={24} sm={12} md={12} lg={8} xl={6}>
           <Card
             hoverable
             style={{
@@ -462,7 +493,7 @@ const AdminDashboard = () => {
               transition: "all 0.2s ease",
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
-            bodyStyle={{ padding: 20 }}
+            bodyStyle={{ padding: window.innerWidth < 768 ? 16 : 20 }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <div
@@ -509,7 +540,7 @@ const AdminDashboard = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} md={12} lg={8} xl={6}>
           <Card
             hoverable
             style={{
@@ -520,7 +551,7 @@ const AdminDashboard = () => {
               transition: "all 0.2s ease",
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
-            bodyStyle={{ padding: 20 }}
+            bodyStyle={{ padding: window.innerWidth < 768 ? 16 : 20 }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <div
@@ -567,7 +598,7 @@ const AdminDashboard = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} md={12} lg={8} xl={6}>
           <Card
             hoverable
             style={{
@@ -578,7 +609,7 @@ const AdminDashboard = () => {
               transition: "all 0.2s ease",
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
-            bodyStyle={{ padding: 20 }}
+            bodyStyle={{ padding: window.innerWidth < 768 ? 16 : 20 }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <div
@@ -625,7 +656,7 @@ const AdminDashboard = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} md={12} lg={8} xl={6}>
           <Card
             hoverable
             style={{
@@ -636,7 +667,7 @@ const AdminDashboard = () => {
               transition: "all 0.2s ease",
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
-            bodyStyle={{ padding: 20 }}
+            bodyStyle={{ padding: window.innerWidth < 768 ? 16 : 20 }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <div
@@ -683,7 +714,7 @@ const AdminDashboard = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} md={12} lg={8} xl={6}>
           <Card
             hoverable
             style={{
@@ -693,7 +724,7 @@ const AdminDashboard = () => {
               height: "100%",
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
-            bodyStyle={{ padding: 20 }}
+            bodyStyle={{ padding: window.innerWidth < 768 ? 16 : 20 }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <div
@@ -741,8 +772,8 @@ const AdminDashboard = () => {
       </Row>
 
       {/* Performance Analytics */}
-      <Row gutter={window.innerWidth < 768 ? [16, 16] : [24, 24]} style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
-        <Col xs={24} lg={16} xl={12}>
+      <Row gutter={[window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 24, window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 24]} style={{ marginBottom: window.innerWidth < 768 ? 20 : 32 }}>
+        <Col xs={24} lg={24} xl={16}>
           <Card
             hoverable
             title={window.innerWidth < 768 ? 'Performance' : 'Performance Analytics'}
@@ -812,7 +843,7 @@ const AdminDashboard = () => {
               </div>
             </div>
             
-            <ResponsiveContainer width="100%" height={350}>
+            <ResponsiveContainer width="100%" height={window.innerWidth < 768 ? 300 : 350}>
               <BarChart data={[
                 { 
                   name: selectedMonth ? `${monthOptions.find(m => m.value === selectedMonth)?.label || 'Selected Month'} Revenue` : 'Monthly Revenue', 
@@ -862,7 +893,7 @@ const AdminDashboard = () => {
             </ResponsiveContainer>
           </Card>
         </Col>
-        <Col xs={24} lg={8}>
+        <Col xs={24} lg={24} xl={8}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <Card
               hoverable
@@ -1540,7 +1571,7 @@ case "payment-management":
 
       <Layout
         style={{
-          marginLeft: isSidebarCollapsed ? 80 : 280,
+          marginLeft: window.innerWidth < 768 ? 0 : (isSidebarCollapsed ? 80 : 280),
           transition: "margin-left 0.2s ease",
         }}
       >
@@ -1548,49 +1579,54 @@ case "payment-management":
           style={{
             background: cardBackground,
             color: textPrimary,
-            padding: "16px 24px",
-            fontSize: 16,
+            padding: window.innerWidth < 768 ? "12px 16px" : "16px 24px",
+            fontSize: window.innerWidth < 768 ? 14 : 16,
             fontWeight: 600,
             borderBottom: "1px solid #e2e8f0",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            height: "64px",
+            height: window.innerWidth < 768 ? "56px" : "64px",
             boxSizing: "border-box",
+            position: window.innerWidth < 768 ? "sticky" : "relative",
+            top: 0,
+            zIndex: 1000,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: window.innerWidth < 768 ? 8 : 12 }}>
             <img
               src="/logo_meeo.png"
               alt="logo"
               style={{
-                width: 32,
-                height: 32,
+                width: window.innerWidth < 768 ? 28 : 32,
+                height: window.innerWidth < 768 ? 28 : 32,
                 borderRadius: "8px",
                 objectFit: "cover",
               }}
             />
-            <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
-              <span
-                style={{
-                  fontSize: 16,
-                  fontWeight: 600,
-                  color: textPrimary,
-                }}
-              >
-                Admin Dashboard
-              </span>
-              <span
-                style={{
-                  fontSize: 12,
-                  color: textSecondary,
-                  fontWeight: 400,
-                }}
-              >
-                Municipal Economic Enterprise Office
-              </span>
-            </div>
+            {window.innerWidth >= 768 && (
+              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
+                <span
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 600,
+                    color: textPrimary,
+                  }}
+                >
+                  Admin Dashboard
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: textSecondary,
+                    fontWeight: 400,
+                  }}
+                >
+                  Municipal Economic Enterprise Office
+                </span>
+              </div>
+            )}
           </div>
 
           <div
@@ -1646,7 +1682,8 @@ case "payment-management":
           padding: 0,
           display: 'flex',
           flexDirection: 'column',
-          minHeight: 'calc(100vh - 64px)' // Full height minus header
+          minHeight: 'calc(100vh - 64px)', // Full height minus header
+          overflowX: 'hidden', // Prevent horizontal scroll
         }}>
           <div style={{ flex: 1 }}>
             {renderContent()}
