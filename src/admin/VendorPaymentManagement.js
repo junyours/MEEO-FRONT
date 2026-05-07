@@ -88,6 +88,7 @@ const VendorPaymentManagement = () => {
   const [selectedPaymentForDeposit, setSelectedPaymentForDeposit] = useState(null);
   const [depositConsumptionModal, setDepositConsumptionModal] = useState(false);
   const [customDepositAmount, setCustomDepositAmount] = useState('');
+  const [selectedMonthForDeposit, setSelectedMonthForDeposit] = useState(null);
 
   useEffect(() => {
     fetchVendors();
@@ -112,6 +113,16 @@ const VendorPaymentManagement = () => {
     try {
       // Add cache-busting parameter
       const response = await api.get('/vendor-payments?t=' + Date.now());
+      
+      // Check the specific vendor that was updated
+      if (selectedVendor) {
+        const updatedVendor = response.data.data.find(v => v.id === selectedVendor.id);
+        if (updatedVendor) {
+          // Calculate the new total deposit
+          const newTotalDeposit = getTotalDepositAmount(updatedVendor);
+        }
+      }
+      
       setVendors(response.data.data);
     } catch (error) {
       message.error('Failed to fetch vendors');
@@ -911,8 +922,10 @@ const VendorPaymentManagement = () => {
   const handleDepositConsumption = (vendor) => {
     setSelectedVendor(vendor);
     setDepositConsumptionModal(true);
+    setSelectedMonthForDeposit(null);
     setSelectedPaymentForDeposit(null);
     setUseDeposit(true);
+    setCustomDepositAmount('');
   };
 
   const getTotalDepositAmount = (vendor) => {
@@ -921,6 +934,29 @@ const VendorPaymentManagement = () => {
       const deposit = month.deposit || 0; // Use backend-provided deposit
       return sum + deposit;
     }, 0);
+  };
+
+  const getAvailableMonthsForDeposit = (vendor) => {
+    // Use vendor-level monthly balances instead of calculating from individual rentals
+    const monthsWithDeposits = [];
+    
+    // Get vendor monthly balances directly (already calculated correctly at backend)
+    const vendorMonthlyBalances = vendor.monthly_balances || [];
+    
+    vendorMonthlyBalances.forEach((monthBalance, monthIndex) => {
+      // Only add months that have deposits
+      if (monthBalance.deposit > 0) {
+        monthsWithDeposits.push({
+          monthIndex: monthIndex,
+          month: monthBalance.month,
+          totalDeposit: monthBalance.deposit, // Use backend-calculated deposit
+          monthlyRate: monthBalance.monthly_rate,
+          totalPayments: monthBalance.payment
+        });
+      }
+    });
+    
+    return monthsWithDeposits;
   };
 
   const getAvailablePaymentsForDeposit = (vendor) => {
@@ -944,7 +980,7 @@ const VendorPaymentManagement = () => {
         
         // Calculate deposit: total payments - monthly rate
         const totalDeposit = Math.max(0, totalMonthPayment - parseFloat(monthBalance.monthly_rate) || 0);
-        monthDeposits[monthIndex] = totalDeposit > 0;
+        monthDeposits[monthIndex] = totalDeposit; // Store the actual deposit amount for the month
         
            });
       
@@ -952,8 +988,9 @@ const VendorPaymentManagement = () => {
       monthlyBalances.forEach((monthBalance, monthIndex) => {
         if (monthBalance.individual_payments && monthBalance.individual_payments.length > 0) {
           monthBalance.individual_payments.forEach(individualPayment => {
-            // Calculate deposit correctly: payment amount - actual monthly rate
-            const deposit = Math.max(0, individualPayment.amount - individualPayment.monthly_rate);
+            // Use the total month deposit instead of individual payment deposit
+            // This matches the backend calculation logic
+            const deposit = monthDeposits[monthIndex] || 0;
             
             allPayments.push({
               ...individualPayment,
@@ -962,8 +999,8 @@ const VendorPaymentManagement = () => {
               stall_number: rental.stall_number,
               month: monthBalance.month,
               monthIndex: monthIndex,
-              deposit: deposit, // Use corrected deposit calculation
-              has_deposit: monthDeposits[monthIndex], // Use calculated month deposit status
+              deposit: deposit, // Use total month deposit amount
+              has_deposit: deposit > 0, // Check if month has deposit
             });
             
                 });
@@ -2401,11 +2438,11 @@ const VendorPaymentManagement = () => {
             key="consume"
             type="primary"
             loading={processingPayment}
-            disabled={!selectedPaymentForDeposit || !orNumber.trim() || selectedRentals.length === 0}
+            disabled={!selectedMonthForDeposit || !orNumber.trim() || selectedRentals.length === 0}
             onClick={async () => {
          
-              if (!selectedPaymentForDeposit) {
-                message.error('Please select a payment to consume deposit from');
+              if (!selectedMonthForDeposit) {
+                message.error('Please select a month with deposit to consume');
                 return;
               }
               if (!orNumber.trim()) {
@@ -2420,52 +2457,72 @@ const VendorPaymentManagement = () => {
               // Process deposit consumption
               setProcessingPayment(true);
               try {
-                // Determine the amount to consume
-                const amountToConsume = customDepositAmount ? parseFloat(customDepositAmount) : getTotalDepositAmount(selectedVendor);
                 
-                // Validate that selected payment is from a month with deposits
-                if (!selectedPaymentForDeposit.has_deposit) {
-                  message.error('This payment is from a month that does not have any deposit available');
-                  return;
-                }
+                // Determine the amount to consume - ensure precise decimal handling
+                const totalAmountToConsume = customDepositAmount ? 
+                  Math.round(parseFloat(customDepositAmount) * 100) / 100 : 
+                  Math.round(selectedMonthForDeposit.totalDeposit * 100) / 100;
+
+                // Divide the amount equally among the selected stalls
+                const amountPerStall = Math.round((totalAmountToConsume / selectedRentals.length) * 100) / 100;
                 
-                // Validate amount
-                if (amountToConsume <= 0 || amountToConsume > getTotalDepositAmount(selectedVendor)) {
-                  message.error('Invalid deposit amount');
+                console.log('After rounding - totalAmountToConsume:', totalAmountToConsume);
+                console.log('After division - amountPerStall:', amountPerStall);
+                console.log('Number of selected stalls:', selectedRentals.length);
+                console.log('Selected rental IDs:', selectedRentals);
+                console.log('Selected month:', selectedMonthForDeposit.month);
+                console.log('Payment data custom_amount:', totalAmountToConsume);
+                console.log('Payment data amounts array:', selectedRentals.map(() => amountPerStall));
+                
+                // Calculate and log remaining deposit
+                const remainingDeposit = selectedMonthForDeposit.totalDeposit - totalAmountToConsume;
+                console.log('=== DEPOSIT CALCULATION ===');
+                console.log('Original deposit amount:', selectedMonthForDeposit.totalDeposit);
+                console.log('Amount to consume:', totalAmountToConsume);
+                console.log('Expected remaining deposit:', remainingDeposit);
+                console.log('============================');
+                
+
+                // Find a payment from the selected month to use as the source
+                const availablePayments = getAvailablePaymentsForDeposit(selectedVendor);
+                const sourcePayment = availablePayments.find(p => p.monthIndex === selectedMonthForDeposit.monthIndex);
+                
+                if (!sourcePayment) {
+                  message.error('No payment found for selected month');
                   return;
                 }
 
-                // Calculate amounts for each selected rental (distribute deposit equally)
-                const depositPerStall = amountToConsume / selectedRentals.length;
-                const amounts = selectedRentals.map(() => Math.round(depositPerStall * 100) / 100);
-                const paymentTypes = selectedRentals.map(() => 'daily');
-
+                // Create payment data for deposit consumption
                 const paymentData = {
                   rental_ids: selectedRentals,
-                  amounts: amounts,
-                  payment_types: paymentTypes,
-                  advance_days: [],
+                  amounts: selectedRentals.map(() => amountPerStall),
+                  payment_types: selectedRentals.map(() => 'partial'),
                   or_number: orNumber.trim(),
                   payment_date: paymentDate.format('YYYY-MM-DD'),
-                  payment_id: selectedPaymentForDeposit.payment_id,
+                  payment_id: sourcePayment.payment_id,
                   consume_deposit: true,
-                  custom_amount: amountToConsume,
+                  custom_amount: totalAmountToConsume, // Send total amount for backend calculation
                 };
 
-             
                 const response = await api.post(`/vendor-payments/consume-deposit/${selectedVendor.id}`, paymentData);
-                
+
                 if (response.data.success) {
-                  message.success(`Deposit consumed successfully: ${fmtMoney(amountToConsume)}`);
+                  message.success(`Deposit consumed successfully: ${fmtMoney(totalAmountToConsume)}`);
+                  
                   // Reset form and close modal
                   setDepositConsumptionModal(false);
+                  setSelectedMonthForDeposit(null);
                   setSelectedPaymentForDeposit(null);
                   setUseDeposit(false);
                   setSelectedRentals([]);
                   setOrNumber('');
                   setPaymentDate(dayjs());
                   setCustomDepositAmount('');
-                  fetchVendors(); // Refresh data
+                  
+                  // Force refresh with a small delay to ensure backend has updated
+                  setTimeout(() => {
+                    fetchVendors();
+                  }, 500);
                 } else {
                   message.error('Failed to consume deposit');
                 }
@@ -2477,7 +2534,7 @@ const VendorPaymentManagement = () => {
               }
             }}
           >
-            {processingPayment ? 'Processing...' : 'Consume Deposit'}
+            Consume Deposit
           </Button>
         ]}
         width={800}
@@ -2486,7 +2543,7 @@ const VendorPaymentManagement = () => {
           <div>
             <div style={{ marginBottom: '16px' }}>
               <Text type="secondary">
-                Select a payment with deposit to consume. The deposit amount will be used to pay for current or future payments.
+                Select a month with available deposit to consume. The deposit amount will be used to pay for current or future payments.
               </Text>
             </div>
 
@@ -2497,19 +2554,19 @@ const VendorPaymentManagement = () => {
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <Text strong style={{ marginBottom: '8px', display: 'block' }}>Select Payment with Deposit:</Text>
+              <Text strong style={{ marginBottom: '8px', display: 'block' }}>Select Month with Deposit:</Text>
               <Select
                 style={{ width: '100%' }}
-                placeholder="Select a payment"
-                value={selectedPaymentForDeposit ? `${selectedPaymentForDeposit.section_name} - ${selectedPaymentForDeposit.stall_number} (${selectedPaymentForDeposit.month}) - Payment: ${fmtMoney(selectedPaymentForDeposit.amount)}` : undefined}
-                onChange={(paymentId) => {
-                  const availablePayments = getAvailablePaymentsForDeposit(selectedVendor);
-                  const selectedPayment = availablePayments.find(p => p.payment_id === paymentId);
-                  setSelectedPaymentForDeposit(selectedPayment);
+                placeholder="Select a month"
+                value={selectedMonthForDeposit ? `${selectedMonthForDeposit.month} - Available Deposit: ${fmtMoney(selectedMonthForDeposit.totalDeposit)}` : undefined}
+                onChange={(monthIndex) => {
+                  const availableMonths = getAvailableMonthsForDeposit(selectedVendor);
+                  const selectedMonth = availableMonths.find(m => m.monthIndex === monthIndex);
+                  setSelectedMonthForDeposit(selectedMonth);
                 }}
               >
-                {getAvailablePaymentsForDeposit(selectedVendor).map((payment) => (
-                  <Option key={payment.payment_id} value={payment.payment_id} >
+                {getAvailableMonthsForDeposit(selectedVendor).map((month) => (
+                  <Option key={month.monthIndex} value={month.monthIndex} >
                     <div style={{ 
                       padding: '8px 0',
                       lineHeight: '1.4',
@@ -2517,73 +2574,51 @@ const VendorPaymentManagement = () => {
                     }}>
                       <div style={{ marginBottom: '4px' }}>
                         <Text strong style={{ fontSize: '14px', color: '#52c41a' }}>
-                          {payment.section_name} - {payment.stall_number}
-                        </Text>
-                        <Text style={{ marginLeft: '8px', fontSize: '12px', color: '#666' }}>
-                          ({payment.month})
+                          {month.month}
                         </Text>
                       </div>
                       <div style={{ marginBottom: '4px' }}>
                         <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
-                          Payment: <Text strong>{fmtMoney(payment.amount)}</Text>
+                          Total Payments: <Text strong>{fmtMoney(month.totalPayments)}</Text>
                         </Text>
                       </div>
                       <div style={{ marginBottom: '4px' }}>
                         <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
-                          Monthly Rate: <Text strong>{fmtMoney(payment.monthly_rate)}</Text>
+                          Monthly Rate: <Text strong>{fmtMoney(month.monthlyRate)}</Text>
                         </Text>
                       </div>
-                      {payment.or_number && (
-                        <div>
-                          <Text type="secondary" style={{ fontSize: '11px', display: 'block' }}>
-                            OR #: <Text strong>{payment.or_number}</Text>
-                          <Text style={{ marginLeft: '8px', fontSize: '10px', color: '#999' }}>
-                              ({formatDate(payment.payment_date)})
-                          </Text>
-                          </Text>
-                        </div>
-                      )}
+                      <div style={{ marginBottom: '4px' }}>
+                        <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
+                          Available Deposit: <Text strong style={{ color: '#52c41a' }}>{fmtMoney(month.totalDeposit)}</Text>
+                        </Text>
+                      </div>
                     </div>
                   </Option>
                 ))}
               </Select>
             </div>
 
-            {selectedPaymentForDeposit && (
+            {selectedMonthForDeposit && (
               <div style={{ padding: '16px', backgroundColor: '#e6f7ff', borderRadius: '8px' }}>
                 <div style={{ marginBottom: '8px' }}>
-                  <Text strong>Selected Payment Details:</Text>
+                  <Text strong>Selected Month Details:</Text>
                 </div>
                 <div>
-                  <Text>Stall: <Text strong>{selectedPaymentForDeposit.section_name} - {selectedPaymentForDeposit.stall_number}</Text></Text>
+                  <Text>Month: <Text strong>{selectedMonthForDeposit.month}</Text></Text>
                   <br />
-                  <Text>Month: <Text strong>{selectedPaymentForDeposit.month}</Text></Text>
+                  <Text>Total Payments: <Text strong>{fmtMoney(selectedMonthForDeposit.totalPayments)}</Text></Text>
                   <br />
-                  <Text>Payment Amount: <Text strong>{fmtMoney(selectedPaymentForDeposit.amount)}</Text></Text>
+                  <Text>Monthly Rate: <Text strong>{fmtMoney(selectedMonthForDeposit.monthlyRate)}</Text></Text>
                   <br />
-                  <Text>Monthly Rate: <Text strong>{fmtMoney(selectedPaymentForDeposit.monthly_rate)}</Text></Text>
-                  {selectedPaymentForDeposit.deposit > 0 && (
-                    <>
-                      <br />
-                      <Text>Deposit Amount: <Text strong style={{ color: '#52c41a' }}>{fmtMoney(selectedPaymentForDeposit.deposit)}</Text></Text>
-                      <br />
-                      <Text>Available to consume: <Text strong style={{ color: '#52c41a' }}>{fmtMoney(selectedPaymentForDeposit.deposit)}</Text></Text>
-                    </>
-                  )}
-                  {selectedPaymentForDeposit.or_number && (
-                    <div>
-                      <Text>OR Number: <Text strong>{selectedPaymentForDeposit.or_number}</Text></Text>
-                      <Text style={{ marginLeft: '8px', fontSize: '11px', color: '#666' }}>
-                        ({formatDate(selectedPaymentForDeposit.payment_date)})
-                      </Text>
-                    </div>
-                  )}
+                  <Text>Total Available Deposit for {selectedMonthForDeposit.month}: <Text strong style={{ color: '#52c41a' }}>{fmtMoney(selectedMonthForDeposit.totalDeposit)}</Text></Text>
+                  <br />
+                  <Text>Available to consume: <Text strong style={{ color: '#52c41a' }}>{fmtMoney(selectedMonthForDeposit.totalDeposit)}</Text></Text>
                 </div>
               </div>
             )}
 
             {/* Custom Deposit Amount Input */}
-            {selectedPaymentForDeposit && (
+            {selectedMonthForDeposit && (
               <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fff7e6', borderRadius: '8px' }}>
                 <div style={{ marginBottom: '8px' }}>
                   <Text strong>Deposit Amount to Consume:</Text>
@@ -2598,7 +2633,7 @@ const VendorPaymentManagement = () => {
                     }}
                   >
                     <Radio value="full">
-                      <Text>Use Full Deposit ({fmtMoney(getTotalDepositAmount(selectedVendor))})</Text>
+                      <Text>Use Full Deposit ({fmtMoney(selectedMonthForDeposit.totalDeposit)})</Text>
                     </Radio>
                     <Radio value="custom">
                       <Text>Custom Amount</Text>
@@ -2614,12 +2649,12 @@ const VendorPaymentManagement = () => {
                       prefix="₱"
                       type="number"
                       min={0}
-                      max={selectedPaymentForDeposit.deposit}
+                      max={selectedMonthForDeposit.totalDeposit}
                       style={{ width: '100%' }}
                     />
-                    {customDepositAmount && parseFloat(customDepositAmount) > getTotalDepositAmount(selectedVendor) && (
+                    {customDepositAmount && parseFloat(customDepositAmount) > selectedMonthForDeposit.totalDeposit && (
                       <Text type="danger" style={{ fontSize: '12px', display: 'block', marginTop: '4px' }}>
-                        Amount cannot exceed available deposit ({fmtMoney(getTotalDepositAmount(selectedVendor))})
+                        Amount cannot exceed available deposit ({fmtMoney(selectedMonthForDeposit.totalDeposit)})
                       </Text>
                     )}
                   </div>
@@ -2628,7 +2663,7 @@ const VendorPaymentManagement = () => {
             )}
 
             {/* OR Number and Payment Date Input */}
-            {selectedPaymentForDeposit && (
+            {selectedMonthForDeposit && (
               <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
                 <div style={{ marginBottom: '16px' }}>
                   <Text strong>Payment Details for Deposit Consumption:</Text>
@@ -2709,7 +2744,7 @@ const VendorPaymentManagement = () => {
               style={{ marginTop: '16px' }}
             />
             
-            {!orNumber.trim() && selectedPaymentForDeposit && (
+            {!orNumber.trim() && selectedMonthForDeposit && (
               <Alert
                 message="OR Number Required"
                 description="Please enter an OR number to proceed with deposit consumption."
@@ -2719,7 +2754,7 @@ const VendorPaymentManagement = () => {
               />
             )}
             
-            {selectedRentals.length === 0 && selectedPaymentForDeposit && (
+            {selectedRentals.length === 0 && selectedMonthForDeposit && (
               <Alert
                 message="Select Stalls"
                 description="Please select at least one stall to apply the deposit to."
