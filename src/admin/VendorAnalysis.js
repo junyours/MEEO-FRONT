@@ -1742,7 +1742,7 @@ const VendorAnalysis = () => {
               <Card>
                 <Statistic
                   title="Monthly Total"
-                  value={vendorData.totals.monthly}
+                  value={vendorData.vendor_analysis?.monthly || 0}
                   formatter={(value) => formatCurrency(value)}
                   valueStyle={{ color: '#1890ff' }}
                   prefix={<DollarOutlined />}

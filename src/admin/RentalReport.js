@@ -21,6 +21,7 @@ import {
   Badge,
   DatePicker,
   Form,
+  Alert,
 } from 'antd';
 import {
   DollarOutlined,
@@ -32,6 +33,7 @@ import {
   SearchOutlined,
   EyeOutlined,
   EditOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -53,6 +55,9 @@ const RentalReport = () => {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editForm, setEditForm] = useState({ rented_at: '' });
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [deletingRented, setDeletingRented] = useState(null);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     fetchRentalReport();
@@ -163,6 +168,47 @@ const RentalReport = () => {
     setEditModalVisible(false);
     setEditingRented(null);
     setEditForm({ rented_at: '' });
+  };
+
+  const handleDeleteRented = (stallDetail) => {
+    setDeletingRented(stallDetail);
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingRented) {
+      message.error('No record selected for deletion');
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      const response = await api.delete(`/rented/${deletingRented.rented_id}/delete-record`);
+      
+      if (response.data.status === 'success') {
+        message.success('Rented record deleted successfully');
+        setDeleteModalVisible(false);
+        setDeletingRented(null);
+        // Refresh vendor details to show updated data
+        if (selectedVendor) {
+          fetchVendorDetails(selectedVendor.vendor_name);
+        }
+        // Also refresh the main rental report
+        fetchRentalReport();
+      } else {
+        message.error('Failed to delete rented record');
+      }
+    } catch (error) {
+      console.error('Error deleting rented record:', error);
+      message.error('Failed to delete rented record');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModalVisible(false);
+    setDeletingRented(null);
   };
 
   const getStatusColor = (status) => {
@@ -795,18 +841,29 @@ const RentalReport = () => {
                   {
                     title: 'Action',
                     key: 'action',
-                    width: 100,
+                    width: 150,
                     align: 'center',
                     render: (text, record) => (
-                      <Button
-                        type="link"
-                        size="small"
-                        icon={<EditOutlined />}
-                        onClick={() => handleEditRentedAt(record)}
-                        style={{ color: '#1890ff' }}
-                      >
-                        Edit Record
-                      </Button>
+                      <Space size="small">
+                        <Button
+                          type="link"
+                          size="small"
+                          icon={<EditOutlined />}
+                          onClick={() => handleEditRentedAt(record)}
+                          style={{ color: '#1890ff' }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          type="link"
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          onClick={() => handleDeleteRented(record)}
+                          style={{ color: '#ff4d4f' }}
+                        >
+                          Delete
+                        </Button>
+                      </Space>
                     ),
                   },
                 ]}
@@ -855,6 +912,47 @@ const RentalReport = () => {
             />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        title="Delete Rented Record"
+        open={deleteModalVisible}
+        onOk={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        confirmLoading={deleteLoading}
+        okText="Delete"
+        cancelText="Cancel"
+        okButtonProps={{ danger: true }}
+        width={400}
+      >
+        <div>
+          <p>Are you sure you want to delete this rented record?</p>
+          <Descriptions column={1} size="small">
+            <Descriptions.Item label="Stall Number">
+              <Text strong>{deletingRented?.stall_number || 'N/A'}</Text>
+            </Descriptions.Item>
+            <Descriptions.Item label="Status">
+              <Badge 
+                status={getStatusColor(deletingRented?.status)} 
+                text={getStatusText(deletingRented?.status)} 
+              />
+            </Descriptions.Item>
+            <Descriptions.Item label="Daily Rent">
+              {formatCurrency(deletingRented?.daily_rent || 0)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Rented At">
+              {deletingRented?.created_at ? dayjs(deletingRented.created_at).format('MMMM DD, YYYY') : 'N/A'}
+            </Descriptions.Item>
+          </Descriptions>
+          <Alert
+            message="Warning"
+            description="This action cannot be undone. The rented record will be permanently deleted."
+            type="warning"
+            showIcon
+            style={{ marginTop: '16px' }}
+          />
+        </div>
       </Modal>
 
       {/* Custom CSS */}

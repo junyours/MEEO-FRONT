@@ -155,18 +155,30 @@ const TargetsReports = () => {
 
   // Optimized change handlers to prevent focus loss
   const handleAnnualChange = useCallback((module, value) => {
-    const cleanValue = value.replace(/[^\d]/g, '');
+    const cleanValue = value.replace(/[^\d.]/g, '');
+    // Ensure only one decimal point
+    const parts = cleanValue.split('.');
+    if (parts.length > 2) {
+      parts.splice(2);
+    }
+    const finalValue = parts.join('.');
     setTargetValues(prev => ({
       ...prev,
-      [module]: cleanValue ? Number(cleanValue) : null,
+      [module]: finalValue,
     }));
   }, []);
 
   const handleMonthlyChange = useCallback((cellKey, value) => {
-    const cleanValue = value.replace(/[^\d]/g, '');
+    const cleanValue = value.replace(/[^\d.]/g, '');
+    // Ensure only one decimal point
+    const parts = cleanValue.split('.');
+    if (parts.length > 2) {
+      parts.splice(2);
+    }
+    const finalValue = parts.join('.');
     setTargetValues(prev => ({
       ...prev,
-      [cellKey]: cleanValue ? Number(cleanValue) : null,
+      [cellKey]: finalValue,
     }));
   }, []);
 
@@ -277,7 +289,7 @@ const TargetsReports = () => {
     try {
       const monthNames = ['january', 'february', 'march', 'april', 'may', 'june',
                          'july', 'august', 'september', 'october', 'november', 'december'];
-      
+
       const payload = {
         year: year,
         month: monthNames[monthIndex - 1],
@@ -554,7 +566,7 @@ const TargetsReports = () => {
                             }
                           }}
                           type="text"
-                          value={targetValues[row.module] ? `₱ ${Number(targetValues[row.module]).toLocaleString()}` : ''}
+                          value={targetValues[row.module] !== undefined ? targetValues[row.module] : ''}
                           onChange={(e) => handleAnnualChange(row.module, e.target.value)}
                           className={CSS_CLASSES.input}
                           style={{
@@ -632,7 +644,7 @@ const TargetsReports = () => {
                             onClick={() => {
                               setTargetValues(prev => ({
                                 ...prev,
-                                [row.module]: Number(row.annual_target) || 0,
+                                [row.module]: String(row.annual_target || 0),
                               }));
                               setEditingRow(row.module);
                             }}
@@ -654,10 +666,10 @@ const TargetsReports = () => {
                   const monthlyCollection = row.monthly?.[i + 1] || 0;
 
                   if (editingCell === cellKey) {
-                    const currentValue = targetValues[cellKey] !== undefined 
-                      ? targetValues[cellKey] 
-                      : Number(monthlyCollection);
-                    const originalValue = Number(monthlyCollection);
+                    const currentValue = targetValues[cellKey] !== undefined
+                      ? targetValues[cellKey]
+                      : String(monthlyCollection);
+                    const originalValue = String(monthlyCollection);
                     const hasChanged = currentValue !== originalValue;
                     
                     return (
@@ -678,7 +690,7 @@ const TargetsReports = () => {
                             }
                           }}
                           type="text"
-                          value={targetValues[cellKey] ? `₱ ${Number(targetValues[cellKey]).toLocaleString()}` : ''}
+                          value={targetValues[cellKey] !== undefined ? targetValues[cellKey] : ''}
                           onChange={(e) => handleMonthlyChange(cellKey, e.target.value)}
                           className={CSS_CLASSES.input}
                           style={{
@@ -768,7 +780,7 @@ const TargetsReports = () => {
                             onClick={() => {
                               setTargetValues(prev => ({
                                 ...prev,
-                                [cellKey]: Number(monthlyCollection) || 0,
+                                [cellKey]: String(monthlyCollection || 0),
                               }));
                               setEditingCell(cellKey);
                             }}
