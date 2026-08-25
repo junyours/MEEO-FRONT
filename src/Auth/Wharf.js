@@ -282,7 +282,7 @@ const HeroSection = ({
           HERO CONTENT
           ===================================================================== */}
 
-      <div className="enterprise-hero-content">
+      <div className="wharf-enterprise-hero-content">
         <span className="enterprise-kicker">
           <EnvironmentOutlined />
           MUNICIPAL WHARF

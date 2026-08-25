@@ -24,6 +24,7 @@ import Footer from "../Auth/Footer";
 import AvailableProducts from "../Auth/AvailableProducts";
 import AboutSection from "../Auth/AboutSection";
 import bg from "../assets/bg.jpg";
+import Market1 from "../assets/Market1.jpg"
 import logo from "../assets/logo_meeo.png";
 import "./homepage.css";
 
@@ -126,7 +127,7 @@ const Homepage = () => {
     heroWrapper: { 
       position: "relative", 
       minHeight: "100vh", 
-      background: `url(${bg}) center/cover no-repeat`,
+      background: `url(${Market1}) center/cover no-repeat`,
       backgroundAttachment: "fixed"
     },
 
@@ -194,24 +195,28 @@ const Homepage = () => {
       alignItems: "center", 
       textAlign: "center", 
       padding: "60px 20px", 
-      color: "#fff" 
+      color: "#ffffff" 
     },
-    heroTitle: { 
-      fontSize: "clamp(42px, 8vw, 72px)", 
-      fontWeight: 900, 
-      marginBottom: 24, 
-      textShadow: "0 4px 12px rgba(0,0,0,0.8)",
-      letterSpacing: "2px",
-      lineHeight: 1.2
-    },
-    heroSubtitle: { 
-      fontSize: "clamp(18px, 4vw, 24px)", 
-      maxWidth: 800, 
-      lineHeight: 1.8, 
-      opacity: 0.95,
-      textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-      marginBottom: 40
-    },
+heroTitle: { 
+  fontSize: "clamp(42px, 8vw, 72px)", 
+  fontWeight: 900, 
+  marginBottom: 24, 
+  color: "rgba(255, 255, 255, 0.75)",
+  textShadow: "0 4px 12px rgba(0,0,0,0.5)",
+  letterSpacing: "2px",
+  lineHeight: 1.2
+},
+
+heroSubtitle: { 
+  fontSize: "clamp(18px, 4vw, 24px)", 
+  maxWidth: 800, 
+  lineHeight: 1.8, 
+  color: "rgba(255, 255, 255, 0.85)",
+  textShadow: "0 2px 8px rgba(0,0,0,0.4)",
+  marginBottom: 40
+},
+
+
     // Enhanced stall monitoring styles
     stallMonitoringWrapper: {
       padding: "60px 20px",
@@ -360,7 +365,7 @@ const Homepage = () => {
     };
 
   const menuItems = [
-     { key: "get-started", label: "Get Started" },
+     { key: "get-started", label: "Back" },
     { key: "home", label: "Home" },
     { key: "products", label: "Available Products" },
     { key: "about", label: "About" },

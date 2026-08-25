@@ -244,7 +244,7 @@
 
 .get-started-content h1 span,.more-info-header h2 span {
 	display: block;
-	color: var(--blue);
+	color: #06e66b;
 }
 
 .description {
@@ -2207,7 +2207,7 @@
 }
 
 .market-hero .get-started-content h1 span {
-	color: #9fc7ff;
+	color: #06e66b
 }
 
 .market-hero .description {
@@ -2397,6 +2397,7 @@
 
 .brand-text strong,.brand-text span {
 	overflow-wrap: anywhere;
+	color:#000000;
 }
 
 .enterprise-nav-links {
