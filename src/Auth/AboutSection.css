@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
+.about-section {
+  position: relative;
+  min-height: calc(100vh - 100px);
+  overflow: hidden;
+  padding: clamp(60px, 9vw, 120px) 20px;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4fa 100%) !important;
+  font-family: 'DM Sans', 'Avenir Next', sans-serif;
+}
+
+.about-section::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: -120px;
+  width: 280px;
+  height: 280px;
+  border: 1px solid rgba(23, 105, 224, .08);
+  border-radius: 50%;
+  box-shadow: 0 0 0 34px rgba(23, 105, 224, .025), 0 0 0 68px rgba(23, 105, 224, .018);
+}
+
+.about-section-card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 920px);
+  padding: clamp(32px, 6vw, 64px) clamp(22px, 6vw, 74px) !important;
+  overflow: hidden;
+  border: 1px solid #dfe8f3 !important;
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, .94) !important;
+  box-shadow: 0 24px 60px rgba(35, 61, 102, .1) !important;
+  animation: aboutReveal .8s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.about-section-icon {
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 22px;
+  border: 1px solid #c8dcfa;
+  border-radius: 15px;
+  color: #1769e0;
+  background: #eaf2ff;
+}
+
+.about-section-icon .anticon { font-size: 30px; }
+.about-section-eyebrow { display: block; color: #1769e0; font-size: .7rem; font-weight: 800; letter-spacing: .14em; text-align: center; }
+.about-section-title { margin: 12px 0 24px !important; color: #14213d !important; -webkit-text-fill-color: #14213d !important; background: none !important; font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(2rem, 5vw, 3.4rem) !important; line-height: 1.1; letter-spacing: -.04em; }
+.about-section-copy { max-width: 730px; margin: 0 auto; color: #526680; font-size: clamp(1rem, 1.6vw, 1.15rem) !important; line-height: 1.8 !important; text-align: left; }
+.about-section-copy p { margin: 0; }.about-section-copy p + p { margin-top: 18px; }
+.about-section-pill { width: fit-content; display: inline-flex; align-items: center; gap: 8px; margin-top: 30px; padding: 9px 13px; border: 1px solid #c9ddfb; border-radius: 7px; color: #1769e0; background: #f2f7ff; font-size: .8rem; font-weight: 700; }
+
+@keyframes aboutReveal { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 600px) {
+  .about-section { min-height: calc(100vh - 70px); padding: 42px 16px; }
+  .about-section-card { border-radius: 14px !important; }
+  .about-section-icon { width: 54px; height: 54px; }
+  .about-section-eyebrow { font-size: .58rem; line-height: 1.5; }
+  .about-section-title { font-size: 2rem !important; }
+  .about-section-copy { font-size: .95rem !important; text-align: left; }
+  .about-section-pill { font-size: .72rem; }
+}
+
+@media (prefers-reduced-motion: reduce) { .about-section-card { animation: none; } }

@@ -48,6 +48,7 @@ import api from '../Api';
 import logo from '../assets/logo_meeo.png';
 import bg from '../assets/bg.jpg';
 import Footer from './Footer';
+import './Login.css';
 
 const { Text, Link, Title } = Typography;
 const { Step } = Steps;
@@ -1127,16 +1128,16 @@ const Login = () => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh', background: 'transparent' }}>
-      <div style={containerStyle}>
-        <div style={bgStyle}></div>
-        <div style={overlayStyle}></div>
-        <div style={animatedBgStyle}></div>
+    <Layout className="login-page" style={{ minHeight: '100vh', background: 'transparent' }}>
+      <div className="login-container" style={containerStyle}>
+        <div className="login-background" style={bgStyle}></div>
+        <div className="login-overlay" style={overlayStyle}></div>
+        <div className="login-ambient-background" style={animatedBgStyle}></div>
 
-        <div style={cardWrapperStyle}>
-          <div style={formContainerStyle}>
+        <div className="login-card" style={cardWrapperStyle}>
+          <div className="login-form-panel" style={formContainerStyle}>
             <div style={formContainerPattern}></div>
-            <div style={{ textAlign: 'center', marginBottom: window.innerWidth <= 768 ? '30px' : '50px', paddingTop: '10px' }}>
+            <div className="login-intro" style={{ textAlign: 'center', marginBottom: window.innerWidth <= 768 ? '30px' : '50px', paddingTop: '10px' }}>
               <div style={{ marginBottom: window.innerWidth <= 768 ? '20px' : '30px' }}>
                 <img 
                   src={logo} 
@@ -1149,7 +1150,7 @@ const Login = () => {
                   }} 
                 />
               </div>
-              <h2 style={{
+              <h2 className="login-intro-title" style={{
                 fontSize: window.innerWidth <= 768 ? '24px' : '36px',
                 marginBottom: '12px',
                 fontWeight: '800',
@@ -1164,7 +1165,7 @@ const Login = () => {
               }}>
                 Login
               </h2>
-              <p style={{
+              <p className="login-intro-subtitle" style={{
                 fontSize: window.innerWidth <= 768 ? '14px' : '18px',
                 marginBottom: '20px',
                 color: '#64748b',
@@ -1392,7 +1393,7 @@ const Login = () => {
                 <div style={{ textAlign: 'center', marginTop: '16px' }}>
                   <button
                     type="button"
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/homepage')}
                     style={{
                       background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                       border: 'none',
@@ -1430,7 +1431,7 @@ const Login = () => {
             {error && <div style={errorStyle}>{error}</div>}
           </div>
 
-          <div style={logoContainerStyle}>
+          <div className="login-brand-panel" style={logoContainerStyle}>
             <div style={logoContainerPattern}></div>
             <img src={logo} alt="MEEO Logo" style={logoStyle} />
           </div>

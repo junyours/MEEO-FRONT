@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { Menu, Card, Row, Col, Statistic, Spin, Button, Drawer, Badge, Progress } from "antd";
 import { 
   ShopOutlined, 
@@ -25,20 +25,32 @@ import AvailableProducts from "../Auth/AvailableProducts";
 import AboutSection from "../Auth/AboutSection";
 import bg from "../assets/bg.jpg";
 import logo from "../assets/logo_meeo.png";
+import "./homepage.css";
 
 
 
 
 
 const Homepage = () => {
+  const navigate = useNavigate();
   const [active, setActive] = useState("home");
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [drawerVisible, setDrawerVisible] = useState(false); // For mobile menu
   const [displaySectionType, setDisplaySectionType] = useState('main'); // 'main', 'market', 'open_space'
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
 
   const handleBackToMain = () => {
     setDisplaySectionType('main');
+  };
+
+  const handleMenuSelect = (key) => {
+    if (key === "get-started") {
+      navigate("/");
+      return;
+    }
+
+    setActive(key);
   };
 
   // Filter sections by area type
@@ -90,6 +102,9 @@ const Homepage = () => {
   const { market, openSpace } = processSectionsData();
 
   useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+
     api
       .get("/sections/available-stalls")
       .then((res) => {
@@ -98,6 +113,7 @@ const Homepage = () => {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const styles = {
@@ -113,13 +129,7 @@ const Homepage = () => {
       background: `url(${bg}) center/cover no-repeat`,
       backgroundAttachment: "fixed"
     },
-    overlay: { 
-      position: "absolute", 
-      inset: 0, 
-      background: "linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%)", 
-      backdropFilter: "blur(8px)", 
-      zIndex: 1 
-    },
+
     navbar: {
       display: "flex",
       justifyContent: "space-between",
@@ -350,32 +360,35 @@ const Homepage = () => {
     };
 
   const menuItems = [
+     { key: "get-started", label: "Get Started" },
     { key: "home", label: "Home" },
     { key: "products", label: "Available Products" },
     { key: "about", label: "About" },
+   
     { key: "login", label: <RouterLink to="/login">Login</RouterLink> },
   ];
 
   return (
-    <div style={styles.page}>
+    <div className="homepage" style={styles.page}>
       {/* NAVBAR */}
-      <div style={active === "home" ? styles.heroWrapper : { background: "#f4f6f9" }}>
-        {active === "home" && <div style={styles.overlay}></div>}
+      <div className={`homepage-shell ${active === "home" ? "homepage-hero-shell" : "homepage-inner-shell"}`} style={active === "home" ? styles.heroWrapper : { background: "#f4f6f9" }}>
+        {active === "home" && <div className="homepage-overlay" style={styles.overlay}></div>}
 
-        <div style={styles.navbar}>
-          <div style={styles.brand}>
-            <img src={logo} alt="logo" height={40} />
-            MEEO System
+        <div className="homepage-navbar" style={styles.navbar}>
+          <div className="homepage-brand" style={styles.brand}>
+            <img src={logo} alt="MEEO System logo" height={40} />
+            <span>MEEO System</span>
           </div>
 
           {/* Desktop Menu */}
-          <div className="desktop-menu" style={styles.menuDesktop}>
-            {window.innerWidth > 768 &&
+          <div className="homepage-desktop-menu" style={styles.menuDesktop}>
+            {!isMobile &&
               menuItems.map((item) => (
                 <div
+                  className={`homepage-menu-item ${active === item.key ? "active" : ""}`}
                   key={item.key}
                   style={{ ...styles.menuItem, cursor: "pointer" }}
-                  onClick={() => setActive(item.key)}
+                  onClick={() => handleMenuSelect(item.key)}
                 >
                   {item.label}
                 </div>
@@ -383,8 +396,10 @@ const Homepage = () => {
           </div>
 
           {/* Mobile Hamburger */}
-          {window.innerWidth <= 768 && (
-            <MenuOutlined style={styles.menuMobileIcon} onClick={() => setDrawerVisible(true)} />
+          {isMobile && (
+            <button className="homepage-menu-toggle" aria-label="Open navigation menu" onClick={() => setDrawerVisible(true)}>
+              <MenuOutlined />
+            </button>
           )}
         </div>
 
@@ -400,7 +415,7 @@ const Homepage = () => {
               key={item.key}
               style={{ padding: "12px 0", fontSize: 18 }}
               onClick={() => {
-                setActive(item.key);
+                handleMenuSelect(item.key);
                 setDrawerVisible(false);
               }}
             >
@@ -411,9 +426,9 @@ const Homepage = () => {
 
         {/* HERO CONTENT */}
         {active === "home" && (
-          <div style={styles.hero}>
-            <h1 style={styles.heroTitle}>Municipal Economic Enterprise Office</h1>
-            <p style={styles.heroSubtitle}>
+          <div className="homepage-hero-content" style={styles.hero}>
+            <h1 className="homepage-hero-title" style={styles.heroTitle}>Municipal Economic Enterprise Office</h1>
+            <p className="homepage-hero-subtitle" style={styles.heroSubtitle}>
               A centralized platform for Economic Enterprise Revenue Collections, Stall Rental Monitoring, Vendor Management, and Automated Financial Reporting.
             </p>
           </div>
@@ -422,9 +437,9 @@ const Homepage = () => {
 
       {/* AVAILABLE STALLS - MARKET & OPEN SPACE */}
       {active === "home" && (
-        <div style={styles.stallMonitoringWrapper}>
-          <h2 style={styles.sectionTitle}>Stall Availability </h2>
-          <p style={styles.sectionDesc}>
+        <div className="homepage-stall-section" style={styles.stallMonitoringWrapper}>
+          <h2 className="homepage-section-title" style={styles.sectionTitle}>Stall Availability </h2>
+          <p className="homepage-section-description" style={styles.sectionDesc}>
             Simple and clear view of market and open space stall availability to help manage our community market better.
           </p>
 
@@ -435,6 +450,7 @@ const Homepage = () => {
               {/* Market Card */}
               <Col xs={24} lg={12}>
                 <Card
+                  className="homepage-stall-card"
                   hoverable
                   style={{
                     ...styles.stallCard,
@@ -449,12 +465,12 @@ const Homepage = () => {
                     e.currentTarget.style.boxShadow = "0 20px 60px rgba(0,0,0,0.15)";
                   }}
                 >
-                  <div style={styles.marketCardHeader}>
+                  <div className="homepage-stall-card-header homepage-market-header" style={styles.marketCardHeader}>
                     <HomeOutlined style={styles.cardIcon} />
                     <h3 style={styles.cardTitle}>Market Stalls</h3>
                     <p style={styles.cardSubtitle}>Wet & Dry Market Areas</p>
                   </div>
-                  <div style={styles.stallCardContent}>
+                  <div className="homepage-stall-card-content" style={styles.stallCardContent}>
                     <div style={styles.statsGrid}>
                       <div 
                         style={styles.statItem}
@@ -554,12 +570,7 @@ const Homepage = () => {
                               }}>
                                 {section.name}
                               </div>
-                              <div style={{ 
-                                fontSize: "clamp(10px, 2.5vw, 12px)", 
-                                color: "#666" 
-                              }}>
-                                {section.area?.name} Area
-                              </div>
+                             
                             </div>
                             <div style={{ 
                               display: "flex", 
@@ -628,6 +639,7 @@ const Homepage = () => {
               {/* Open Space Card */}
               <Col xs={24} lg={12}>
                 <Card
+                  className="homepage-stall-card"
                   hoverable
                   style={{
                     ...styles.stallCard,
@@ -642,12 +654,12 @@ const Homepage = () => {
                     e.currentTarget.style.boxShadow = "0 20px 60px rgba(0,0,0,0.15)";
                   }}
                 >
-                  <div style={styles.openSpaceCardHeader}>
+                  <div className="homepage-stall-card-header homepage-open-space-header" style={styles.openSpaceCardHeader}>
                     <FieldTimeOutlined style={styles.cardIcon} />
                     <h3 style={styles.cardTitle}>Open Space</h3>
                     <p style={styles.cardSubtitle}>Outdoor Market Areas</p>
                   </div>
-                  <div style={styles.stallCardContent}>
+                  <div className="homepage-stall-card-content" style={styles.stallCardContent}>
                     <div style={styles.statsGrid}>
                       <div 
                         style={styles.statItem}
@@ -747,12 +759,7 @@ const Homepage = () => {
                               }}>
                                 {section.name}
                               </div>
-                              <div style={{ 
-                                fontSize: "clamp(10px, 2.5vw, 12px)", 
-                                color: "#666" 
-                              }}>
-                                {section.area?.name} Area
-                              </div>
+                              
                             </div>
                             <div style={{ 
                               display: "flex", 

@@ -1,0 +1,696 @@
+/* ==========================================================================
+   Wharf / Pantalan
+   Enterprise Detail Page
+   ========================================================================== */
+
+
+/* ==========================================================================
+   Navbar
+   ========================================================================== */
+
+.enterprise-detail-page .landing-navbar {
+  position: relative;
+}
+
+
+/* ==========================================================================
+   Hero Section
+   ========================================================================== */
+
+.enterprise-hero {
+  min-height: 610px;
+  padding: 130px 8% 90px;
+
+  display: flex;
+  align-items: center;
+  gap: 40px;
+
+  color: #fff;
+
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.enterprise-hero-content {
+  width: min(650px, 100%);
+}
+
+.enterprise-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  color: #cde1ff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+
+.enterprise-hero h1 {
+  margin: 22px 0;
+
+  color: #fff;
+
+  font:
+    800 clamp(42px, 6vw, 76px) / 1.05
+    "Plus Jakarta Sans",
+    sans-serif;
+}
+
+.enterprise-hero h1 span {
+  display: block;
+  color: #9cc7ff;
+}
+
+.enterprise-hero p {
+  max-width: 590px;
+
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+
+/* ==========================================================================
+   Hero Points
+   ========================================================================== */
+
+.enterprise-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+
+  margin: 26px 0 30px;
+
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.enterprise-points span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.enterprise-points svg {
+  color: #8de0bb;
+}
+
+
+/* ==========================================================================
+   Hero Buttons
+   ========================================================================== */
+
+.enterprise-detail-page .hero-buttons {
+  max-width: 560px;
+  gap: 10px;
+}
+
+.enterprise-detail-page .hero-buttons > button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.enterprise-detail-page .hero-buttons .get-started-button {
+  box-shadow: 0 12px 24px rgba(23, 105, 224, 0.28);
+}
+
+.enterprise-detail-page .hero-buttons .hero-more-info {
+  color: var(--ink);
+  background: #fff;
+  border-color: #fff;
+}
+
+.enterprise-detail-page .hero-buttons button:hover {
+  transform: translateY(-3px);
+}
+
+
+/* ==========================================================================
+   Hero Gallery
+   ========================================================================== */
+
+.enterprise-gallery {
+  position: relative;
+
+  width: min(420px, 100%);
+  margin-left: auto;
+
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 14px;
+
+  background: #0c1c31;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+
+  flex-shrink: 0;
+}
+
+.enterprise-gallery img {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center;
+}
+
+.enterprise-gallery .gallery-arrow {
+  position: absolute;
+  z-index: 5;
+}
+
+
+/* ==========================================================================
+   Hero Gallery Dots
+   ========================================================================== */
+
+.enterprise-gallery .hero-gallery-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+
+  width: max-content;
+  margin: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  transform: translateX(-50%);
+
+  z-index: 20;
+}
+
+.enterprise-gallery .hero-gallery-dots button {
+  width: 9px;
+  height: 9px;
+  min-width: 9px;
+  min-height: 9px;
+
+  margin: 0;
+  padding: 0;
+
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.35);
+
+  cursor: pointer;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.enterprise-gallery .hero-gallery-dots button:hover {
+  transform: scale(1.3);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.enterprise-gallery .hero-gallery-dots button.active {
+  background: #fff;
+
+  transform: scale(1.2);
+
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.18);
+}
+
+
+/* ==========================================================================
+   Enterprise Overview
+   ========================================================================== */
+
+.enterprise-overview {
+  padding: 95px 5%;
+
+  text-align: center;
+
+  background: #f7f9fc;
+}
+
+.enterprise-overview h2 {
+  margin: 17px 0 0;
+
+  color: var(--ink);
+
+  font:
+    800 clamp(30px, 4vw, 48px) / 1.15
+    "Plus Jakarta Sans",
+    sans-serif;
+}
+
+.enterprise-overview h2 span {
+  display: block;
+  color: var(--blue);
+}
+
+.enterprise-overview > p {
+  max-width: 700px;
+  margin: 18px auto 0;
+
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+
+/* ==========================================================================
+   Overview Cards
+   ========================================================================== */
+
+.enterprise-overview-grid {
+  max-width: 900px;
+  margin: 48px auto 0;
+
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.enterprise-overview-grid div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+
+  padding: 24px 15px;
+
+  border: 1px solid var(--line);
+  border-radius: 10px;
+
+  background: #fff;
+}
+
+.enterprise-overview-grid svg {
+  color: var(--blue);
+  font-size: 22px;
+}
+
+.enterprise-overview-grid strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.enterprise-overview-grid small {
+  color: var(--quiet);
+  font-size: 11px;
+}
+
+
+/* ==========================================================================
+   Bottom Actions
+   ========================================================================== */
+
+.enterprise-actions {
+  padding-bottom: 55px;
+}
+
+
+/* ==========================================================================
+   Wharf Hero Animations
+   ========================================================================== */
+
+@keyframes wharfContentReveal {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes wharfGalleryReveal {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes wharfImageSweep {
+  from {
+    opacity: 0;
+    transform: translateX(-130%) skewX(-18deg);
+  }
+
+  20% {
+    opacity: 0.2;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(170%) skewX(-18deg);
+  }
+}
+
+
+/* ==========================================================================
+   Wharf Hero Content Animation
+   ========================================================================== */
+
+.wharf-hero .enterprise-hero-content > * {
+  opacity: 0;
+
+  animation:
+    wharfContentReveal
+    0.75s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    forwards;
+}
+
+.wharf-hero .enterprise-hero-content > :nth-child(1) {
+  animation-delay: 0.12s;
+}
+
+.wharf-hero .enterprise-hero-content > :nth-child(2) {
+  animation-delay: 0.22s;
+}
+
+.wharf-hero .enterprise-hero-content > :nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+.wharf-hero .enterprise-hero-content > :nth-child(4) {
+  animation-delay: 0.42s;
+}
+
+.wharf-hero .enterprise-hero-content > :nth-child(5) {
+  animation-delay: 0.52s;
+}
+
+
+/* ==========================================================================
+   Wharf Gallery Animation
+   ========================================================================== */
+
+.wharf-hero .enterprise-gallery {
+  opacity: 0;
+
+  animation:
+    wharfGalleryReveal
+    1s
+    cubic-bezier(0.16, 1, 0.3, 1)
+    0.28s
+    forwards;
+}
+
+.wharf-hero .enterprise-gallery::after {
+  content: "";
+
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+
+  width: 24%;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+
+  transform: translateX(-130%) skewX(-18deg);
+
+  animation:
+    wharfImageSweep
+    1.8s
+    ease-out
+    1.1s
+    both;
+
+  pointer-events: none;
+  z-index: 10;
+}
+
+
+/* ==========================================================================
+   Large Desktop
+   ========================================================================== */
+
+@media (min-width: 1200px) {
+  .enterprise-hero {
+    padding-right: 6%;
+    padding-left: 6%;
+  }
+
+  .enterprise-hero-content {
+    width: min(700px, 56vw);
+  }
+
+  .enterprise-gallery {
+    width: min(500px, 38vw);
+  }
+}
+
+
+/* ==========================================================================
+   Medium Screens
+   ========================================================================== */
+
+@media (max-width: 1100px) {
+  .enterprise-hero {
+    gap: 40px;
+  }
+
+  .enterprise-hero-content {
+    width: min(650px, 100%);
+  }
+
+  .enterprise-gallery {
+    width: min(520px, 100%);
+  }
+}
+
+
+/* ==========================================================================
+   Tablet
+   ========================================================================== */
+
+@media (max-width: 800px) {
+  .enterprise-detail-page .landing-navbar {
+    position: relative;
+  }
+
+  .enterprise-hero {
+    min-height: auto;
+    padding: 76px 24px 64px;
+
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .enterprise-hero-content {
+    width: 100%;
+  }
+
+  .enterprise-hero h1 {
+    font-size: clamp(38px, 9vw, 58px);
+  }
+
+  .enterprise-hero p {
+    max-width: 680px;
+    font-size: 14px;
+  }
+
+  .enterprise-gallery {
+    width: 100%;
+    max-width: 520px;
+    margin: 10px auto 0;
+  }
+
+  .enterprise-overview {
+    padding: 72px 20px;
+  }
+
+  .enterprise-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .enterprise-detail-page .hero-buttons > button {
+    padding: 0 9px;
+    font-size: 11px;
+  }
+}
+
+
+/* ==========================================================================
+   Mobile
+   ========================================================================== */
+
+@media (max-width: 600px) {
+  .enterprise-hero {
+    padding: 64px 16px 48px;
+  }
+
+  .enterprise-kicker {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .enterprise-hero h1 {
+    margin: 16px 0;
+    font-size: clamp(34px, 11vw, 48px);
+  }
+
+  .enterprise-hero p {
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .enterprise-points {
+    flex-direction: column;
+    gap: 9px;
+
+    margin: 20px 0 24px;
+
+    font-size: 11px;
+  }
+
+  .enterprise-detail-page .hero-buttons {
+    width: 100%;
+    max-width: none;
+
+    flex-direction: column;
+  }
+
+  .enterprise-hero .hero-buttons button {
+    width: 100%;
+  }
+
+  .enterprise-gallery {
+    aspect-ratio: 4 / 3;
+    margin-top: 18px;
+  }
+
+  .enterprise-gallery .hero-gallery-dots {
+    bottom: 14px;
+    gap: 8px;
+  }
+
+  .enterprise-gallery .hero-gallery-dots button {
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
+    min-height: 8px;
+  }
+
+  .enterprise-overview h2 {
+    font-size: clamp(28px, 9vw, 40px);
+  }
+
+  .enterprise-overview-grid div {
+    min-width: 0;
+  }
+}
+
+
+/* ==========================================================================
+   Small Mobile
+   ========================================================================== */
+
+@media (max-width: 380px) {
+  .enterprise-nav-link {
+    padding: 0 6px;
+    font-size: 9px;
+  }
+
+  .enterprise-nav-link:last-child::after {
+    font-size: 9px;
+  }
+
+  .enterprise-hero h1 {
+    font-size: 34px;
+  }
+
+  .enterprise-hero .hero-buttons > button {
+    min-height: 46px;
+    padding-right: 6px;
+    padding-left: 6px;
+
+    font-size: 10px;
+  }
+
+  .enterprise-gallery .gallery-arrow {
+    width: 32px;
+    height: 32px;
+  }
+
+  .enterprise-gallery .hero-gallery-dots {
+    bottom: 12px;
+    gap: 7px;
+  }
+
+  .enterprise-gallery .hero-gallery-dots button {
+    width: 7px;
+    height: 7px;
+    min-width: 7px;
+    min-height: 7px;
+  }
+}
+
+
+/* ==========================================================================
+   Wharf Hero Actions
+   ========================================================================== */
+
+.wharf-hero .hero-buttons {
+  margin-left: 0;
+  margin-right: 0;
+
+  justify-content: stretch;
+}
+
+@media (max-width: 1100px) {
+  .wharf-hero .hero-buttons {
+    margin-right: auto;
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .wharf-hero .hero-buttons {
+    margin-right: 0;
+    margin-left: 0;
+  }
+}
+
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .wharf-hero .enterprise-hero-content > *,
+  .wharf-hero .enterprise-gallery,
+  .wharf-hero .enterprise-gallery::after {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .enterprise-gallery .hero-gallery-dots button,
+  .enterprise-detail-page .hero-buttons button {
+    transition: none;
+  }
+}

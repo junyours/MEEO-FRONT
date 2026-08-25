@@ -1,6 +1,7 @@
 import React from "react";
 import { Card } from "antd";
 import { BankOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import "./AboutSection.css";
 
 const AboutSection = () => {
   const styles = {
@@ -64,20 +65,20 @@ const AboutSection = () => {
   };
 
   return (
-    <div style={styles.aboutWrapper}>
-      <Card style={styles.aboutCard} >
-        <div style={styles.iconContainer}>
+    <div className="about-section" style={styles.aboutWrapper}>
+      <Card className="about-section-card" style={styles.aboutCard} >
+        <div className="about-section-icon" style={styles.iconContainer}>
      
           <InfoCircleOutlined style={styles.aboutIcon} />
         </div>
-        <h2 style={styles.aboutTitle}>About Our System</h2>
-        <p style={styles.aboutText}>
-          This system was developed to enhance the management and operations of our local market. It integrates stall information, vendor records, and administrative functions into a single platform, enabling more organized, efficient, and reliable market management.
-          <br /><br />
-          The system is designed to support transparency, fairness, and accountability in market activities. By streamlining processes for both vendors and administrators, it helps to ensures that market operations run smoothly and that all stakeholders are served effectively.
-          <br /><br />
-          Through this initiative, we aim to strengthen local commerce, support small vendors, and contribute to the continued growth and sustainability of our community.
-        </p>
+        <span className="about-section-eyebrow">MUNICIPAL ECONOMIC ENTERPRISE OFFICE</span>
+        <h2 className="about-section-title" style={styles.aboutTitle}>About Our System</h2>
+        <div className="about-section-copy" style={styles.aboutText}>
+          <p>This platform brings stall information, vendor records, and administrative services together in one organized workspace for more efficient market management.</p>
+          <p>It supports transparency, fairness, and accountability by making daily processes clearer for both vendors and administrators.</p>
+          <p>Through this initiative, we support local commerce, small vendors, and the continued growth of our community.</p>
+        </div>
+        <div className="about-section-pill"><BankOutlined /> Built for better public service</div>
       </Card>
     </div>
   );

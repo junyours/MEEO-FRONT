@@ -14,6 +14,7 @@ import {
   FaArrowLeft
 } from "react-icons/fa";
 import api from '../Api';
+import './AvailableProducts.css';
 
 const { Title, Text } = Typography;
 
@@ -128,7 +129,7 @@ const AvailableProducts = () => {
 
   if (loading) {
     return (
-      <div style={{ 
+      <div className="available-products-loading" style={{ 
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
@@ -398,13 +399,14 @@ const AvailableProducts = () => {
   };
 
   return (
-    <>
+    <div className="available-products-page">
       {/* Navigation Bar */}
-      <nav style={styles.nav.wrapper}>
-        <div style={styles.nav.container}>
-          <div style={styles.nav.itemGrid}>
+      <nav className="available-products-nav" style={styles.nav.wrapper}>
+        <div className="available-products-nav-container" style={styles.nav.container}>
+          <div className="available-products-category-grid" style={styles.nav.itemGrid}>
             {transformedCategories.map((category) => (
               <div
+                className={`available-products-category ${selectedCategory === category.id ? 'active' : ''}`}
                 key={category.id}
                 style={{
                   ...styles.nav.item,
@@ -438,12 +440,12 @@ const AvailableProducts = () => {
       </nav>
 
       {/* Main Content */}
-      <main style={styles.main.wrapper}>
-        <div style={styles.main.container}>
+      <main className="available-products-main" style={styles.main.wrapper}>
+        <div className="available-products-container" style={styles.main.container}>
           {!selectedCategory ? (
             // Category Overview
-            <div>
-              <header style={styles.main.header}>
+            <div className="available-products-content">
+              <header className="available-products-header" style={styles.main.header}>
                 <h1 style={styles.main.title}>Available Products</h1>
                 <p style={styles.main.subtitle}>
                   Browse through our wide selection of fresh products available at the market. 
@@ -455,6 +457,7 @@ const AvailableProducts = () => {
                 {filteredCategories.map((category) => (
                   <Col xs={24} sm={12} md={8} lg={6} key={category.id}>
                     <Card
+                      className="available-product-card category-card"
                       hoverable
                       style={styles.card.base}
                       onClick={() => setSelectedCategory(category.id)}
@@ -493,10 +496,10 @@ const AvailableProducts = () => {
             </div>
           ) : (
             // Selected Category Details
-            <div>
+            <div className="available-products-content">
               {filteredCategories.map((category) => (
                 <div key={category.id}>
-                  <div style={{ textAlign: "center", marginBottom: 40 }}>
+                  <div className="available-products-selected-header" style={{ textAlign: "center", marginBottom: 40 }}>
                     <button
                       style={styles.button.back}
                       onClick={() => setSelectedCategory(null)}
@@ -511,7 +514,7 @@ const AvailableProducts = () => {
                       Back to All Categories
                     </button>
                     
-                    <header style={styles.main.header}>
+                    <header className="available-products-header" style={styles.main.header}>
                       <h1 style={styles.main.title}>{category.name}</h1>
                       <p style={styles.main.subtitle}>{category.description}</p>
                     </header>
@@ -522,6 +525,7 @@ const AvailableProducts = () => {
                       category.products.map((product, index) => (
                         <Col xs={24} sm={12} md={8} lg={6} key={index}>
                           <Card
+                            className="available-product-card product-card"
                             hoverable
                             style={styles.card.base}
                             onMouseEnter={(e) => {
@@ -568,7 +572,7 @@ const AvailableProducts = () => {
                       ))
                     ) : (
                       <Col xs={24}>
-                        <div style={{ 
+                        <div className="available-products-empty" style={{ 
                           textAlign: 'center', 
                           padding: '60px 20px',
                           background: '#f8f9fa',
@@ -607,7 +611,7 @@ const AvailableProducts = () => {
           )}
         </div>
       </main>
-    </>
+    </div>
   );
 };
 

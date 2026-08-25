@@ -5,9 +5,10 @@ import { HashRouter  as Router, Routes, Route } from 'react-router-dom';
 import PrivateRoute from './Auth/PrivateRoute';
 import Login from './Auth/Login';
 import AdminDashboard from './admin/Dashboard';
-import VendorDashboard from './vendor/VendorDashboard';
-import InchargeDashboard from './incharge_collector/Dashboard';
-import MainDashboard from './main_collector/Dashboard';
+import GetStarted from './Auth/GetStarted';
+import Slaughter from './Auth/Slaughter';
+import Wharf from './Auth/Wharf';
+
 import Homepage from './Auth/Homepage';
 import AutoLogoutProvider from './components/AutoLogoutProvider';
 
@@ -21,7 +22,10 @@ function App() {
       <Router basename="/">
         <AutoLogoutProvider>
           <Routes>
-      <Route path="/" element={<Homepage />} />
+              <Route path="/" element={<GetStarted />} />
+                  <Route path="/slaughter" element={<Slaughter />} />
+                  <Route path="/wharf" element={<Wharf />} />
+      <Route path="/homepage" element={<Homepage />} />
 
           <Route path="/login" element={<Login />} />
 
@@ -37,6 +41,14 @@ function App() {
           />
           <Route
             path="/admin/vendor-management"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/office-activities"
             element={
               <PrivateRoute>
                 <AdminDashboard />
@@ -191,35 +203,10 @@ function App() {
           />
 
 
-             <Route
-            path="/vendor/dashboard"
-            element={
-              <PrivateRoute>
-                <VendorDashboard />
-              </PrivateRoute>
-            }
-          />
-
+      
          
 
-            <Route
-            path="/incharge_collector/dashboard"
-            element={
-              <PrivateRoute>
-                <InchargeDashboard />
-              </PrivateRoute>
-            }
-          />
-
-             <Route
-            path="/main_collector/dashboard"
-            element={
-              <PrivateRoute>
-                <MainDashboard />
-              </PrivateRoute>
-            }
-          />
-
+       
    
           </Routes>
         </AutoLogoutProvider>

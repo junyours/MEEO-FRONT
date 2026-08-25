@@ -63,7 +63,7 @@ import {
   DollarOutlined,
 
   
-
+HistoryOutlined,
   UserAddOutlined,
 
   CreditCardOutlined,
@@ -106,17 +106,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
 
   const [selectedKey, setSelectedKey] = useState(activeView || 'dashboard');
 
-  const [profileCounts, setProfileCounts] = useState({
-
-    vendor: 0,
-
-    mainCollector: 0,
-
-    incharge: 0,
-
-    meatInspector: 0,
-
-  });
+ 
 
 
 
@@ -132,33 +122,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
 
 
 
-
-
-  useEffect(() => {
-
-    api
-
-      .get("/sidebar-data")
-
-      .then((res) => {
-
-        setProfileCounts({
-
-          vendor: res.data.vendorCount,
-
-          mainCollector: res.data.mainCollectorCount,
-
-          incharge: res.data.inchargeCount,
-
-          meatInspector: res.data.meatInspectorCount,
-
-        });
-
-      })
-
-      .catch((err) => console.error(err));
-
-  }, []);
 
   useEffect(() => {
     if (activeView) {
@@ -210,6 +173,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
 
     }, 
  { key: "product-management", label: "Product Management", icon: <ShoppingOutlined /> },
+ { key: "office-activities", label: "Office Activities", icon: <HistoryOutlined /> },
+
 
     {
 

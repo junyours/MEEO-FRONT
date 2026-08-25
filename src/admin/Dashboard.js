@@ -35,46 +35,28 @@ import {
 import { DollarOutlined } from "@ant-design/icons";
 import Sidebar from "./Sidebar";
 import SectionManager from "./SectionManager";
-
 import VendorPaymentManagement from "./VendorPaymentManagement";
-
 import VendorAnalysis from "./VendorAnalysis";
-
 import RentalReport from "./RentalReport";
-
 import TargetsReports from "./TargetsReports";
-
 import LoadingOverlay from "./Loading";
-// import CashTickets from "./CashTickets";
 import CashTicketManagement from "./CashTicketManagement";
-
-
 import VendorPaymentCalendar from "./VendorPaymentCalendar";
-
 import ExpectedCollectionAnalysis from "./ExpectedCollectionAnalysis";
-
 import MarketOpenSpaceScreen from "./MarketOpenSpaceScreen";
-
-
-// New Market Management Components
 import VendorManagement from "./VendorManagement";
 import ProductManagement from "./ProductManagement";
-
 import AdminProfile from "./AdminProfile";
-
-import api from "../Api";
-import Footer from "../Auth/Footer";
-
 import StallRateDashboard from "./StallRateDashboard";
-
 import PaymentManagement from "./PaymentManagement";
-
-// Event Management Components
 import EventActivityManagement from "./EventActivityManagement";
+import OfficeActivity from "./OfficeActivity";
 import EventStallManagement from "./EventStallManagement";
 import EventPaymentManagement from "./EventPaymentManagement";
 import EventVendorManagement from "./EventVendorManagement";
 import EventSalesReporting from "./EventSalesReporting";
+import api from "../Api";
+import Footer from "../Auth/Footer";
 
 import {
   ResponsiveContainer,
@@ -133,6 +115,8 @@ const AdminDashboard = () => {
       'dashboard': 'dashboard',
       'vendor-management': 'vendor-management',
       'product-management': 'product-management',
+      'office-activities': 'office-activities',
+
       'cash-ticket': 'cash-ticket',
       'vendor-payment-calendar': 'vendor-payment-calendar',
       'market-section-stalls': 'market-section-stalls',
@@ -1495,7 +1479,8 @@ case "vendor-management":
    
 case "product-management":
   return <ProductManagement />;
-   
+   case "office-activities":
+  return <OfficeActivity />;
 case "cash-ticket":
   return <CashTicketManagement />;
 

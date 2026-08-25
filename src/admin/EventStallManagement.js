@@ -35,7 +35,7 @@ import {
 
 
 import api from '../Api';
-import StallsGrid from './StallsGrid';
+import StallsGrid from './EventStallGrid';
 import LoadingOverlay from './Loading';
 import dayjs from 'dayjs';
 import './EventStallManagement.css';

@@ -66,6 +66,7 @@ const SectionManager = () => {
   // Edit Section
   const [showEditSectionForm, setShowEditSectionForm] = useState(false);
   const [editingSection, setEditingSection] = useState(null);
+  const [editSectionName, setEditSectionName] = useState("");
 
   // Add Stalls
   const [showStallModal, setShowStallModal] = useState(false);
@@ -356,52 +357,99 @@ const SectionManager = () => {
   };
 
   // ✅ Edit Section
-  const handleUpdateSection = async () => {
-    if (!editingSection) return;
+const handleUpdateSection = async () => {
+  if (!editingSection) return;
 
-    setLoadingMessage("Updating Section...");
-    setLoading(true);
-    try {
-      const payload = {
-        rate_type: rateType,
-        ...(rateType === "per_sqm" && { rate }),
-        ...(rateType === "fixed" && { monthly_rate: monthlyRate }),
-      };
+  if (!editSectionName.trim()) {
+    return message.warning("Section name is required.");
+  }
 
-      const response = await api.put(`/sections/${editingSection.id}`, payload);
-      const updatedSection = response.data.data;
+  if (!rateType) {
+    return message.warning("Rate type is required.");
+  }
 
-      const updatedAreas = areas.map((area) => ({
-        ...area,
-        vacancies: area.vacancies.map((vac) =>
-          vac.section?.id === editingSection.id
-            ? { ...vac, section: updatedSection }
-            : vac
-        ),
-        sections: area.sections.map((s) => {
-          const sectionWithAreaName = s.id === editingSection.id ? updatedSection : s;
-          // Add area_name if not already present
-          if (!sectionWithAreaName.area_name) {
-            sectionWithAreaName.area_name = area.name;
-          }
-          return sectionWithAreaName;
-        }),
-      }));
+  if (rateType === "per_sqm" && !rate) {
+    return message.warning("Rate per sqm is required.");
+  }
 
-      setAreas(updatedAreas);
-      setEditingSection(null);
-      setRateType("");
-      setRate("");
-      setMonthlyRate("");
-      setShowEditSectionForm(false);
-      message.success("Section updated successfully!");
-    } catch (err) {
-      console.error(err);
-      message.error("Failed to update section.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (rateType === "fixed" && !monthlyRate) {
+    return message.warning("Monthly rate is required.");
+  }
+
+  setLoadingMessage("Updating Section...");
+  setLoading(true);
+
+  try {
+    const payload = {
+      name: editSectionName.trim(),
+      rate_type: rateType,
+
+      ...(rateType === "per_sqm" && {
+        rate: rate,
+      }),
+
+      ...(rateType === "fixed" && {
+        monthly_rate: monthlyRate,
+      }),
+    };
+
+    const response = await api.put(
+      `/sections/${editingSection.id}`,
+      payload
+    );
+
+    const updatedSection = response.data.data;
+
+    const updatedAreas = areas.map((area) => ({
+      ...area,
+
+      // Update section inside vacancies
+      vacancies: area.vacancies.map((vac) =>
+        vac.section?.id === editingSection.id
+          ? {
+              ...vac,
+              section: {
+                ...updatedSection,
+                area_name: area.name,
+              },
+            }
+          : vac
+      ),
+
+      // Update section inside sections array
+      sections: area.sections.map((section) =>
+        section.id === editingSection.id
+          ? {
+              ...updatedSection,
+              area_name: area.name,
+            }
+          : section
+      ),
+    }));
+
+    setAreas(updatedAreas);
+
+    // Reset edit form
+    setEditingSection(null);
+    setEditSectionName("");
+    setRateType("");
+    setRate("");
+    setMonthlyRate("");
+    setShowEditSectionForm(false);
+
+    message.success("Section updated successfully!");
+
+  } catch (err) {
+    console.error("Update section error:", err);
+
+    message.error(
+      err.response?.data?.message ||
+      "Failed to update section."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
   
   // ✅ Delete Section
   const handleDeleteSection = async (sectionId) => {
@@ -880,52 +928,103 @@ const SectionManager = () => {
       </Modal>
 
       {/* Edit Section Modal */}
-      <Modal
-        title={`Edit Section: ${editingSection?.name}`}
-        open={showEditSectionForm}
-        onCancel={() => setShowEditSectionForm(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setShowEditSectionForm(false)}
+    {/* Edit Section Modal */}
+<Modal
+  title={`Edit Section: ${editingSection?.name || ""}`}
+  open={showEditSectionForm}
+  onCancel={() => {
+    setShowEditSectionForm(false);
+    setEditingSection(null);
+    setEditSectionName("");
+    setRateType("");
+    setRate("");
+    setMonthlyRate("");
+  }}
+  footer={[
+    <Button
+      key="cancel"
+      onClick={() => {
+        setShowEditSectionForm(false);
+        setEditingSection(null);
+        setEditSectionName("");
+        setRateType("");
+        setRate("");
+        setMonthlyRate("");
+      }}
+      style={{
+        backgroundColor: "#b1260aff",
+        borderColor: "#b1260aff",
+        color: "#fff",
+        fontWeight: "bold",
+      }}
+    >
+      Cancel
+    </Button>,
 
-            style={{
-              backgroundColor: "#b1260aff", // Sky Blue
-              borderColor: "#87CEEB",
-              color: "#fff",
-              fontWeight: "bold",
-            }}>
-            Cancel
-          </Button>,
-          <Button key="update" type="primary" onClick={handleUpdateSection}
-            style={{
-              backgroundColor: "#043e54ff", // Sky Blue
-              borderColor: "#87CEEB",
-              color: "#fff",
-              fontWeight: "bold",
-            }}
-          >
-            Update
-          </Button>,
-        ]}
+    <Button
+      key="update"
+      type="primary"
+      onClick={handleUpdateSection}
+      style={{
+        backgroundColor: "#043e54ff",
+        borderColor: "#043e54ff",
+        color: "#fff",
+        fontWeight: "bold",
+      }}
+    >
+      Update
+    </Button>,
+  ]}
+>
+  <Form layout="vertical">
+
+    {/* Section Name */}
+    <Form.Item label="Section Name" required>
+      <Input
+        placeholder="Enter section name"
+        value={editSectionName}
+        onChange={(e) => setEditSectionName(e.target.value)}
+      />
+    </Form.Item>
+
+    {/* Rate Type */}
+    <Form.Item label="Rate Type" required>
+      <Select
+        value={rateType}
+        onChange={(val) => setRateType(val)}
+        style={{ width: "100%" }}
       >
-        <Form layout="vertical">
-          <Form.Item label="Rate Type" required>
-            <Select value={rateType} onChange={(val) => setRateType(val)}>
-              <Option value="per_sqm">Per SQM</Option>
-              <Option value="fixed">Fixed</Option>
-            </Select>
-          </Form.Item>
-          {rateType === "per_sqm" && (
-            <Form.Item label="Rate per sqm" required>
-              <Input type="number" value={rate} onChange={(e) => setRate(e.target.value)} />
-            </Form.Item>
-          )}
-          {rateType === "fixed" && (
-            <Form.Item label="Monthly Rate" required>
-              <Input type="number" value={monthlyRate} onChange={(e) => setMonthlyRate(e.target.value)} />
-            </Form.Item>
-          )}
-        </Form>
-      </Modal>
+        <Option value="per_sqm">Per SQM</Option>
+        <Option value="fixed">Fixed</Option>
+      </Select>
+    </Form.Item>
+
+    {/* Per SQM */}
+    {rateType === "per_sqm" && (
+      <Form.Item label="Rate per sqm" required>
+        <Input
+          type="number"
+          placeholder="Enter rate per sqm"
+          value={rate}
+          onChange={(e) => setRate(e.target.value)}
+        />
+      </Form.Item>
+    )}
+
+    {/* Fixed */}
+    {rateType === "fixed" && (
+      <Form.Item label="Monthly Rate" required>
+        <Input
+          type="number"
+          placeholder="Enter monthly rate"
+          value={monthlyRate}
+          onChange={(e) => setMonthlyRate(e.target.value)}
+        />
+      </Form.Item>
+    )}
+
+  </Form>
+</Modal>
 
       {/* Add Stalls Modal */}
       <Modal
@@ -1061,6 +1160,7 @@ const SectionManager = () => {
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setEditingSection(vac.section);
+                                        setEditSectionName(vac.section.name || "");
                                       setRateType(vac.section.rate_type);
                                       setRate(vac.section.rate || "");
                                       setMonthlyRate(vac.section.monthly_rate || "");

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../Api';
-import StallsGrid from './StallsGrid';
+import StallsGrid from './EventStallGrid';
 import LoadingOverlay from './Loading';
 import {
   Card,

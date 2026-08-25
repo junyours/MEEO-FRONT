@@ -57,6 +57,7 @@ const { Option } = Select;
 const VendorPaymentManagement = () => {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [bulkPaymentModal, setBulkPaymentModal] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [selectedRentals, setSelectedRentals] = useState([]);
@@ -128,6 +129,7 @@ const VendorPaymentManagement = () => {
       message.error('Failed to fetch vendors');
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
@@ -220,7 +222,7 @@ const VendorPaymentManagement = () => {
         setPaymentDate(dayjs());
         setSelectedMonths([]);
         setCustomPaymentAmount(''); // Reset custom amount
-        fetchVendors(); // Refresh data
+        fetchVendors({ showLoading: false }); // Refresh data without blocking the screen
       } else {
         message.error('Failed to process selected months payment');
       }
@@ -909,7 +911,7 @@ const VendorPaymentManagement = () => {
       setPaymentDate(dayjs());
       setUseDeposit(false);
       setSelectedPaymentForDeposit(null);
-      fetchVendors();
+      fetchVendors({ showLoading: false });
     } catch (error) {
       console.error('Payment error:', error);
       message.error(error.response?.data?.message || 'Failed to process payment');
@@ -1303,7 +1305,7 @@ const VendorPaymentManagement = () => {
     },
   ];
 
-  if (loading) {
+  if (initialLoading) {
     return <LoadingOverlay message="Loading vendor payment data..." />;
   }
 
@@ -2521,7 +2523,7 @@ const VendorPaymentManagement = () => {
                   
                   // Force refresh with a small delay to ensure backend has updated
                   setTimeout(() => {
-                    fetchVendors();
+                    fetchVendors({ showLoading: false });
                   }, 500);
                 } else {
                   message.error('Failed to consume deposit');
