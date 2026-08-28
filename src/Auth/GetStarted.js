@@ -5,6 +5,9 @@ import bg from "../assets/bg.jpg";
 import meeoLogo from "../assets/logo_meeo.png";
 import opolLogo from "../assets/logo_Opol.png";
 import Footer from "./Footer";
+import EnterpriseNavbar from "./EnterpriseNavbar";
+import MeeoServices from "./MeeoServices";
+import AvailableProducts from "./AvailableProducts";
 import Market1 from "../assets/Market1.jpg";
 import Market2 from "../assets/Market2.jpg";
 import Market3 from "../assets/Market3.jpg";
@@ -21,11 +24,12 @@ import {
   ProfileOutlined,
   RocketOutlined,
   HomeOutlined,
-  SettingOutlined,
+RestOutlined ,
   BarChartOutlined,
   ArrowRightOutlined,
   ArrowDownOutlined,
   ArrowUpOutlined,
+  CloseOutlined,
   InfoCircleOutlined,
   SafetyCertificateOutlined,
   EnvironmentOutlined,
@@ -34,6 +38,7 @@ import {
   LeftOutlined,
   RightOutlined,
   PictureOutlined,
+  CustomerServiceOutlined,
 } from "@ant-design/icons";
 import "./GetStarted.css";
 
@@ -41,6 +46,7 @@ const GetStarted = () => {
   const navigate = useNavigate();
   const moreInfoRef = useRef(null);
   const activitiesRef = useRef(null);
+  const servicesRef = useRef(null);
 
   const [moreInfoActive, setMoreInfoActive] = useState(false);
   const [moreInfoVisible, setMoreInfoVisible] = useState(false);
@@ -50,6 +56,13 @@ const GetStarted = () => {
   const [activitiesError, setActivitiesError] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [activeInfoModal, setActiveInfoModal] = useState(null);
+  const [marketFees, setMarketFees] = useState([]);
+  const [marketFeesLoading, setMarketFeesLoading] = useState(false);
+  const [marketFeesError, setMarketFeesError] = useState(false);
+  const [stallSections, setStallSections] = useState([]);
+  const [stallSectionsLoading, setStallSectionsLoading] = useState(false);
+  const [stallSectionsError, setStallSectionsError] = useState(false);
   const heroImages = [
   
     { source: Market1, alt: "Market Layout 1", fit: "cover" },
@@ -146,6 +159,10 @@ const getActivityImages = (activity) => [
     activitiesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const handleViewServices = () => {
+    servicesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const handleHeroImageNavigation = (direction) => {
     setHeroImageIndex((currentIndex) =>
       (currentIndex + direction + heroImages.length) % heroImages.length
@@ -162,6 +179,69 @@ const getActivityImages = (activity) => [
     setSelectedImageIndex((currentIndex) =>
       (currentIndex + direction + imageCount) % imageCount
     );
+  };
+
+  const openRequirementsModal = () => setActiveInfoModal("requirements");
+
+  const openStallAvailabilityModal = async () => {
+    setActiveInfoModal("availability");
+    if (stallSections.length > 0 || stallSectionsLoading) return;
+
+    try {
+      setStallSectionsLoading(true);
+      setStallSectionsError(false);
+      const response = await api.get("/sections/available-stalls");
+      setStallSections(response.data?.data || response.data || []);
+    } catch (error) {
+      console.error("Failed to load stall availability:", error);
+      setStallSectionsError(true);
+    } finally {
+      setStallSectionsLoading(false);
+    }
+  };
+
+  const openFeesModal = async () => {
+    setActiveInfoModal("fees");
+    if (marketFees.length > 0 || marketFeesLoading) return;
+
+    try {
+      setMarketFeesLoading(true);
+      setMarketFeesError(false);
+      const response = await api.get("/public/market-fees");
+      setMarketFees(response.data?.data || []);
+    } catch (error) {
+      console.error("Failed to load market rental fees:", error);
+      setMarketFeesError(true);
+    } finally {
+      setMarketFeesLoading(false);
+    }
+  };
+
+  const closeInfoModal = () => setActiveInfoModal(null);
+
+  const getAvailabilitySummary = (areaName) => {
+    const matchingSections = stallSections.filter((section) => (
+      section.area?.name?.toLowerCase() === areaName
+    ));
+
+    return matchingSections.reduce((summary, section) => ({
+      total: summary.total + (section.total_stalls || 0),
+      available: summary.available + (section.available_stalls_count || 0),
+      occupied: summary.occupied + (section.occupied_stalls_count || 0),
+      sections: [...summary.sections, section],
+    }), { total: 0, available: 0, occupied: 0, sections: [] });
+  };
+
+  const getMarketAvailabilitySummary = () => {
+    const drySummary = getAvailabilitySummary("dry");
+    const wetSummary = getAvailabilitySummary("wet");
+
+    return {
+      total: drySummary.total + wetSummary.total,
+      available: drySummary.available + wetSummary.available,
+      occupied: drySummary.occupied + wetSummary.occupied,
+      sections: [...drySummary.sections, ...wetSummary.sections],
+    };
   };
 
   useEffect(() => {
@@ -203,18 +283,8 @@ const getActivityImages = (activity) => [
   }, []);
 
   return (
-    <div className="get-started-page">
-      <nav className="landing-navbar" aria-label="Economic enterprises">
-        <div className="landing-brand">
-          <div className="brand-logo"><img src={meeoLogo} alt="MEEO Opol logo" /></div>
-          <div className="brand-text"><strong>MEEO OPOL</strong><span>Municipal Economic Enterprise Office</span></div>
-        </div>
-        <div className="enterprise-nav-links">
-          <button className="enterprise-nav-link active" type="button" onClick={handleBackToTop}>Market</button>
-          <button className="enterprise-nav-link" type="button" onClick={() => navigate("/slaughter")}>Slaughter</button>
-          <button className="enterprise-nav-link" type="button" onClick={() => navigate("/wharf")}>Wharf</button>
-        </div>
-         </nav>
+    <div className="market-get-started-page">
+      <EnterpriseNavbar />
 
       {/* Background */}
       <div className="background-grid"></div>
@@ -250,7 +320,7 @@ const getActivityImages = (activity) => [
               </span>
 
               <span>
-                MUNICIPAL MARKET MANAGEMENT
+             MUNICIPAL ECONOMIC ENTERPRISE OFFICE-MARKET
               </span>
             </div>
 
@@ -264,30 +334,13 @@ const getActivityImages = (activity) => [
 
 
             <p className="description">
-             The core function of the Municipal Economic Enterprise Office (MEEO) is to manage and sustain local government-owned economic enterprises—ensuring they generate revenue, remain financially viable, and provide quality services to the community 
-            </p>
+      The Opol Public Market serves as a central marketplace that provides the community with accessible and affordable basic goods and services. 
+      It supports the livelihood of vendors, traders, and other market workers by providing opportunities for income and employment. The market also promotes local economic activity, ensures an organized and regulated trading environment, and contributes to the municipality’s revenue through rentals, fees, and other authorized collections. Overall, it plays an important role in meeting 
+      the daily needs of the community while supporting local economic development and municipal revenue generation.  
+              </p>
 
 
-            {/* TRUST ITEMS */}
-            <div className="trust-row">
-
-              <div className="trust-item">
-                <CheckCircleOutlined />
-                <span>Organized Records</span>
-              </div>
-
-              <div className="trust-item">
-                <CheckCircleOutlined />
-                <span>Efficient Operations</span>
-              </div>
-
-              <div className="trust-item">
-                <CheckCircleOutlined />
-                <span>Reliable Reports</span>
-              </div>
-
-            </div>
-
+         
 
             {/* FEATURES */}
             <div className="features">
@@ -385,6 +438,17 @@ const getActivityImages = (activity) => [
                 <PictureOutlined />
                 <span className="button-label">View Activities</span>
                        <ArrowDownOutlined />
+              </button>
+
+              <button
+                className="hero-services-button"
+                onClick={handleViewServices}
+                aria-label="View Services"
+                title="View Services"
+              >
+                <AppstoreOutlined    />
+                <span className="button-label">View Services</span>
+                <ArrowDownOutlined />
               </button>
 
             </div>
@@ -747,11 +811,11 @@ const getActivityImages = (activity) => [
 
             <div
               className="information-card information-card-clickable"
-              onClick={handleGetStarted}
+              onClick={openStallAvailabilityModal}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  handleGetStarted();
+                  openStallAvailabilityModal();
                 }
               }}
               role="button"
@@ -785,7 +849,19 @@ const getActivityImages = (activity) => [
             </div>
 
 
-            <div className="information-card">
+            <div
+              className="information-card information-card-clickable"
+              onClick={openFeesModal}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openFeesModal();
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label="View stall rental and market fees"
+            >
 
               <div className="information-card-icon">
                 <DollarOutlined />
@@ -798,7 +874,7 @@ const getActivityImages = (activity) => [
                 </span>
 
                 <h3>
-                  Stall & Market Fees
+                  Stall Rental And Market Fees
                 </h3>
 
                 <p>
@@ -814,7 +890,19 @@ const getActivityImages = (activity) => [
             </div>
 
 
-            <div className="information-card">
+            <div
+              className="information-card information-card-clickable"
+              onClick={openRequirementsModal}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openRequirementsModal();
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label="View market requirements"
+            >
 
               <div className="information-card-icon">
                 <ProfileOutlined />
@@ -844,6 +932,129 @@ const getActivityImages = (activity) => [
 
           </div>
 
+          {activeInfoModal && (
+            <div className="market-info-modal-backdrop" role="presentation" onMouseDown={closeInfoModal}>
+              <div
+                className={`market-info-modal ${activeInfoModal === "fees" ? "market-info-modal-fees" : ""}`}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="market-info-modal-title"
+                onMouseDown={(event) => event.stopPropagation()}
+              >
+                <button className="market-info-modal-close" type="button" onClick={closeInfoModal} aria-label="Close information modal" title="Close">
+                  <CloseOutlined />
+                </button>
+                {activeInfoModal === "availability" ? (
+                  <>
+                    <span className="section-label"><ShopOutlined /> MARKET INFORMATION</span>
+                    <h2 id="market-info-modal-title">Stall Availability</h2>
+                    <p className="market-info-modal-intro">Current availability for wet, dry, and open-space market areas.</p>
+                    {stallSectionsLoading && <div className="market-info-modal-state">Loading stall availability...</div>}
+                    {!stallSectionsLoading && stallSectionsError && <div className="market-info-modal-state market-info-modal-state-error">Unable to load stall availability right now.</div>}
+                    {!stallSectionsLoading && !stallSectionsError && stallSections.length === 0 && <div className="market-info-modal-state">No stall availability information is currently available.</div>}
+                    {!stallSectionsLoading && !stallSectionsError && stallSections.length > 0 && (
+                      <div className="market-availability-panels">
+                        {["market", "open space"].map((areaName) => {
+                          const summary = areaName === "market"
+                            ? getMarketAvailabilitySummary()
+                            : getAvailabilitySummary(areaName);
+                          if (summary.sections.length === 0) return null;
+
+                          return (
+                            <section className={`market-availability-panel market-availability-panel-${areaName.replace(" ", "-")}`} key={areaName}>
+                              <div className="market-availability-panel-banner">
+                                <HomeOutlined />
+                                <strong>{areaName === "open space" ? "Open Space" : "Market Stalls"}</strong>
+                                <span>{areaName === "open space" ? "Outdoor Market Areas" : "Wet & Dry Market Areas"}</span>
+                              </div>
+                              <div className="market-availability-panel-heading">
+                                <div>
+                                  <span className="market-availability-kicker">{areaName === "open space" ? "OUTDOOR AREA" : "WET & DRY MARKET"}</span>
+                                    <h3>{areaName === "open space" ? "Open Space" : "Market Stalls"}</h3>
+                                </div>
+                                <strong>{summary.total} <small>Total</small></strong>
+                              </div>
+                              <div className="market-availability-stats">
+                                <div><strong>{summary.available}</strong><span>Available</span></div>
+                                <div><strong>{summary.occupied}</strong><span>Occupied</span></div>
+                                <div><strong>{summary.total}</strong><span>Total</span></div>
+                              </div>
+                              <div className="market-availability-sections">
+                                {summary.sections.map((section) => (
+                                  <div className="market-availability-section-row" key={section.id}>
+                                    <strong>{section.name}</strong>
+                                    <span>{section.available_stalls_count || 0} available</span>
+                                    <span>{section.occupied_stalls_count || 0} occupied</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="market-availability-occupancy">
+                                <div><strong>Occupancy Rate</strong><span>{summary.total > 0 ? Math.round((summary.occupied / summary.total) * 100) : 0}%</span></div>
+                                <div className="market-availability-progress"><span style={{ width: `${summary.total > 0 ? (summary.occupied / summary.total) * 100 : 0}%` }} /></div>
+                                <div className="market-availability-occupancy-counts"><span>◷ {summary.available} Available</span><span>⊗ {summary.occupied} Occupied</span></div>
+                              </div>
+                            </section>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                ) : activeInfoModal === "requirements" ? (
+                  <>
+                    <span className="section-label"><ProfileOutlined /> DOCUMENTATION</span>
+                    <h2 id="market-info-modal-title">Market Requirements</h2>
+                    <p className="market-info-modal-intro">Prepare the following information and documents before coordinating with the market office.</p>
+                    <ul className="market-info-modal-list">
+                  
+                      <li><CheckCircleOutlined /> Valid government-issued identification</li>
+                      <li><CheckCircleOutlined /> Letter Of Intent</li>
+                      <li><CheckCircleOutlined /> 2x2 Photo 2pcs</li>
+                      <li><CheckCircleOutlined /> Barangay Clearance</li>
+                      <li><CheckCircleOutlined /> Valid Resident Certificate/Cedula</li>
+                          <li><CheckCircleOutlined /> Must Be A Filipino Citizen</li>
+                      <li><CheckCircleOutlined /> Must Be Of Legal Age, Whether Single Or Married</li>
+                      <li><CheckCircleOutlined /> Must Be A Resident Of The Municipality Of Opol, Misamis Oriental, Philippines </li>
+
+                      <li><CheckCircleOutlined /> Contract Of Lease</li>
+
+                    </ul>
+                    <p className="market-info-modal-note">Requirements may vary by vendor type. Confirm the latest requirements with the Municipal Economic Enterprise Office.</p>
+                  </>
+                ) : (
+                  <>
+                    <span className="section-label"><DollarOutlined /> FINANCIAL INFORMATION</span>
+                    <h2 id="market-info-modal-title">Stall Rental And Market Fees</h2>
+                    <p className="market-info-modal-intro">Current rental rates are grouped below by market section.</p>
+                    {marketFeesLoading && <div className="market-info-modal-state">Loading current rental fees...</div>}
+                    {!marketFeesLoading && marketFeesError && <div className="market-info-modal-state market-info-modal-state-error">Unable to load rental fees right now.</div>}
+                    {!marketFeesLoading && !marketFeesError && marketFees.length === 0 && <div className="market-info-modal-state">No rental fee information is currently available.</div>}
+                    {!marketFeesLoading && !marketFeesError && marketFees.length > 0 && (
+                      <div className="market-fees-list">
+                        {marketFees.map((section) => (
+                          <section className="market-fee-group" key={section.id}>
+                            <div>
+                              <h3>{section.name}</h3>
+                              <span>{section.area?.name || "Market section"}</span>
+                            </div>
+                            <div className="market-fee-stalls">
+                              {section.stalls.length > 0 ? section.stalls.map((stall) => (
+                                <div className="market-fee-stall" key={stall.id}>
+                                  <strong>Stall {stall.stall_number}</strong>
+                                  <span><small>Daily rate</small>{stall.daily_rate !== null ? `₱${Number(stall.daily_rate).toLocaleString()}` : "Unavailable"}</span>
+                                  <span><small>30-day rate</small>{stall.monthly_rate !== null ? `₱${Number(stall.monthly_rate).toLocaleString()}` : "Unavailable"}</span>
+                                </div>
+                              )) : <span className="market-fee-empty">No active stalls in this section.</span>}
+                            </div>
+                          </section>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
 
           {/* NOTICE */}
           <div className="vendor-notice">
@@ -863,62 +1074,74 @@ const getActivityImages = (activity) => [
                 prospective market vendors. For official
                 requirements, fees, stall availability,
                 schedules, and approval procedures, please
-                coordinate directly with the appropriate
-                Municipality of Opol market office.
+                coordinate directly with the Municipal Economic Enterprise Office.
               </p>
 
             </div>
 
           </div>
 
-          <div className={`activities-section ${activitiesVisible ? "section-is-visible" : ""}`} ref={activitiesRef}>
-            <div className="activities-section-heading">
-              <span className="section-label"><PictureOutlined /> MARKET ACTIVITIES</span>
-              <h3>Life at the market</h3>
-              <p>Explore announcements, programs, and community activities from the market office.</p>
+          <div className="market-info-panels">
+            <div className={`activities-section ${activitiesVisible ? "section-is-visible" : ""}`} ref={activitiesRef}>
+              <div className="activities-section-heading">
+                <span className="section-label"><PictureOutlined /> MARKET ACTIVITIES</span>
+                <h3>Life at the market</h3>
+                <p>Explore announcements, programs, and community activities .</p>
+              </div>
+
+              {activitiesLoading && <div className="activities-state">Loading market activities...</div>}
+              {!activitiesLoading && activitiesError && <div className="activities-state activities-state-error">Unable to load activities right now.</div>}
+              {!activitiesLoading && !activitiesError && activities.length === 0 && <div className="activities-state">No activities have been published yet.</div>}
+              {!activitiesLoading && !activitiesError && activities.length > 0 && (
+                <div className="activities-layout">
+                  <div className="activities-list">
+                    {activities.map((activity) => (
+                      <button className={`activity-list-item ${selectedActivity?.id === activity.id ? "active" : ""}`} key={activity.id} onClick={() => handleSelectActivity(activity)}>
+                        <img src={getImageSource(activity.image)} alt="" />
+                        <span><strong>{activity.title}</strong><small>{activity.activity_type}</small></span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="activity-gallery">
+                    {selectedActivity && (
+                      <>
+                        <div className="activity-main-image">
+                          <img src={getActivityImages(selectedActivity)[selectedImageIndex]} alt={selectedActivity.title} />
+                          {getActivityImages(selectedActivity).length > 1 && (
+                            <>
+                              <button className="gallery-arrow gallery-arrow-left" onClick={() => handleImageNavigation(-1)} aria-label="Previous image"><LeftOutlined /></button>
+                              <button className="gallery-arrow gallery-arrow-right" onClick={() => handleImageNavigation(1)} aria-label="Next image"><RightOutlined /></button>
+                            </>
+                          )}
+                        </div>
+                        <div className="activity-details">
+                          <span className="activity-date">{formatActivityDate(selectedActivity.activity_date)}</span>
+                          <h4>{selectedActivity.title}</h4>
+                          <p>{selectedActivity.description}</p>
+                        </div>
+                        <div className="activity-thumbnails">
+                          {getActivityImages(selectedActivity).map((image, index) => (
+                            <button className={index === selectedImageIndex ? "active" : ""} key={`${image}-${index}`} onClick={() => setSelectedImageIndex(index)} aria-label={`View image ${index + 1}`}><img src={image} alt="" /></button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {activitiesLoading && <div className="activities-state">Loading market activities...</div>}
-            {!activitiesLoading && activitiesError && <div className="activities-state activities-state-error">Unable to load activities right now.</div>}
-            {!activitiesLoading && !activitiesError && activities.length === 0 && <div className="activities-state">No activities have been published yet.</div>}
-            {!activitiesLoading && !activitiesError && activities.length > 0 && (
-              <div className="activities-layout">
-                <div className="activities-list">
-                  {activities.map((activity) => (
-                    <button className={`activity-list-item ${selectedActivity?.id === activity.id ? "active" : ""}`} key={activity.id} onClick={() => handleSelectActivity(activity)}>
-                      <img src={getImageSource(activity.image)} alt="" />
-                      <span><strong>{activity.title}</strong><small>{activity.activity_type}</small></span>
-                    </button>
-                  ))}
-                </div>
-                <div className="activity-gallery">
-                  {selectedActivity && (
-                    <>
-                      <div className="activity-main-image">
-                        <img src={getActivityImages(selectedActivity)[selectedImageIndex]} alt={selectedActivity.title} />
-                        {getActivityImages(selectedActivity).length > 1 && (
-                          <>
-                            <button className="gallery-arrow gallery-arrow-left" onClick={() => handleImageNavigation(-1)} aria-label="Previous image"><LeftOutlined /></button>
-                            <button className="gallery-arrow gallery-arrow-right" onClick={() => handleImageNavigation(1)} aria-label="Next image"><RightOutlined /></button>
-                          </>
-                        )}
-                      </div>
-                      <div className="activity-details">
-                        <span className="activity-date">{formatActivityDate(selectedActivity.activity_date)}</span>
-                        <h4>{selectedActivity.title}</h4>
-                        <p>{selectedActivity.description}</p>
-                      </div>
-                      <div className="activity-thumbnails">
-                        {getActivityImages(selectedActivity).map((image, index) => (
-                          <button className={index === selectedImageIndex ? "active" : ""} key={`${image}-${index}`} onClick={() => setSelectedImageIndex(index)} aria-label={`View image ${index + 1}`}><img src={image} alt="" /></button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
+            <MeeoServices servicesRef={servicesRef} />
           </div>
+
+          <section className="market-products-section" aria-labelledby="market-products-heading">
+            <div className="market-products-section-heading">
+              <span className="section-label"><ShopOutlined /> AVAILABLE PRODUCTS</span>
+              <h2 id="market-products-heading">Fresh products available at the market</h2>
+              <p>Browse current product categories and available items from the public market.</p>
+            </div>
+            <AvailableProducts />
+          </section>
 
 
           {/* ACTIONS */}

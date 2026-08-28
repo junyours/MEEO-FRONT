@@ -46,7 +46,7 @@ const Footer = () => {
                 <EnvironmentOutlined className="auth-contact-icon" />
                 <div>
                   <Text className="auth-contact-text">Municipal Economic Enterprise Office</Text>
-                  <Text className="auth-contact-subtext">Taboc, Opol, Misamis Oriental</Text>
+                  <Text className="auth-contact-subtext">2nd Floor, Opol Public Market, Zone 4, Taboc, Opol, Misamis Oriental</Text>
                 </div>
               </div>
               

@@ -41,9 +41,7 @@ const Homepage = () => {
   const [displaySectionType, setDisplaySectionType] = useState('main'); // 'main', 'market', 'open_space'
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
 
-  const handleBackToMain = () => {
-    setDisplaySectionType('main');
-  };
+ 
 
   const handleMenuSelect = (key) => {
     if (key === "get-started") {
@@ -365,7 +363,7 @@ heroSubtitle: {
     };
 
   const menuItems = [
-     { key: "get-started", label: "Back" },
+     { key: "get-started", label: "Enterprises" },
     { key: "home", label: "Home" },
     { key: "products", label: "Available Products" },
     { key: "about", label: "About" },

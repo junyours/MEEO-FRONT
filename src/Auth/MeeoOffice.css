@@ -1,0 +1,2106 @@
+/* ==========================================================================
+   MEEO OFFICE PUBLIC PAGE
+   ========================================================================== */
+
+.meeo-office-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #14213d;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f8fc 100%);
+  font-family: "DM Sans", "Avenir Next", sans-serif;
+}
+
+
+/* ==========================================================================
+   NAVBAR
+   ========================================================================== */
+
+.meeo-office-navbar {
+  position: relative;
+  z-index: 20;
+  min-height: 76px;
+  padding: 14px 6%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e4eaf2;
+
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+}
+
+/* Removed arrow pointing downward to division */
+
+.meeo-office-brand-subtitle {
+  margin-top: 2px;
+  color: #5f6f86;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.meeo-office-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.meeo-office-nav-button {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid #e4eaf2;
+  border-radius: 8px;
+  color: #475467;
+  background: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.meeo-office-nav-button:hover {
+  color: #1769e0;
+  background: #f4f8ff;
+  transform: translateY(-1px);
+}
+
+.meeo-office-nav-button-active {
+  color: #ffffff;
+  background: #1769e0;
+  border-color: #1769e0;
+  box-shadow: 0 5px 14px rgba(23, 105, 224, 0.2);
+}
+
+
+/* ==========================================================================
+   HERO
+   ========================================================================== */
+
+.meeo-office-hero {
+  position: relative;
+  min-height: 610px;
+  padding: 130px 8% 90px;
+
+  display: flex;
+  align-items: center;
+
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.meeo-office-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(12, 28, 49, 0.94),
+      rgba(12, 28, 49, 0.48)
+    );
+}
+
+.meeo-office-hero-inner {
+  position: relative;
+  z-index: 1;
+
+  width: 100%;
+  max-width: none;
+  margin: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 72px;
+}
+
+.meeo-office-hero-content {
+  width: min(650px, 100%);
+  flex: 1 1 auto;
+}
+
+.meeo-office-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  color: #cde1ff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+  line-height: 1.4;
+}
+
+.meeo-office-hero h1 {
+  max-width: 800px;
+  margin: 22px 0;
+
+  color: #ffffff;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: clamp(42px, 5.5vw, 76px);
+  line-height: 1.04;
+  letter-spacing: -1px;
+}
+
+.meeo-office-hero h1 span {
+  display: block;
+  color: #06e66b;
+}
+
+.meeo-office-hero-description {
+  max-width: 650px;
+  margin: 0;
+
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+.meeo-office-hero-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+
+  margin: 26px 0 30px;
+
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.meeo-office-hero-point {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.meeo-office-hero-point svg {
+  color: #8de0bb;
+}
+
+.meeo-office-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.meeo-office-hero-action {
+  min-height: 50px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 0 18px;
+
+  border: 1px solid transparent;
+  border-radius: 8px;
+
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+}
+
+.meeo-office-hero-action-primary {
+  color: #ffffff;
+  background: #1769e0;
+  box-shadow: 0 12px 24px rgba(23, 105, 224, 0.28);
+}
+
+.meeo-office-hero-action-secondary {
+  color: #14213d;
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+.meeo-office-hero-action:hover {
+  transform: translateY(-3px);
+}
+
+
+/* ==========================================================================
+   HERO GALLERY
+   ========================================================================== */
+
+.meeo-office-hero-gallery {
+  position: relative;
+
+  width: min(420px, 100%);
+  flex: 0 0 auto;
+
+  aspect-ratio: 4 / 3;
+
+  overflow: hidden;
+
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 14px;
+
+  background: #0c1c31;
+
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.meeo-office-gallery-image {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.meeo-office-gallery-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+
+  width: 40px;
+  height: 40px;
+
+  display: grid;
+  place-items: center;
+
+  border: 0;
+  border-radius: 50%;
+
+  color: #14213d;
+  background: rgba(255, 255, 255, 0.94);
+
+  transform: translateY(-50%);
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.meeo-office-gallery-arrow:hover {
+  color: #1769e0;
+  background: #ffffff;
+}
+
+.meeo-office-gallery-arrow-left {
+  left: 14px;
+}
+
+.meeo-office-gallery-arrow-right {
+  right: 14px;
+}
+
+.meeo-office-gallery-dots {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  z-index: 2;
+
+  display: flex;
+  gap: 8px;
+
+  transform: translateX(-50%);
+}
+
+.meeo-office-gallery-dot {
+  width: 9px;
+  height: 9px;
+
+  padding: 0;
+
+  border: 1px solid #ffffff;
+  border-radius: 50%;
+
+  background: rgba(20, 33, 61, 0.35);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.meeo-office-gallery-dot:hover {
+  transform: scale(1.2);
+}
+
+.meeo-office-gallery-dot-active {
+  background: #ffffff;
+}
+
+
+/* ==========================================================================
+   GENERAL SECTIONS
+   ========================================================================== */
+
+.meeo-office-section {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 95px 6%;
+}
+
+.meeo-office-section-heading {
+  max-width: 720px;
+  margin: 0 auto 42px;
+  text-align: center;
+}
+
+.meeo-office-section-heading h2 {
+  margin: 14px 0 10px;
+
+  color: #14213d;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.12;
+}
+
+.meeo-office-section-heading p {
+  margin: 0;
+
+  color: #000000;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.meeo-office-section-heading > .meeo-office-eyebrow {
+  margin: 0;
+}
+
+.meeo-office-section-heading > span:not(.meeo-office-eyebrow) {
+  margin: 14px 0 10px;
+
+  color: #5288fc;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 18px;
+  line-height: 1.12;
+}
+
+
+/* ==========================================================================
+   ENTERPRISES
+   ========================================================================== */
+
+.meeo-office-enterprise-grid,
+.meeo-office-function-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.meeo-office-enterprise-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.meeo-office-enterprise-card {
+  min-height: 280px;
+
+  padding: 26px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+
+  border: 1px solid #e4eaf2;
+  border-top: 4px solid;
+
+  border-radius: 12px;
+
+  color: #14213d;
+  background: #ffffff;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  box-shadow: 0 12px 32px rgba(35, 61, 102, 0.06);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+
+.meeo-office-enterprise-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 44px rgba(35, 61, 102, 0.12);
+}
+
+.meeo-office-enterprise-card:nth-child(1):hover {
+  border-color: #7aaaf5;
+  background: #f2f7ff;
+  box-shadow: 0 20px 44px rgba(23, 105, 224, 0.16);
+}
+
+.meeo-office-enterprise-card:nth-child(2):hover {
+  border-color: #ee9b8b;
+  background: #fff7f4;
+  box-shadow: 0 20px 44px rgba(210, 91, 67, 0.16);
+}
+
+.meeo-office-enterprise-card:nth-child(3):hover {
+  border-color: #6bc29f;
+  background: #f1fbf7;
+  box-shadow: 0 20px 44px rgba(22, 132, 93, 0.16);
+}
+
+.meeo-office-enterprise-card:focus-visible,
+.meeo-office-function-card:focus-within {
+  outline: 3px solid rgba(23, 105, 224, 0.2);
+  outline-offset: 3px;
+}
+
+.meeo-office-enterprise-icon {
+  width: 48px;
+  height: 48px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  font-size: 21px;
+}
+
+.meeo-office-card-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.meeo-office-card-title {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 21px;
+}
+
+.meeo-office-card-description,
+.meeo-office-function-card p {
+  color: #5f6f86;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.meeo-office-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  margin-top: auto;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+
+/* ==========================================================================
+   GOVERNMENT FUNCTIONS
+   ========================================================================== */
+
+.meeo-office-functions {
+  max-width: none;
+
+  background: #ffffff;
+
+  border-top: 1px solid #e4eaf2;
+}
+
+.meeo-office-function-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.meeo-office-function-card {
+  min-height: 230px;
+
+  padding: 24px;
+
+  border: 1px solid #e4eaf2;
+  border-radius: 10px;
+
+  background: #f8fbff;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.meeo-office-function-card:hover {
+  transform: translateY(-4px);
+
+  border-color: #c6dafa;
+
+  box-shadow: 0 16px 34px rgba(35, 61, 102, 0.09);
+}
+
+.meeo-office-function-card svg {
+  color: #1769e0;
+  font-size: 23px;
+}
+
+.meeo-office-function-card h3 {
+  margin: 16px 0 8px;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 16px;
+}
+
+.meeo-office-function-card p {
+  margin: 0;
+}
+
+
+/* ==========================================================================
+   GOVERNMENT SERVICE DETAILS
+   ========================================================================== */
+
+.meeo-office-service-details-card {
+  max-width: 1280px;
+
+  margin: 24px auto 0;
+  padding: 28px;
+
+  border: 1px solid #d8e3f0;
+  border-left: 4px solid #0f766e;
+
+  border-radius: 12px;
+
+  background: linear-gradient(
+    135deg,
+    #f5fbfa 0%,
+    #ffffff 58%
+  );
+
+  box-shadow: 0 12px 32px rgba(35, 61, 102, 0.06);
+}
+
+.meeo-office-service-details-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.meeo-office-service-details-icon {
+  width: 46px;
+  height: 46px;
+
+  flex: 0 0 46px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  color: #0f766e;
+  background: #dff4ef;
+
+  font-size: 20px;
+}
+
+.meeo-office-service-details-card h3 {
+  margin: 5px 0 7px;
+
+  color: #14213d;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 21px;
+  line-height: 1.3;
+}
+
+.meeo-office-service-details-card p {
+  margin: 0;
+
+  color: #5f6f86;
+
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.meeo-office-service-details-list {
+  margin: 24px 0 0;
+  padding: 20px 0 0;
+
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 24px;
+
+  border-top: 1px solid #dfeae8;
+
+  list-style: none;
+}
+
+.meeo-office-service-details-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+
+  color: #43566f;
+
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.meeo-office-service-details-list svg {
+  flex: 0 0 auto;
+
+  margin-top: 2px;
+
+  color: #16845d;
+}
+
+
+/* ==========================================================================
+   ACTIVITIES
+   ========================================================================== */
+
+.meeo-office-activities {
+  width: 100%;
+  max-width: 1050px;
+
+  margin: 28px auto 70px;
+  padding: 32px;
+
+  border: 1px solid #e4eaf2;
+  border-radius: 14px;
+
+  background: #ffffff;
+
+  box-shadow: 0 16px 40px rgba(35, 61, 102, 0.06);
+}
+
+.meeo-office-activities .meeo-office-section-heading {
+  max-width: none;
+
+  margin: 0 0 24px;
+
+  text-align: left;
+}
+
+.meeo-office-activities .meeo-office-section-heading h2 {
+  margin: 10px 0 7px;
+  font-size: 28px;
+}
+
+.meeo-office-activities .meeo-office-section-heading p {
+  font-size: 14px;
+}
+
+.meeo-office-activities-state {
+  padding: 55px 20px;
+
+  color: #5f6f86;
+
+  text-align: center;
+
+  font-size: 14px;
+}
+
+.meeo-office-activities-state-error {
+  color: #b54b4b;
+}
+
+.meeo-office-activities-layout {
+  display: grid;
+
+  grid-template-columns: 250px minmax(0, 1fr);
+
+  gap: 22px;
+}
+
+.meeo-office-activities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meeo-office-activity-list-item {
+  width: 100%;
+  min-width: 0;
+
+  padding: 9px;
+
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  border: 1px solid #e4eaf2;
+  border-radius: 9px;
+
+  color: #14213d;
+  background: #ffffff;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+
+.meeo-office-activity-list-item:hover,
+.meeo-office-activity-list-item.active {
+  border-color: #9fc3f5;
+  background: #eaf2ff;
+}
+
+.meeo-office-activity-list-item:hover {
+  transform: translateX(3px);
+}
+
+.meeo-office-activity-list-item img {
+  width: 54px;
+  height: 48px;
+
+  flex: 0 0 auto;
+
+  object-fit: cover;
+
+  border-radius: 6px;
+}
+
+.meeo-office-activity-list-item span {
+  min-width: 0;
+}
+
+.meeo-office-activity-list-item strong,
+.meeo-office-activity-list-item small {
+  display: block;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.meeo-office-activity-list-item strong {
+  font-size: 12px;
+}
+
+.meeo-office-activity-list-item small {
+  margin-top: 5px;
+
+  color: #8290a5;
+
+  font-size: 10px;
+}
+
+.meeo-office-activity-gallery {
+  min-width: 0;
+}
+
+.meeo-office-activity-main-image {
+  position: relative;
+
+  overflow: hidden;
+
+  aspect-ratio: 16 / 9;
+
+  border-radius: 11px;
+
+  background: #f5f8fc;
+}
+
+.meeo-office-activity-main-image > img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: contain;
+}
+
+.meeo-office-activity-gallery-arrow {
+  position: absolute;
+  top: 50%;
+
+  width: 38px;
+  height: 38px;
+
+  display: grid;
+  place-items: center;
+
+  border: 0;
+  border-radius: 50%;
+
+  color: #14213d;
+  background: rgba(255, 255, 255, 0.92);
+
+  box-shadow: 0 5px 18px rgba(20, 33, 61, 0.15);
+
+  transform: translateY(-50%);
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.meeo-office-activity-gallery-arrow:hover {
+  color: #1769e0;
+  background: #ffffff;
+}
+
+.meeo-office-activity-gallery-arrow-left {
+  left: 14px;
+}
+
+.meeo-office-activity-gallery-arrow-right {
+  right: 14px;
+}
+
+.meeo-office-activity-details {
+  padding: 18px 0 12px;
+}
+
+.meeo-office-activity-details > span {
+  color: #1769e0;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.meeo-office-activity-details h3 {
+  margin: 5px 0 7px;
+
+  color: #14213d;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 20px;
+}
+
+.meeo-office-activity-details p {
+  margin: 0;
+
+  color: #5f6f86;
+
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.meeo-office-activity-thumbnails {
+  display: flex;
+  gap: 8px;
+
+  overflow-x: auto;
+
+  padding-top: 4px;
+}
+
+.meeo-office-activity-thumbnails button {
+  width: 70px;
+  height: 54px;
+
+  flex: 0 0 auto;
+
+  padding: 2px;
+
+  border: 2px solid transparent;
+  border-radius: 7px;
+
+  background: transparent;
+
+  cursor: pointer;
+}
+
+.meeo-office-activity-thumbnails button.active {
+  border-color: #1769e0;
+}
+
+.meeo-office-activity-thumbnails img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+
+  border-radius: 4px;
+}
+
+
+/* ==========================================================================
+   ORGANIZATIONAL STRUCTURE
+   ========================================================================== */
+
+.meeo-office-organization {
+  max-width: none;
+
+  padding-top: 104px;
+  padding-bottom: 104px;
+
+  background: linear-gradient(
+    180deg,
+    #f8fbff 0%,
+    #fffdf8 100%
+  );
+
+  border-top: 1px solid #eee7d9;
+}
+
+.meeo-office-org-chart {
+  max-width: 1450px;
+
+  margin: 0 auto;
+
+  padding: 126px 32px 58px;
+
+  overflow-x: auto;
+
+  overscroll-behavior-inline: contain;
+
+  border: 1px solid #e3d6bf;
+  border-radius: 16px;
+
+  background-color: #fffefb;
+
+  background-image:
+    repeating-linear-gradient(
+      135deg,
+      rgba(223, 211, 188, 0.2) 0,
+      rgba(223, 211, 188, 0.2) 1px,
+      transparent 1px,
+      transparent 19px
+    );
+
+  box-shadow: 0 22px 55px rgba(35, 61, 102, 0.1);
+}
+
+.meeo-office-org-canvas {
+  min-width: 880px;
+}
+
+
+/* ==========================================================================
+   ORGANIZATION HEAD
+   ========================================================================== */
+
+.meeo-office-org-head,
+.meeo-office-org-mayor,
+.meeo-office-org-lead,
+.meeo-office-org-staff-card {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  text-align: center;
+}
+
+.meeo-office-org-head {
+  width: 380px;
+  min-height: 142px;
+
+  margin: 0 auto;
+
+  padding: 40px 32px 24px;
+
+  border: 1px solid #e3a01b;
+  border-radius: 10px;
+
+  background: linear-gradient(
+    145deg,
+    #ffbd45 0%,
+    #f5a51f 100%
+  );
+
+  color: #241b0d;
+
+  box-shadow: 0 12px 24px rgba(180, 117, 17, 0.18);
+}
+
+
+/* ==========================================================================
+   ORGANIZATION AVATARS
+   ========================================================================== */
+
+.meeo-office-org-avatar {
+  position: relative;
+  z-index: 3;
+
+  width: 76px;
+  height: 76px;
+
+  display: grid;
+  place-items: center;
+
+  margin: -80px auto 13px;
+
+  padding: 4px;
+
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+
+  color: #ffffff;
+  background: #ffffff;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+
+  object-fit: cover;
+  object-position: center;
+
+  image-rendering: auto;
+
+  filter: contrast(1.04) saturate(1.04);
+}
+
+.meeo-office-org-avatar-head {
+  width: 82px;
+  height: 82px;
+
+  margin-top: -87px;
+
+  border-width: 4px;
+
+  box-shadow:
+    0 7px 18px rgba(20, 33, 61, 0.26),
+    0 0 0 2px #1769e0,
+    0 0 0 5px rgba(255, 255, 255, 0.9);
+}
+
+
+/* ==========================================================================
+   ORGANIZATION TYPOGRAPHY
+   ========================================================================== */
+
+.meeo-office-org-head strong,
+.meeo-office-org-mayor strong,
+.meeo-office-org-lead strong,
+.meeo-office-org-staff-card strong {
+  text-transform: uppercase;
+}
+
+.meeo-office-org-head strong,
+.meeo-office-org-mayor strong,
+.meeo-office-org-lead strong,
+.meeo-office-org-staff-card strong {
+  margin-top: 3px;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 13px;
+
+  overflow-wrap: anywhere;
+
+  line-height: 1.3;
+}
+
+.meeo-office-org-item {
+  margin-top: 5px;
+
+  color: #66460f;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+
+  line-height: 1.35;
+
+  text-transform: uppercase;
+}
+
+.meeo-office-org-head .meeo-office-org-item {
+  color: #3f2c0d;
+  font-size: 12px;
+}
+
+.meeo-office-org-role {
+  color: #6d4c16;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  line-height: 1.35;
+}
+
+.meeo-office-org-head .meeo-office-org-role,
+.meeo-office-org-lead .meeo-office-org-role {
+  color: #3f2c0d;
+}
+
+
+/* ==========================================================================
+   HEAD → DIVISIONS CONNECTOR
+   ========================================================================== */
+
+.meeo-office-org-connector {
+  position: relative;
+
+  width: 3px;
+  height: 46px;
+
+  margin: 0 auto;
+
+  background: #526b86;
+
+  z-index: 0;
+}
+
+/* ==========================================================================
+   DIVISIONS CONTAINER
+   ========================================================================== */
+
+.meeo-office-org-divisions {
+  position: relative;
+
+  display: grid;
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 34px;
+
+  min-width: 0;
+
+  padding-top: 55px;
+}
+
+
+/* Horizontal line connecting all three divisions */
+.meeo-office-org-divisions::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+
+  left: 16.66%;
+  right: 16.66%;
+
+  height: 3px;
+
+  background: #526b86;
+
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9);
+
+  z-index: 0;
+}
+
+
+/* ==========================================================================
+   DIVISION
+   ========================================================================== */
+
+.meeo-office-org-division {
+  position: relative;
+
+  padding-top: 2px;
+}
+
+
+/* Vertical connector from horizontal line to division */
+.meeo-office-org-division::before {
+  content: "";
+  position: absolute;
+  top: -55px;
+  left: 50%;
+  width: 3px;
+  height: 55px;
+  transform: translateX(-50%);
+  z-index: 0;
+}
+
+.meeo-office-org-division::after {
+  content: "";
+  position: absolute;
+  top: -55px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid #526b86;
+  transform: translate(-50%, -1px);
+  filter: drop-shadow(0 0 2px #fffefb);
+  z-index: 2;
+}
+
+
+/* ==========================================================================
+   DIVISION LEAD
+   ========================================================================== */
+
+.meeo-office-org-lead {
+  position: relative;
+  z-index: 2;
+
+  min-height: 124px;
+
+  padding: 34px 16px 18px;
+
+  border: 1px solid #d8a33d;
+  border-radius: 12px;
+
+  background: linear-gradient(
+    145deg,
+    #ffd16c 0%,
+    #f4b43b 100%
+  );
+
+  color: #2d2416;
+
+  box-shadow: 0 10px 20px rgba(180, 117, 17, 0.14);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.meeo-office-org-lead:hover {
+  transform: translateY(-3px);
+
+  box-shadow: 0 14px 24px rgba(180, 117, 17, 0.18);
+}
+
+.meeo-office-org-lead .meeo-office-org-avatar {
+  background: #d25b43;
+}
+
+
+/* ==========================================================================
+   LEAD → STAFF CONNECTOR
+   ========================================================================== */
+
+.meeo-office-org-lead::after {
+  content: "";
+
+  position: absolute;
+
+  top: 100%;
+  left: 50%;
+
+  width: 3px;
+  height: 50px;
+
+
+
+  transform: translateX(-50%);
+
+  z-index: 0;
+}
+
+
+/* ==========================================================================
+   STAFF AREA
+   ========================================================================== */
+
+.meeo-office-org-staff {
+  position: relative;
+
+  display: grid;
+
+  grid-template-columns: 1fr;
+
+  gap: 20px;
+
+  margin-top: 50px;
+
+  padding: 44px 0 0 28px;
+}
+
+
+/* Main vertical line for staff */
+.meeo-office-org-staff::before {
+  content: "";
+
+  position: absolute;
+
+  top: -50px;
+  bottom: 0;
+
+  left: 10px;
+
+  width: 3px;
+
+  background: #526b86;
+
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9);
+
+  z-index: 0;
+}
+
+
+/* ==========================================================================
+   STAFF CARD
+   ========================================================================== */
+
+.meeo-office-org-staff-card {
+  position: relative;
+  z-index: 2;
+
+  width: calc(100% - 18px);
+
+  min-height: 104px;
+
+  display: grid;
+
+  grid-template-columns: 64px minmax(0, 1fr);
+
+  grid-template-rows: auto auto auto;
+
+  column-gap: 14px;
+
+  align-items: center;
+
+  padding: 14px 16px 14px 12px;
+
+  border: 1px solid #e4bd67;
+  border-radius: 12px;
+
+  background: linear-gradient(
+    145deg,
+    #ffda83 0%,
+    #f7bd50 100%
+  );
+
+  color: #2d2416;
+
+  box-shadow: 0 8px 16px rgba(180, 117, 17, 0.1);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.meeo-office-org-staff-card:hover {
+  transform: translateY(-3px);
+
+  box-shadow: 0 14px 24px rgba(180, 117, 17, 0.18);
+}
+
+
+/* Horizontal line from staff vertical line to card */
+.meeo-office-org-staff-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 50%;
+  left: -18px;
+
+  width: 18px;
+  height: 3px;
+
+  background: #526b86;
+
+  transform: translateY(-50%);
+
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9);
+
+  z-index: 0;
+}
+
+
+/* Arrow pointing into staff card */
+.meeo-office-org-staff-card::after {
+  content: "";
+
+  position: absolute;
+
+  top: 50%;
+  left: -5px;
+
+  width: 0;
+  height: 0;
+
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 9px solid #526b86;
+
+  transform: translateY(-50%);
+
+  filter: drop-shadow(0 1px 0 #ffffff);
+
+  z-index: 5;
+}
+
+
+/* ==========================================================================
+   STAFF CARD CONTENT
+   ========================================================================== */
+
+.meeo-office-org-staff-card strong,
+.meeo-office-org-staff-card .meeo-office-org-item,
+.meeo-office-org-staff-card .meeo-office-org-role {
+  grid-column: 2;
+
+  width: 100%;
+
+  text-align: left;
+}
+
+.meeo-office-org-staff-card .meeo-office-org-item {
+  max-width: 130px;
+}
+
+
+/* Staff avatar */
+.meeo-office-org-staff-card .meeo-office-org-avatar {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+
+  width: 70px;
+  height: 70px;
+
+  margin: 0;
+  padding: 0;
+
+  border: 3px solid #ffffff;
+  border-radius: 10px;
+
+  background: transparent;
+
+  box-shadow:
+    0 6px 14px rgba(20, 33, 61, 0.2),
+    0 0 0 1px rgba(82, 107, 134, 0.35);
+
+  font-size: 12px;
+}
+
+.meeo-office-org-staff-card .meeo-office-org-avatar + strong {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
+
+@keyframes meeo-office-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes meeo-office-gallery-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.975);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.meeo-office-hero-content > *,
+.meeo-office-hero-gallery,
+.meeo-office-enterprise-card,
+.meeo-office-function-card,
+.meeo-office-activities {
+  opacity: 0;
+
+  animation:
+    meeo-office-rise-in
+    0.75s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    forwards;
+}
+
+.meeo-office-hero-content > :nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.meeo-office-hero-content > :nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.meeo-office-hero-content > :nth-child(3) {
+  animation-delay: 0.26s;
+}
+
+.meeo-office-hero-content > :nth-child(4) {
+  animation-delay: 0.34s;
+}
+
+.meeo-office-hero-content > :nth-child(5) {
+  animation-delay: 0.42s;
+}
+
+.meeo-office-hero-gallery {
+  animation-name: meeo-office-gallery-in;
+  animation-duration: 0.95s;
+  animation-delay: 0.25s;
+}
+
+.meeo-office-enterprise-card:nth-child(1) {
+  animation-delay: 0.12s;
+}
+
+.meeo-office-enterprise-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.meeo-office-enterprise-card:nth-child(3) {
+  animation-delay: 0.28s;
+}
+
+.meeo-office-function-card:nth-child(1) {
+  animation-delay: 0.12s;
+}
+
+.meeo-office-function-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.meeo-office-function-card:nth-child(3) {
+  animation-delay: 0.28s;
+}
+
+.meeo-office-function-card:nth-child(4) {
+  animation-delay: 0.36s;
+}
+
+.meeo-office-activities {
+  animation-delay: 0.12s;
+}
+
+
+/* ==========================================================================
+   LARGE SCREENS
+   ========================================================================== */
+
+@media (min-width: 1200px) {
+  .meeo-office-hero {
+    padding-right: 6%;
+    padding-left: 6%;
+  }
+
+  .meeo-office-hero-content {
+    width: min(700px, 56vw);
+  }
+
+  .meeo-office-hero-gallery {
+    width: min(500px, 38vw);
+
+    flex-basis: min(500px, 38vw);
+  }
+}
+
+
+/* ==========================================================================
+   TABLET
+   ========================================================================== */
+
+@media (max-width: 1100px) {
+  .meeo-office-function-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .meeo-office-hero {
+    padding: 76px 24px 64px;
+  }
+
+  .meeo-office-hero-inner {
+    flex-direction: column;
+
+    gap: 40px;
+
+    align-items: stretch;
+  }
+
+  .meeo-office-hero-content {
+    width: min(700px, 100%);
+  }
+
+  .meeo-office-hero-gallery {
+    width: min(520px, 100%);
+
+    margin: 0 auto;
+
+    flex-basis: auto;
+  }
+
+  .meeo-office-enterprise-grid,
+  .meeo-office-function-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .meeo-office-service-details-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Activities */
+  .meeo-office-activities-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .meeo-office-activities-list {
+    display: grid;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Organization chart */
+  .meeo-office-org-chart {
+    margin-right: -24px;
+    margin-left: -24px;
+
+    padding: 108px 24px 46px;
+
+    border-right: 0;
+    border-left: 0;
+
+    border-radius: 0;
+  }
+
+  .meeo-office-org-canvas {
+    min-width: 820px;
+  }
+
+  .meeo-office-org-divisions {
+    min-width: 820px;
+
+    gap: 26px;
+  }
+}
+
+
+/* ==========================================================================
+   MOBILE
+   ========================================================================== */
+
+@media (max-width: 600px) {
+  .meeo-office-navbar {
+    padding: 10px 16px;
+
+    flex-direction: column;
+
+    align-items: stretch;
+
+    gap: 10px;
+  }
+
+  .meeo-office-nav {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    gap: 6px;
+  }
+
+  .meeo-office-nav-button {
+    width: 100%;
+
+    padding-right: 6px;
+    padding-left: 6px;
+
+    font-size: 10px;
+  }
+
+  /* Hero */
+  .meeo-office-hero {
+    min-height: auto;
+
+    padding: 64px 16px 48px;
+  }
+
+  .meeo-office-hero h1 {
+    margin: 16px 0;
+
+    font-size: clamp(36px, 11vw, 52px);
+  }
+
+  .meeo-office-hero-description {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .meeo-office-hero-points {
+    flex-direction: column;
+
+    gap: 9px;
+
+    margin: 20px 0 24px;
+  }
+
+  .meeo-office-hero-actions {
+    display: grid;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .meeo-office-hero-action {
+    min-width: 0;
+
+    padding: 8px;
+
+    font-size: 11px;
+  }
+
+  /* Sections */
+  .meeo-office-section {
+    padding: 70px 16px;
+  }
+
+  .meeo-office-section-heading {
+    margin-bottom: 30px;
+  }
+
+  /* Services */
+  .meeo-office-service-details-card {
+    padding: 20px;
+  }
+
+  .meeo-office-service-details-list {
+    grid-template-columns: 1fr;
+
+    gap: 10px;
+  }
+
+  /* Activities */
+  .meeo-office-activities {
+    width: auto;
+
+    margin: 24px 16px 55px;
+
+    padding: 18px;
+  }
+
+  .meeo-office-activities .meeo-office-section-heading h2 {
+    font-size: 24px;
+  }
+
+  .meeo-office-activities .meeo-office-section-heading p {
+    font-size: 12px;
+  }
+
+  .meeo-office-activities-list {
+    display: flex;
+  }
+
+  .meeo-office-activity-main-image {
+    aspect-ratio: 4 / 3;
+  }
+
+  /* Organization */
+  .meeo-office-org-chart {
+    margin-right: -16px;
+    margin-left: -16px;
+
+    padding: 104px 16px 42px;
+  }
+
+  .meeo-office-org-canvas {
+    min-width: 760px;
+  }
+
+  .meeo-office-org-divisions {
+    min-width: 760px;
+
+    gap: 22px;
+  }
+
+  .meeo-office-org-head {
+    width: min(300px, 100%);
+  }
+
+  .meeo-office-org-mayor {
+    width: min(320px, 100%);
+  }
+
+  .meeo-office-org-lead {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .meeo-office-org-staff {
+    column-gap: 18px;
+    row-gap: 46px;
+  }
+
+  .meeo-office-org-staff-card {
+    grid-template-columns: 58px minmax(0, 1fr);
+
+    column-gap: 10px;
+
+    min-height: 94px;
+
+    padding: 11px 10px 11px 8px;
+  }
+
+  .meeo-office-org-staff-card .meeo-office-org-avatar {
+    width: 58px;
+    height: 58px;
+  }
+
+  .meeo-office-org-head strong,
+  .meeo-office-org-mayor strong,
+  .meeo-office-org-lead strong,
+  .meeo-office-org-staff-card strong {
+    font-size: 12px;
+  }
+
+  .meeo-office-org-item,
+  .meeo-office-org-role {
+    font-size: 9px;
+  }
+}
+
+
+/* ==========================================================================
+   REDUCED MOTION
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .meeo-office-nav-button,
+  .meeo-office-hero-action,
+  .meeo-office-enterprise-card,
+  .meeo-office-function-card,
+  .meeo-office-gallery-arrow,
+  .meeo-office-gallery-dot,
+  .meeo-office-activity-list-item,
+  .meeo-office-activity-gallery-arrow,
+  .meeo-office-org-lead,
+  .meeo-office-org-staff-card {
+    transition: none;
+  }
+
+  .meeo-office-hero-content > *,
+  .meeo-office-hero-gallery,
+  .meeo-office-enterprise-card,
+  .meeo-office-function-card,
+  .meeo-office-activities {
+    animation: none;
+
+    opacity: 1;
+
+    transform: none;
+  }
+}
+
+/* ========================================================================
+   FEATURED SECTION HEADINGS
+   ======================================================================== */
+
+.meeo-office-functions > .meeo-office-section-heading,
+.meeo-office-activities > .meeo-office-section-heading,
+.meeo-office-organization > .meeo-office-section-heading {
+  max-width: 820px;
+  margin-bottom: 48px;
+}
+
+.meeo-office-functions > .meeo-office-section-heading .meeo-office-eyebrow,
+.meeo-office-activities > .meeo-office-section-heading .meeo-office-eyebrow,
+.meeo-office-organization > .meeo-office-section-heading .meeo-office-eyebrow {
+  position: relative;
+  padding: 8px 14px 8px 12px;
+  border: 1px solid #cfe0f3;
+  border-radius: 999px;
+  color: #1769e0;
+  background: #eef5fd;
+  letter-spacing: 1.5px;
+}
+
+.meeo-office-functions > .meeo-office-section-heading h2,
+.meeo-office-activities > .meeo-office-section-heading h2,
+.meeo-office-organization > .meeo-office-section-heading h2 {
+  margin-top: 20px;
+  font-size: clamp(36px, 4.5vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -0.5px;
+}
+
+.meeo-office-functions > .meeo-office-section-heading p,
+.meeo-office-activities > .meeo-office-section-heading p,
+.meeo-office-organization > .meeo-office-section-heading p {
+  max-width: 680px;
+  margin-right: auto;
+  margin-left: auto;
+  color: #536681;
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.meeo-office-functions > .meeo-office-section-heading::after,
+.meeo-office-activities > .meeo-office-section-heading::after,
+.meeo-office-organization > .meeo-office-section-heading::after {
+  content: "";
+  display: block;
+  width: 58px;
+  height: 4px;
+  margin: 22px auto 0;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #1769e0, #16845d);
+}
+
+@media (max-width: 600px) {
+  .meeo-office-functions > .meeo-office-section-heading,
+  .meeo-office-activities > .meeo-office-section-heading,
+  .meeo-office-organization > .meeo-office-section-heading {
+    margin-bottom: 34px;
+  }
+
+  .meeo-office-functions > .meeo-office-section-heading .meeo-office-eyebrow,
+  .meeo-office-activities > .meeo-office-section-heading .meeo-office-eyebrow,
+  .meeo-office-organization > .meeo-office-section-heading .meeo-office-eyebrow {
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .meeo-office-functions > .meeo-office-section-heading h2,
+  .meeo-office-activities > .meeo-office-section-heading h2,
+  .meeo-office-organization > .meeo-office-section-heading h2 {
+    margin-top: 16px;
+    font-size: clamp(28px, 8vw, 38px);
+  }
+
+  .meeo-office-functions > .meeo-office-section-heading p,
+  .meeo-office-activities > .meeo-office-section-heading p,
+  .meeo-office-organization > .meeo-office-section-heading p {
+    font-size: 14px;
+  }
+}
+
+.meeo-office-org-mayor {
+  position: relative;
+  width: 360px;
+  min-height: 152px;
+  margin: 0 auto;
+  padding: 38px 24px 22px;
+  border: 1px solid #c2666c;
+  border-radius: 14px;
+  color: #38171b;
+  background: linear-gradient(145deg, #ffd0d1 0%, #ee959b 100%);
+  box-shadow: 0 14px 28px rgba(160, 64, 72, .18);
+}
+
+.meeo-office-org-avatar-mayor {
+  width: 108px;
+  height: 108px;
+  margin-top: -113px;
+  box-shadow: 0 7px 18px rgba(20, 33, 61, .22), 0 0 0 2px #bb5960, 0 0 0 4px rgba(255, 255, 255, .9);
+}
+
+.meeo-office-org-mayor .meeo-office-org-item,
+.meeo-office-org-mayor .meeo-office-org-role {
+  color: #5b2429;
+}
+
+.meeo-office-org-mayor .meeo-office-org-mayor-fullname {
+  position: relative;
+
+  display: inline-block;
+
+  max-width: 100%;
+
+  margin-top: 1px;
+  margin-bottom: 7px;
+  padding: 0 14px 9px;
+
+  color: #551d25;
+
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  line-height: 1.16;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.meeo-office-org-mayor .meeo-office-org-mayor-fullname::before,
+.meeo-office-org-mayor .meeo-office-org-mayor-fullname::after {
+  content: "";
+
+  position: absolute;
+  bottom: 0;
+
+  height: 2px;
+
+  background: #a84c59;
+}
+
+.meeo-office-org-mayor .meeo-office-org-mayor-fullname::before {
+  right: 50%;
+  left: 0;
+  margin-right: 7px;
+}
+
+.meeo-office-org-mayor .meeo-office-org-mayor-fullname::after {
+  right: 0;
+  left: 50%;
+  margin-left: 7px;
+}
+
+.meeo-office-org-mayor .meeo-office-org-mayor-fullname {
+  border-bottom: 0;
+}
+
+.meeo-office-org-mayor .meeo-office-org-mayor-fullname + strong {
+  position: relative;
+
+  color: #38171b;
+
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+
+.meeo-office-org-mayor-connector {
+  position: relative;
+  width: 3px;
+  height: 132px;
+  margin: 0 auto;
+  background: #526b86;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .9);
+}
+
+.meeo-office-org-mayor-connector::after {
+  content: "";
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-top: 10px solid #526b86;
+  border-right: 7px solid transparent;
+  border-left: 7px solid transparent;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 0 2px #fffefb);
+  z-index: 3;
+}

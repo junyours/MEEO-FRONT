@@ -1,212 +1,493 @@
 /* ==========================================================================
-   Wharf / Pantalan
-   Enterprise Detail Page
+   WHARF / PANTALAN
+   Municipal Economic Enterprise Office
+   Page-specific styles
    ========================================================================== */
 
 
 /* ==========================================================================
-   Navbar
+   PAGE
    ========================================================================== */
 
-.enterprise-detail-page .landing-navbar {
-  position: relative;
+.wharf-page {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: #f5f8f7;
+  color: #0c1c31;
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+.wharf-page *,
+.wharf-page *::before,
+.wharf-page *::after {
+  box-sizing: border-box;
 }
 
 
 /* ==========================================================================
-   Hero Section
+   NAVBAR
    ========================================================================== */
 
-.enterprise-hero {
-  min-height: 610px;
-  padding: 130px 8% 90px;
+.wharf-navbar {
+  position: relative;
+  z-index: 100;
+  width: 100%;
+  min-height: 76px;
+  padding: 14px 6%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid #dce9e5;
+  box-shadow: 0 4px 18px rgba(12, 28, 49, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+}
 
+
+/* ==========================================================================
+   NAVBAR BRAND
+   ========================================================================== */
+
+.wharf-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.wharf-brand-logo {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.wharf-brand-logo img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.wharf-brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wharf-brand-text strong {
+  display: block;
+  color: #0c1c31;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+}
+
+.wharf-brand-text span {
+  display: block;
+  color: #667085;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+
+/* ==========================================================================
+   NAVBAR LINKS
+   ========================================================================== */
+
+.wharf-nav-links {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.wharf-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #475467;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.wharf-nav-link:hover {
+  color: #16845d;
+  background: #f2faf6;
+  transform: translateY(-1px);
+}
+
+.wharf-nav-link.active {
+  color: #ffffff;
+  background: #16845d;
+  border-color: #16845d;
+  box-shadow: 0 5px 14px rgba(22, 132, 93, 0.24);
+}
+
+.wharf-nav-link.active:hover {
+  color: #ffffff;
+  background: #116d4d;
+  border-color: #116d4d;
+}
+
+
+/* ==========================================================================
+   HERO SECTION
+   ========================================================================== */
+
+.wharf-hero {
+  position: relative;
+  min-height: 650px;
+  padding: 130px 6% 90px;
   display: flex;
   align-items: center;
   gap: 40px;
-
-  color: #fff;
-
+  color: #ffffff;
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
+  overflow: hidden;
 }
 
-.enterprise-hero-content {
-  width: min(650px, 100%);
+.wharf-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(135deg, rgba(8, 27, 43, 0.28), transparent 52%),
+    linear-gradient(0deg, rgba(8, 27, 43, 0.18), transparent 42%);
+  pointer-events: none;
 }
 
-.enterprise-kicker {
+
+/* ==========================================================================
+   HERO CONTENT
+   ========================================================================== */
+
+.wharf-hero-content {
+  position: relative;
+  z-index: 2;
+  width: min(700px, 56vw);
+  flex: 1 1 auto;
+  max-width: 720px;
+}
+
+.wharf-kicker {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-
   color: #cde1ff;
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 1.4px;
+  line-height: 1.4;
 }
 
-.enterprise-hero h1 {
+.wharf-kicker svg {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+
+/* ==========================================================================
+   HERO HEADING
+   ========================================================================== */
+
+.wharf-hero-content h1 {
   margin: 22px 0;
-
-  color: #fff;
-
-  font:
-    800 clamp(42px, 6vw, 76px) / 1.05
-    "Plus Jakarta Sans",
-    sans-serif;
+  max-width: 680px;
+  color: #ffffff;
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+  font-size: clamp(42px, 5.5vw, 72px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -1.8px;
 }
 
-.wharf-enterprise-hero-content h1 span {
+.wharf-hero-content h1 span {
   display: block;
   color: #9cc7ff;
 }
 
-.enterprise-hero p {
-  max-width: 590px;
 
+/* ==========================================================================
+   HERO DESCRIPTION
+   ========================================================================== */
+
+.wharf-hero-content > p {
+  max-width: 590px;
+  margin: 0;
   color: rgba(255, 255, 255, 0.84);
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
   font-size: 17px;
+  font-weight: 400;
   line-height: 1.75;
 }
 
 
 /* ==========================================================================
-   Hero Points
+   HERO POINTS
    ========================================================================== */
 
-.enterprise-points {
+.wharf-points {
   display: flex;
   flex-wrap: wrap;
   gap: 18px;
-
   margin: 26px 0 30px;
-
-  color: #fff;
+  color: #ffffff;
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
   font-size: 12px;
   font-weight: 700;
 }
 
-.enterprise-points span {
+.wharf-points span {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  white-space: nowrap;
 }
 
-.enterprise-points svg {
+.wharf-points svg {
+  flex-shrink: 0;
   color: #8de0bb;
+  font-size: 14px;
 }
 
 
 /* ==========================================================================
-   Hero Buttons
+   HERO BUTTONS
    ========================================================================== */
 
-.enterprise-detail-page .hero-buttons {
+.wharf-hero-buttons {
+  width: 100%;
   max-width: 560px;
+  display: flex;
+  align-items: stretch;
   gap: 10px;
+  margin: 0;
 }
 
-.enterprise-detail-page .hero-buttons > button {
+.wharf-hero-buttons > button {
   flex: 1 1 0;
   min-width: 0;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease;
 }
 
-.enterprise-detail-page .hero-buttons .get-started-button {
+
+/* ==========================================================================
+   GET STARTED BUTTON
+   ========================================================================== */
+
+.wharf-get-started-button {
+  color: #ffffff;
+  background: #1769e0;
+  border: 1px solid #1769e0;
   box-shadow: 0 12px 24px rgba(23, 105, 224, 0.28);
 }
 
-.enterprise-detail-page .hero-buttons .hero-more-info {
-  color: var(--ink);
-  background: #fff;
-  border-color: #fff;
-}
-
-.enterprise-detail-page .hero-buttons button:hover {
+.wharf-get-started-button:hover {
+  color: #ffffff;
+  background: #125dcc;
+  border-color: #125dcc;
   transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(23, 105, 224, 0.34);
 }
 
 
 /* ==========================================================================
-   Hero Gallery
+   EXPLORE SERVICES BUTTON
    ========================================================================== */
 
-.enterprise-gallery {
-  position: relative;
-
-  width: min(420px, 100%);
-  margin-left: auto;
-
-  overflow: hidden;
-  aspect-ratio: 4 / 3;
-
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 14px;
-
-  background: #0c1c31;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
-
-  flex-shrink: 0;
+.wharf-hero-more-info {
+  color: #0c1c31;
+  background: #ffffff;
+  border: 1px solid #ffffff;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
 }
 
-.enterprise-gallery img {
-  display: block;
+.wharf-hero-more-info:hover {
+  color: #0c1c31;
+  background: #f4f7fb;
+  border-color: #f4f7fb;
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
+}
 
+.wharf-button-label {
+  white-space: nowrap;
+}
+
+
+/* ==========================================================================
+   HERO GALLERY
+   ========================================================================== */
+
+.wharf-gallery {
+  position: relative;
+  z-index: 2;
+  width: min(500px, 38vw);
+  margin-left: auto;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 18px;
+  background: #0c1c31;
+  box-shadow: 0 28px 65px rgba(4, 19, 32, 0.34);
+  transform: rotate(1deg);
+}
+
+
+/* ==========================================================================
+   GALLERY IMAGE
+   ========================================================================== */
+
+.wharf-gallery-image {
+  position: relative;
+  z-index: 1;
+  display: block;
   width: 100%;
   height: 100%;
-
   object-fit: cover;
   object-position: center;
 }
 
-.enterprise-gallery .gallery-arrow {
+
+/* ==========================================================================
+   GALLERY ARROWS
+   ========================================================================== */
+
+.wharf-gallery-arrow {
   position: absolute;
-  z-index: 5;
+  z-index: 20;
+  top: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  color: #ffffff;
+  background: rgba(12, 28, 49, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.wharf-gallery-arrow:hover {
+  background: rgba(12, 28, 49, 0.82);
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.wharf-gallery-arrow-left {
+  left: 14px;
+}
+
+.wharf-gallery-arrow-right {
+  right: 14px;
 }
 
 
 /* ==========================================================================
-   Hero Gallery Dots
+   GALLERY DOTS
    ========================================================================== */
 
-.enterprise-gallery .hero-gallery-dots {
+.wharf-gallery-dots {
   position: absolute;
   left: 50%;
   bottom: 18px;
-
+  z-index: 30;
   width: max-content;
+  height: auto;
   margin: 0;
-
+  padding: 0;
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 9px;
-
   transform: translateX(-50%);
-
-  z-index: 20;
+  pointer-events: none;
 }
 
-.enterprise-gallery .hero-gallery-dots button {
+.wharf-gallery-dots button {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
   width: 9px;
   height: 9px;
   min-width: 9px;
   min-height: 9px;
-
   margin: 0;
   padding: 0;
-
   border: 1px solid rgba(255, 255, 255, 0.95);
   border-radius: 50%;
-
   background: rgba(255, 255, 255, 0.35);
-
-  cursor: pointer;
-
   appearance: none;
   -webkit-appearance: none;
-
+  box-sizing: border-box;
+  cursor: pointer;
+  pointer-events: auto;
   transition:
     transform 0.2s ease,
     background 0.2s ease,
@@ -214,112 +495,601 @@
     box-shadow 0.2s ease;
 }
 
-.enterprise-gallery .hero-gallery-dots button:hover {
+.wharf-gallery-dots button:hover {
   transform: scale(1.3);
   background: rgba(255, 255, 255, 0.9);
 }
 
-.enterprise-gallery .hero-gallery-dots button.active {
-  background: #fff;
-
+.wharf-gallery-dots button.active {
+  background: #ffffff;
   transform: scale(1.2);
-
-  box-shadow:
-    0 0 0 3px rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18);
 }
 
 
 /* ==========================================================================
-   Enterprise Overview
+   SECTION LABEL
    ========================================================================== */
 
-.enterprise-overview {
-  padding: 95px 5%;
+.wharf-section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #1769e0;
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  line-height: 1.4;
+}
 
+.wharf-section-label svg {
+  font-size: 14px;
+}
+
+
+/* ==========================================================================
+   OVERVIEW SECTION
+   ========================================================================== */
+
+.wharf-overview {
+  padding: 110px 5%;
   text-align: center;
-
-  background: #f7f9fc;
+  background: linear-gradient(180deg, #f4f8f7 0%, #ffffff 100%);
 }
 
-.enterprise-overview h2 {
+.wharf-overview h2,
+.wharf-users h2,
+.wharf-process h2,
+.wharf-catch h2,
+.wharf-information h2 {
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+  font-weight: 800;
+}
+
+.wharf-overview h2 {
   margin: 17px 0 0;
-
-  color: var(--ink);
-
-  font:
-    800 clamp(30px, 4vw, 48px) / 1.15
-    "Plus Jakarta Sans",
-    sans-serif;
+  color: #0c1c31;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.15;
+  letter-spacing: -1px;
 }
 
-.enterprise-overview h2 span {
+.wharf-overview h2 span,
+.wharf-users h2 span,
+.wharf-process h2 span,
+.wharf-catch h2 span,
+.wharf-information h2 span {
   display: block;
-  color: var(--blue);
+  color: #1769e0;
 }
 
-.enterprise-overview > p {
+.wharf-overview > p {
   max-width: 700px;
   margin: 18px auto 0;
-
-  color: var(--muted);
+  color: #667085;
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
   line-height: 1.8;
 }
 
 
 /* ==========================================================================
-   Overview Cards
+   OVERVIEW SERVICE CARDS
    ========================================================================== */
 
-.enterprise-overview-grid {
-  max-width: 900px;
+.wharf-overview-grid {
+  max-width: 1100px;
   margin: 48px auto 0;
-
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 14px;
 }
 
-.enterprise-overview-grid div {
+.wharf-overview-grid > div {
+  min-width: 0;
+  min-height: 190px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-
-  padding: 24px 15px;
-
-  border: 1px solid var(--line);
-  border-radius: 10px;
-
-  background: #fff;
+  justify-content: center;
+  gap: 9px;
+  padding: 28px 18px;
+  border: 1px solid #dce9e5;
+  border-top: 3px solid #16845d;
+  border-radius: 12px;
+  background: #ffffff;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
 }
 
-.enterprise-overview-grid svg {
-  color: var(--blue);
+.wharf-overview-grid > div:hover {
+  transform: translateY(-5px);
+  border-color: #b9dace;
+  box-shadow: 0 16px 32px rgba(12, 28, 49, 0.1);
+}
+
+.wharf-overview-grid svg {
+  color: #1769e0;
+  font-size: 25px;
+  margin-bottom: 2px;
+}
+
+.wharf-overview-grid strong {
+  color: #0c1c31;
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.wharf-overview-grid small {
+  max-width: 240px;
+  color: #98a2b3;
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.6;
+  text-align: center;
+}
+
+
+/* ==========================================================================
+   WHO WE SERVE
+   ========================================================================== */
+
+.wharf-users {
+  padding: 95px 5%;
+  background: #ffffff;
+  border-top: 1px solid #e2ece9;
+  border-bottom: 1px solid #e2ece9;
+}
+
+.wharf-users-content {
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.wharf-users h2 {
+  margin: 17px 0 0;
+  color: #0c1c31;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.15;
+  letter-spacing: -1px;
+}
+
+.wharf-users-content > p {
+  max-width: 650px;
+  margin: 18px auto 0;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+
+/* ==========================================================================
+   USERS GRID
+   ========================================================================== */
+
+.wharf-users-grid {
+  max-width: 1000px;
+  margin: 48px auto 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.wharf-user-card {
+  min-width: 0;
+  min-height: 230px;
+  padding: 28px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  border: 1px solid #dce9e5;
+  border-radius: 12px;
+  background: #f4f8f7;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+
+.wharf-user-card:hover {
+  transform: translateY(-5px);
+  border-color: #b9dace;
+  background: #ffffff;
+  box-shadow: 0 14px 30px rgba(12, 28, 49, 0.08);
+}
+
+.wharf-user-card > svg {
+  color: #1769e0;
+  font-size: 28px;
+}
+
+.wharf-user-card strong {
+  color: #0c1c31;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.wharf-user-card small {
+  max-width: 210px;
+  color: #667085;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+
+/* ==========================================================================
+   HOW THE FISH PORT WORKS
+   ========================================================================== */
+
+.wharf-process {
+  padding: 95px 5%;
+  text-align: center;
+  background: #eaf3f0;
+}
+
+.wharf-process h2 {
+  margin: 17px 0 0;
+  color: #0c1c31;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.15;
+  letter-spacing: -1px;
+}
+
+.wharf-process > p {
+  max-width: 650px;
+  margin: 18px auto 0;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+
+/* ==========================================================================
+   PROCESS GRID
+   ========================================================================== */
+
+.wharf-process-grid {
+  max-width: 1000px;
+  margin: 50px auto 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.wharf-process-card {
+  position: relative;
+  min-width: 0;
+  min-height: 245px;
+  padding: 32px 18px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  border: 1px solid #cfe2dc;
+  border-radius: 12px;
+  background: #ffffff;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.wharf-process-card:hover {
+  transform: translateY(-5px);
+  border-color: #9ccdb9;
+  box-shadow: 0 14px 30px rgba(12, 28, 49, 0.08);
+}
+
+.wharf-process-number {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  color: #9bc7b6;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.wharf-process-card > svg {
+  color: #1769e0;
+  font-size: 28px;
+}
+
+.wharf-process-card strong {
+  color: #0c1c31;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.wharf-process-card small {
+  max-width: 210px;
+  color: #667085;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+
+/* ==========================================================================
+   LOCAL FISH / CATCH
+   ========================================================================== */
+
+.wharf-catch {
+  padding: 95px 5%;
+  background: #ffffff;
+}
+
+.wharf-catch-header {
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.wharf-catch h2 {
+  margin: 17px 0 0;
+  color: #0c1c31;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.15;
+  letter-spacing: -1px;
+}
+
+.wharf-catch-header > p {
+  max-width: 650px;
+  margin: 18px auto 0;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+
+/* ==========================================================================
+   CATCH GRID
+   ========================================================================== */
+
+.wharf-catch-grid {
+  max-width: 1000px;
+  margin: 48px auto 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.wharf-catch-card {
+  overflow: hidden;
+  border: 1px solid #dce9e5;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(12, 28, 49, 0.04);
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.wharf-catch-card:hover {
+  transform: translateY(-5px);
+  border-color: #b9dace;
+  box-shadow: 0 14px 30px rgba(12, 28, 49, 0.1);
+}
+
+.wharf-catch-card img {
+  display: block;
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+  object-position: center;
+}
+
+.wharf-catch-card > div {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wharf-catch-card strong {
+  color: #0c1c31;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.wharf-catch-card small {
+  color: #98a2b3;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+
+/* ==========================================================================
+   VISITOR INFORMATION
+   ========================================================================== */
+
+.wharf-information {
+  position: relative;
+  padding: 108px 5% 116px;
+  background: linear-gradient(135deg, #eaf3f0 0%, #f7faf9 100%);
+  overflow: hidden;
+}
+
+.wharf-information::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 96px;
+  height: 4px;
+  border-radius: 0 0 4px 4px;
+  background: #16845d;
+  transform: translateX(-50%);
+}
+
+.wharf-information-content {
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.wharf-information h2 {
+  margin: 20px auto 0;
+  max-width: 700px;
+  color: #0c1c31;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.15;
+  letter-spacing: -1px;
+}
+
+.wharf-information-content > p {
+  max-width: 680px;
+  margin: 22px auto 0;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+
+/* ==========================================================================
+   INFORMATION GRID
+   ========================================================================== */
+
+.wharf-information-grid {
+  max-width: 650px;
+  margin: 52px auto 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.wharf-information-grid > div {
+  position: relative;
+  min-height: 190px;
+  padding: 32px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  text-align: center;
+  border: 1px solid #cfe2dc;
+  border-top: 3px solid #1769e0;
+  border-radius: 10px;
+  background: #ffffff;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.wharf-information-grid > div:hover {
+  transform: translateY(-7px);
+  border-color: #9ccdb9;
+  box-shadow: 0 14px 30px rgba(12, 28, 49, 0.08);
+}
+
+.wharf-information-grid svg {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  padding: 11px;
+  border: 1px solid #c8ddf8;
+  border-radius: 50%;
+  color: #1769e0;
+  background: #eff6ff;
   font-size: 22px;
 }
 
-.enterprise-overview-grid strong {
-  color: var(--ink);
-  font-size: 13px;
+.wharf-information-grid strong {
+  color: #0c1c31;
+  font-size: 14px;
+  font-weight: 800;
 }
 
-.enterprise-overview-grid small {
-  color: var(--quiet);
+.wharf-information-grid small {
+  max-width: 230px;
+  color: #667085;
   font-size: 11px;
+  line-height: 1.7;
 }
 
 
 /* ==========================================================================
-   Bottom Actions
+   BOTTOM ACTIONS
    ========================================================================== */
 
-.enterprise-actions {
-  padding-bottom: 55px;
+.wharf-actions {
+  width: 100%;
+  padding: 30px 5% 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #f7f9fc;
+}
+
+.wharf-back-top-button,
+.wharf-bottom-get-started {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.wharf-back-top-button {
+  color: #475467;
+  background: #ffffff;
+  border: 1px solid #dfe5ec;
+}
+
+.wharf-back-top-button:hover {
+  color: #1769e0;
+  border-color: #c8d9ef;
+  background: #f8fbff;
+  transform: translateY(-2px);
+}
+
+.wharf-bottom-get-started {
+  color: #ffffff;
+  background: #1769e0;
+  border: 1px solid #1769e0;
+  box-shadow: 0 8px 18px rgba(23, 105, 224, 0.2);
+}
+
+.wharf-bottom-get-started:hover {
+  color: #ffffff;
+  background: #125dcc;
+  border-color: #125dcc;
+  transform: translateY(-2px);
+  box-shadow: 0 11px 24px rgba(23, 105, 224, 0.28);
 }
 
 
 /* ==========================================================================
-   Wharf Hero Animations
+   HERO ANIMATIONS
    ========================================================================== */
 
 @keyframes wharfContentReveal {
@@ -364,333 +1134,625 @@
 
 
 /* ==========================================================================
-   Wharf Hero Content Animation
+   HERO CONTENT ANIMATION
    ========================================================================== */
 
-.wharf-hero .enterprise-hero-content > * {
+.wharf-hero .wharf-hero-content > * {
   opacity: 0;
-
-  animation:
-    wharfContentReveal
-    0.75s
-    cubic-bezier(0.22, 1, 0.36, 1)
-    forwards;
+  animation: wharfContentReveal 0.75s
+    cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-.wharf-hero .enterprise-hero-content > :nth-child(1) {
+.wharf-hero .wharf-hero-content > :nth-child(1) {
   animation-delay: 0.12s;
 }
 
-.wharf-hero .enterprise-hero-content > :nth-child(2) {
+.wharf-hero .wharf-hero-content > :nth-child(2) {
   animation-delay: 0.22s;
 }
 
-.wharf-hero .enterprise-hero-content > :nth-child(3) {
+.wharf-hero .wharf-hero-content > :nth-child(3) {
   animation-delay: 0.32s;
 }
 
-.wharf-hero .enterprise-hero-content > :nth-child(4) {
+.wharf-hero .wharf-hero-content > :nth-child(4) {
   animation-delay: 0.42s;
-}
-
-.wharf-hero .enterprise-hero-content > :nth-child(5) {
-  animation-delay: 0.52s;
 }
 
 
 /* ==========================================================================
-   Wharf Gallery Animation
+   HERO GALLERY ANIMATION
    ========================================================================== */
 
-.wharf-hero .enterprise-gallery {
+.wharf-hero .wharf-gallery {
   opacity: 0;
-
-  animation:
-    wharfGalleryReveal
-    1s
+  animation: wharfGalleryReveal 1s
     cubic-bezier(0.16, 1, 0.3, 1)
-    0.28s
-    forwards;
+    0.28s forwards;
 }
 
-.wharf-hero .enterprise-gallery::after {
+.wharf-hero .wharf-gallery::after {
   content: "";
-
   position: absolute;
   top: -20%;
   bottom: -20%;
   left: 0;
-
+  z-index: 10;
   width: 24%;
-
   background: linear-gradient(
     90deg,
     transparent,
     rgba(255, 255, 255, 0.55),
     transparent
   );
-
   transform: translateX(-130%) skewX(-18deg);
-
-  animation:
-    wharfImageSweep
-    1.8s
-    ease-out
-    1.1s
-    both;
-
+  animation: wharfImageSweep 1.8s ease-out 1.1s both;
   pointer-events: none;
-  z-index: 10;
 }
 
 
 /* ==========================================================================
-   Large Desktop
+   LARGE DESKTOP
    ========================================================================== */
 
 @media (min-width: 1200px) {
-  .enterprise-hero {
+  .wharf-navbar {
     padding-right: 6%;
     padding-left: 6%;
   }
 
-  .enterprise-hero-content {
-    width: min(700px, 56vw);
+  .wharf-hero {
+    padding-right: 6%;
+    padding-left: 6%;
   }
 
-  .enterprise-gallery {
-    width: min(500px, 38vw);
+  .wharf-overview,
+  .wharf-users,
+  .wharf-process,
+  .wharf-catch,
+  .wharf-information {
+    padding-right: 6%;
+    padding-left: 6%;
   }
 }
 
 
 /* ==========================================================================
-   Medium Screens
+   MEDIUM SCREENS
    ========================================================================== */
 
 @media (max-width: 1100px) {
-  .enterprise-hero {
-    gap: 40px;
+  .wharf-hero {
+    gap: 30px;
   }
 
-  .enterprise-hero-content {
-    width: min(650px, 100%);
+  .wharf-hero-content {
+    width: min(620px, 55vw);
   }
 
-  .enterprise-gallery {
-    width: min(520px, 100%);
+  .wharf-gallery {
+    width: min(440px, 40vw);
+  }
+
+  .wharf-overview-grid {
+    max-width: 900px;
+  }
+
+  .wharf-users-grid,
+  .wharf-process-grid,
+  .wharf-catch-grid {
+    max-width: 900px;
   }
 }
 
 
 /* ==========================================================================
-   Tablet
+   TABLET
    ========================================================================== */
 
-@media (max-width: 800px) {
-  .enterprise-detail-page .landing-navbar {
-    position: relative;
-  }
-
-  .enterprise-hero {
+@media (max-width: 900px) {
+  .wharf-hero {
     min-height: auto;
-    padding: 76px 24px 64px;
-
+    padding: 90px 5% 70px;
     flex-direction: column;
     align-items: stretch;
   }
 
-  .enterprise-hero-content {
+  .wharf-hero-content {
     width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
   }
 
-  .enterprise-hero h1 {
-    font-size: clamp(38px, 9vw, 58px);
+  .wharf-hero-content h1 {
+    font-size: clamp(40px, 7vw, 62px);
   }
 
-  .enterprise-hero p {
-    max-width: 680px;
-    font-size: 14px;
+  .wharf-hero-content > p {
+    font-size: 15px;
   }
 
-  .enterprise-gallery {
-    width: 100%;
-    max-width: 520px;
+  .wharf-gallery {
+    width: min(620px, 100%);
     margin: 10px auto 0;
   }
 
-  .enterprise-overview {
-    padding: 72px 20px;
+  .wharf-overview-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .enterprise-overview-grid {
-    grid-template-columns: 1fr;
+  .wharf-users-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .enterprise-detail-page .hero-buttons > button {
-    padding: 0 9px;
-    font-size: 11px;
+  .wharf-process-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .wharf-catch-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .wharf-information-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 
 /* ==========================================================================
-   Mobile
+   TABLET NAVBAR
+   ========================================================================== */
+
+@media (max-width: 800px) {
+  .wharf-navbar {
+    min-height: 70px;
+    padding: 12px 24px;
+    gap: 20px;
+  }
+
+  .wharf-brand-logo,
+  .wharf-brand-logo img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .wharf-brand-logo {
+    flex-basis: 42px;
+  }
+
+  .wharf-brand-text strong {
+    font-size: 12px;
+  }
+
+  .wharf-brand-text span {
+    font-size: 9px;
+  }
+
+  .wharf-nav-links {
+    gap: 5px;
+  }
+
+  .wharf-nav-link {
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 10px;
+  }
+}
+
+
+/* ==========================================================================
+   MOBILE
    ========================================================================== */
 
 @media (max-width: 600px) {
-  .enterprise-hero {
-    padding: 64px 16px 48px;
+  /* ------------------------------------------------------------------------
+     Navbar
+     ------------------------------------------------------------------------ */
+
+  .wharf-navbar {
+    min-height: auto;
+    padding: 10px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
   }
 
-  .enterprise-kicker {
+  .wharf-brand {
+    gap: 8px;
+  }
+
+  .wharf-brand-logo,
+  .wharf-brand-logo img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .wharf-brand-logo {
+    flex-basis: 48px;
+  }
+
+  .wharf-brand-text strong {
+    font-size: 14px;
+  }
+
+  .wharf-brand-text span {
+    font-size: 10px;
+  }
+
+  .wharf-nav-links {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .wharf-nav-link {
+    width: 100%;
+    min-height: 34px;
+    padding: 0 6px;
+    font-size: 9px;
+    text-align: center;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     Hero
+     ------------------------------------------------------------------------ */
+
+  .wharf-hero {
+    padding: 64px 16px 48px;
+    gap: 24px;
+  }
+
+  .wharf-kicker {
     font-size: 9px;
     letter-spacing: 1px;
   }
 
-  .enterprise-hero h1 {
+  .wharf-hero-content h1 {
     margin: 16px 0;
     font-size: clamp(34px, 11vw, 48px);
+    letter-spacing: -1px;
   }
 
-  .enterprise-hero p {
+  .wharf-hero-content > p {
     font-size: 13px;
     line-height: 1.65;
   }
 
-  .enterprise-points {
+
+  /* ------------------------------------------------------------------------
+     Hero Points
+     ------------------------------------------------------------------------ */
+
+  .wharf-points {
     flex-direction: column;
     gap: 9px;
-
     margin: 20px 0 24px;
-
     font-size: 11px;
   }
 
-  .enterprise-detail-page .hero-buttons {
+
+  /* ------------------------------------------------------------------------
+     Hero Buttons
+     ------------------------------------------------------------------------ */
+
+  .wharf-hero-buttons {
     width: 100%;
     max-width: none;
-
-    flex-direction: column;
-  }
-
-  .enterprise-hero .hero-buttons button {
-    width: 100%;
-  }
-
-  .enterprise-gallery {
-    aspect-ratio: 4 / 3;
-    margin-top: 18px;
-  }
-
-  .enterprise-gallery .hero-gallery-dots {
-    bottom: 14px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
-  .enterprise-gallery .hero-gallery-dots button {
+  .wharf-hero-buttons > button {
+    width: 100%;
+    min-width: 0;
+    min-height: 52px;
+    padding: 8px 10px;
+    flex: none;
+    font-size: 10px;
+  }
+
+  .wharf-button-label {
+    white-space: normal;
+    text-align: center;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     Gallery
+     ------------------------------------------------------------------------ */
+
+  .wharf-gallery {
+    width: 100%;
+    max-width: none;
+    aspect-ratio: 4 / 3;
+    margin: 0 auto;
+    transform: none;
+  }
+
+  .wharf-gallery-dots {
+    left: 50%;
+    right: auto;
+    bottom: 14px;
+    gap: 8px;
+    transform: translateX(-50%);
+  }
+
+  .wharf-gallery-dots button {
     width: 8px;
     height: 8px;
     min-width: 8px;
     min-height: 8px;
   }
 
-  .enterprise-overview h2 {
+  .wharf-gallery-arrow {
+    width: 36px;
+    height: 36px;
+  }
+
+  .wharf-gallery-arrow-left {
+    left: 10px;
+  }
+
+  .wharf-gallery-arrow-right {
+    right: 10px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     Sections
+     ------------------------------------------------------------------------ */
+
+  .wharf-overview,
+  .wharf-users,
+  .wharf-process,
+  .wharf-catch,
+  .wharf-information {
+    padding: 72px 16px;
+  }
+
+  .wharf-overview h2,
+  .wharf-users h2,
+  .wharf-process h2,
+  .wharf-catch h2,
+  .wharf-information h2 {
     font-size: clamp(28px, 9vw, 40px);
   }
 
-  .enterprise-overview-grid div {
-    min-width: 0;
+  .wharf-overview > p,
+  .wharf-users-content > p,
+  .wharf-process > p,
+  .wharf-catch-header > p,
+  .wharf-information-content > p {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     Overview
+     ------------------------------------------------------------------------ */
+
+  .wharf-overview-grid {
+    grid-template-columns: 1fr;
+    margin-top: 38px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     Users
+     ------------------------------------------------------------------------ */
+
+  .wharf-users-grid {
+    grid-template-columns: 1fr;
+    margin-top: 38px;
+  }
+
+  .wharf-user-card {
+    min-height: 190px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     Process
+     ------------------------------------------------------------------------ */
+
+  .wharf-process-grid {
+    grid-template-columns: 1fr;
+    margin-top: 38px;
+  }
+
+  .wharf-process-card {
+    min-height: 200px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     Catch
+     ------------------------------------------------------------------------ */
+
+  .wharf-catch-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 38px;
+  }
+
+  .wharf-catch-card img {
+    height: 150px;
+  }
+
+  .wharf-catch-card > div {
+    padding: 13px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     Information
+     ------------------------------------------------------------------------ */
+
+  .wharf-information-grid {
+    grid-template-columns: 1fr;
+    margin-top: 38px;
+  }
+
+  .wharf-information-grid > div {
+    min-height: 160px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     Bottom Actions
+     ------------------------------------------------------------------------ */
+
+  .wharf-actions {
+    padding: 24px 16px 45px;
+    flex-direction: column;
+  }
+
+  .wharf-back-top-button,
+  .wharf-bottom-get-started {
+    width: 100%;
+    max-width: 360px;
   }
 }
 
 
 /* ==========================================================================
-   Small Mobile
+   SMALL MOBILE
    ========================================================================== */
 
 @media (max-width: 380px) {
-  .enterprise-nav-link {
-    padding: 0 6px;
+  .wharf-navbar {
+    padding: 9px 10px;
+    gap: 8px;
+  }
+
+  .wharf-brand {
+    gap: 6px;
+  }
+
+  .wharf-brand-logo,
+  .wharf-brand-logo img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .wharf-brand-logo {
+    flex-basis: 34px;
+  }
+
+  .wharf-brand-text strong {
     font-size: 9px;
   }
 
-  .enterprise-nav-link:last-child::after {
-    font-size: 9px;
+  .wharf-brand-text span {
+    display: none;
   }
 
-  .enterprise-hero h1 {
+  .wharf-nav-links {
+    gap: 3px;
+  }
+
+  .wharf-nav-link {
+    min-height: 30px;
+    padding: 0 4px;
+    font-size: 8px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     Hero
+     ------------------------------------------------------------------------ */
+
+  .wharf-hero-content h1 {
     font-size: 34px;
   }
 
-  .enterprise-hero .hero-buttons > button {
-    min-height: 46px;
-    padding-right: 6px;
-    padding-left: 6px;
-
-    font-size: 10px;
+  .wharf-hero-buttons {
+    gap: 6px;
   }
 
-  .enterprise-gallery .gallery-arrow {
+  .wharf-hero-buttons > button {
+    min-height: 46px;
+    padding: 6px;
+    font-size: 9px;
+  }
+
+
+  /* ------------------------------------------------------------------------
+     Gallery
+     ------------------------------------------------------------------------ */
+
+  .wharf-gallery-arrow {
     width: 32px;
     height: 32px;
   }
 
-  .enterprise-gallery .hero-gallery-dots {
+  .wharf-gallery-dots {
     bottom: 12px;
     gap: 7px;
   }
 
-  .enterprise-gallery .hero-gallery-dots button {
+  .wharf-gallery-dots button {
     width: 7px;
     height: 7px;
     min-width: 7px;
     min-height: 7px;
   }
-}
 
 
-/* ==========================================================================
-   Wharf Hero Actions
-   ========================================================================== */
+  /* ------------------------------------------------------------------------
+     Catch Cards
+     ------------------------------------------------------------------------ */
 
-.wharf-hero .hero-buttons {
-  margin-left: 0;
-  margin-right: 0;
-
-  justify-content: stretch;
-}
-
-@media (max-width: 1100px) {
-  .wharf-hero .hero-buttons {
-    margin-right: auto;
-    margin-left: auto;
+  .wharf-catch-card img {
+    height: 125px;
   }
-}
 
-@media (max-width: 640px) {
-  .wharf-hero .hero-buttons {
-    margin-right: 0;
-    margin-left: 0;
+  .wharf-catch-card > div {
+    padding: 11px;
+  }
+
+  .wharf-catch-card strong {
+    font-size: 12px;
+  }
+
+  .wharf-catch-card small {
+    font-size: 9px;
   }
 }
 
 
 /* ==========================================================================
-   Accessibility
+   ACCESSIBILITY
    ========================================================================== */
+
+.wharf-page button:focus-visible {
+  outline: 3px solid rgba(23, 105, 224, 0.35);
+  outline-offset: 2px;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .wharf-hero .enterprise-hero-content > *,
-  .wharf-hero .enterprise-gallery,
-  .wharf-hero .enterprise-gallery::after {
+  .wharf-hero .wharf-hero-content > *,
+  .wharf-hero .wharf-gallery,
+  .wharf-hero .wharf-gallery::after {
     animation: none;
     opacity: 1;
     transform: none;
   }
 
-  .enterprise-gallery .hero-gallery-dots button,
-  .enterprise-detail-page .hero-buttons button {
+  .wharf-gallery-dots button,
+  .wharf-hero-buttons button,
+  .wharf-nav-link,
+  .wharf-overview-grid > div,
+  .wharf-user-card,
+  .wharf-process-card,
+  .wharf-catch-card,
+  .wharf-information-grid > div,
+  .wharf-back-top-button,
+  .wharf-bottom-get-started {
     transition: none;
   }
 }

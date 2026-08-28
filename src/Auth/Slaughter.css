@@ -1,35 +1,202 @@
 /* ==========================================================================
-   Enterprise Detail Page
+   SLAUGHTER PAGE
    ========================================================================== */
 
-.enterprise-detail-page .landing-navbar {
-  position: relative;
+.slaughter-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #14213d;
+  background: #ffffff;
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+
+  --slaughter-ink: #0c1c31;
+  --slaughter-muted: #667085;
+  --slaughter-quiet: #98a2b3;
+  --slaughter-line: #e5eaf0;
+  --slaughter-blue: #1769e0;
+  --slaughter-red: #d25b43;
+  --slaughter-soft: #f7f9fc;
+  --slaughter-red-soft: #fff3ef;
+  --slaughter-green: #16845d;
 }
 
 /* ==========================================================================
-   Enterprise Hero
+   NAVBAR
    ========================================================================== */
 
-.enterprise-hero {
-  min-height: 610px;
-  padding: 130px 8% 90px;
+.slaughter-navbar {
+  position: relative;
+  z-index: 100;
+  width: 100%;
+  min-height: 76px;
+  padding: 14px 6%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  box-sizing: border-box;
+
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid #e6e9ee;
+  box-shadow: 0 4px 18px rgba(12, 28, 49, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.slaughter-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.slaughter-brand-logo {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
 
   display: flex;
   align-items: center;
-  gap: 40px;
+  justify-content: center;
 
-  color: #fff;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.slaughter-brand-logo img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.slaughter-brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.slaughter-brand-text strong {
+  display: block;
+  color: var(--slaughter-ink);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+}
+
+.slaughter-brand-text span {
+  display: block;
+  color: var(--slaughter-muted);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.slaughter-nav-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.slaughter-nav-link {
+  position: relative;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 38px;
+  padding: 0 16px;
+
+  border: 1px solid transparent;
+  border-radius: 8px;
+
+  background: transparent;
+  color: #475467;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.slaughter-nav-link:hover {
+  color: var(--slaughter-red);
+  background: #fff5f2;
+  transform: translateY(-1px);
+}
+
+.slaughter-nav-link.active {
+  color: #ffffff;
+  background: var(--slaughter-red);
+  border-color: var(--slaughter-red);
+  box-shadow: 0 5px 14px rgba(210, 91, 67, 0.2);
+}
+
+.slaughter-nav-link.active:hover {
+  color: #ffffff;
+  background: #c94f37;
+  border-color: #c94f37;
+}
+
+/* ==========================================================================
+   HERO
+   ========================================================================== */
+
+.slaughter-hero {
+  position: relative;
+
+  min-height: 610px;
+  padding: 105px 6% 85px;
+
+  display: flex;
+  align-items: center;
+  gap: 55px;
+
+  box-sizing: border-box;
+
+  color: #ffffff;
 
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
 }
 
-.enterprise-hero-content {
-  width: min(650px, 100%);
+.slaughter-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(8, 27, 43, 0.2), transparent 55%),
+    linear-gradient(0deg, rgba(8, 27, 43, 0.16), transparent 45%);
+  pointer-events: none;
 }
 
-.enterprise-kicker {
+.slaughter-hero-content {
+  position: relative;
+  z-index: 1;
+  width: min(700px, 56vw);
+  flex: 1 1 auto;
+}
+
+.slaughter-kicker {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -38,116 +205,181 @@
 
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 1.4px;
+  letter-spacing: 1.3px;
+  line-height: 1.4;
 }
 
-.enterprise-hero h1 {
-  margin: 22px 0;
+.slaughter-hero h1 {
+  margin: 22px 0 20px;
+
+  color: #ffffff;
 
   font:
     800 clamp(42px, 6vw, 76px) / 1.05
     "Plus Jakarta Sans",
+    "Inter",
     sans-serif;
+
+  letter-spacing: -2px;
 }
 
-.enterprise-hero h1 span {
+.slaughter-hero h1 span {
   display: block;
-  color: #c08484;
+  color: #e5a18f;
 }
 
-.enterprise-hero p {
-  max-width: 590px;
+.slaughter-hero p {
+  max-width: 640px;
+  margin: 0;
 
-  color: rgba(255, 255, 255, 0.84);
+  color: rgba(255, 255, 255, 0.86);
 
-  font-size: 17px;
-  line-height: 1.75;
+  font-size: 16px;
+  line-height: 1.8;
 }
 
 /* ==========================================================================
-   Hero Points
+   HERO POINTS
    ========================================================================== */
 
-.enterprise-points {
+.slaughter-points {
   display: flex;
   flex-wrap: wrap;
   gap: 18px;
 
-  margin: 26px 0 30px;
+  margin: 27px 0 30px;
 
-  color: #fff;
+  color: #ffffff;
 
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }
 
-.enterprise-points span {
+.slaughter-points span {
   display: inline-flex;
   align-items: center;
   gap: 7px;
 }
 
-.enterprise-points svg {
+.slaughter-points svg {
   color: #8de0bb;
+  font-size: 14px;
 }
 
 /* ==========================================================================
-   Hero Buttons
+   HERO BUTTONS
    ========================================================================== */
 
-.enterprise-detail-page .hero-buttons {
+.slaughter-hero-buttons {
+  width: 100%;
   max-width: 560px;
+
+  display: flex;
+  align-items: stretch;
   gap: 10px;
 }
 
-.enterprise-detail-page .hero-buttons > button {
+.slaughter-hero-buttons > button {
   flex: 1 1 0;
   min-width: 0;
+  min-height: 48px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  padding: 0 18px;
+
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.enterprise-detail-page .hero-buttons .get-started-button {
+.slaughter-hero-buttons > button:focus-visible,
+.slaughter-gallery-arrow:focus-visible,
+.slaughter-gallery-dots button:focus-visible,
+.slaughter-nav-link:focus-visible {
+  outline: 3px solid rgba(141, 224, 187, 0.9);
+  outline-offset: 3px;
+}
+
+.slaughter-get-started-button {
+  color: #ffffff;
+  background: var(--slaughter-blue);
+  border: 1px solid var(--slaughter-blue);
+
   box-shadow: 0 12px 24px rgba(23, 105, 224, 0.28);
 }
 
-.enterprise-detail-page .hero-buttons .hero-more-info {
-  color: var(--ink);
-  background: #fff;
-  border-color: #fff;
+.slaughter-get-started-button:hover {
+  color: #ffffff;
+  background: #125dcc;
+  border-color: #125dcc;
+  transform: translateY(-3px);
+
+  box-shadow: 0 16px 28px rgba(23, 105, 224, 0.34);
 }
 
-.enterprise-detail-page .hero-buttons button:hover {
+.slaughter-hero-more-info {
+  color: var(--slaughter-ink);
+  background: #ffffff;
+  border: 1px solid #ffffff;
+
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+.slaughter-hero-more-info:hover {
+  color: var(--slaughter-blue);
+  background: #f8fbff;
+  border-color: #f8fbff;
   transform: translateY(-3px);
 }
 
+.slaughter-button-label {
+  white-space: nowrap;
+}
+
 /* ==========================================================================
-   Hero Gallery
+   HERO GALLERY
    ========================================================================== */
 
-.enterprise-gallery {
+.slaughter-gallery {
   position: relative;
+  z-index: 1;
 
-  width: min(420px, 100%);
-  margin-left: auto;
+  width: min(500px, 38vw);
+  aspect-ratio: 4 / 3;
+
+  flex: 0 0 auto;
 
   overflow: hidden;
 
-  aspect-ratio: 4 / 3;
-
   border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 14px;
+  border-radius: 18px;
 
   background: #0c1c31;
 
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
-
-  flex-shrink: 0;
+  box-shadow:
+    0 28px 65px rgba(0, 0, 0, 0.32),
+    0 8px 20px rgba(0, 0, 0, 0.14);
 }
 
-.enterprise-gallery img.enterprise-gallery-image {
-  display: block;
-
+.slaughter-gallery-image {
   position: relative;
   z-index: 1;
+
+  display: block;
 
   width: 100%;
   height: 100%;
@@ -156,99 +388,105 @@
   object-position: center;
 }
 
-.enterprise-gallery .gallery-arrow {
+.slaughter-gallery-arrow {
   position: absolute;
-  z-index: 5;
-}
+  z-index: 20;
+  top: 50%;
 
-/* ==========================================================================
-   Hero Gallery Dots
-   ========================================================================== */
-
-.enterprise-detail-page
-  .enterprise-gallery
-  .hero-gallery-dots {
-  position: absolute;
-
-  left: 50%;
-  bottom: 18px;
-
-  top: auto;
-  right: auto;
-
-  width: max-content;
-  height: auto;
-
-  margin: 0;
-  padding: 0;
+  width: 40px;
+  height: 40px;
 
   display: flex;
-  flex-direction: row;
   align-items: center;
   justify-content: center;
 
-  gap: 9px;
+  padding: 0;
 
-  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
 
-  z-index: 20;
+  color: #ffffff;
+  background: rgba(12, 28, 49, 0.55);
 
-  pointer-events: none;
-  box-sizing: border-box;
+  transform: translateY(-50%);
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.enterprise-detail-page
-  .enterprise-gallery
-  .hero-gallery-dots
-  button {
-  position: relative;
+.slaughter-gallery-arrow:hover {
+  background: rgba(12, 28, 49, 0.82);
+  border-color: rgba(255, 255, 255, 0.7);
+  transform: translateY(-50%) scale(1.06);
+}
 
-  display: block;
-  flex: 0 0 auto;
+.gallery-arrow-left {
+  left: 14px;
+}
 
+.gallery-arrow-right {
+  right: 14px;
+}
+
+/* ==========================================================================
+   GALLERY DOTS
+   ========================================================================== */
+
+.slaughter-gallery-dots {
+  position: absolute;
+  z-index: 30;
+
+  left: 50%;
+  bottom: 17px;
+
+  width: max-content;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  padding: 0;
+  margin: 0;
+
+  transform: translateX(-50%);
+}
+
+.slaughter-gallery-dots button {
   width: 9px;
   height: 9px;
-
   min-width: 9px;
   min-height: 9px;
 
-  margin: 0;
   padding: 0;
+  margin: 0;
 
   border: 1px solid rgba(255, 255, 255, 0.95);
   border-radius: 50%;
 
   background: rgba(255, 255, 255, 0.35);
 
-  box-sizing: border-box;
-
   cursor: pointer;
-  pointer-events: auto;
 
   appearance: none;
-  -webkit-appearance: none;
 
   transition:
     transform 0.2s ease,
     background 0.2s ease,
-    opacity 0.2s ease,
     box-shadow 0.2s ease;
 }
 
-.enterprise-detail-page
-  .enterprise-gallery
-  .hero-gallery-dots
-  button:hover {
-  transform: scale(1.3);
+.slaughter-gallery-dots button:hover {
   background: rgba(255, 255, 255, 0.9);
+  transform: scale(1.3);
 }
 
-.enterprise-detail-page
-  .enterprise-gallery
-  .hero-gallery-dots
-  button.active {
-  background: #fff;
-
+.slaughter-gallery-dots button.active {
+  background: #ffffff;
   transform: scale(1.2);
 
   box-shadow:
@@ -256,98 +494,464 @@
 }
 
 /* ==========================================================================
-   Enterprise Overview
+   GALLERY CAPTION
    ========================================================================== */
 
-.enterprise-overview {
-  padding: 95px 5%;
+.slaughter-gallery-caption {
+  position: absolute;
+  z-index: 25;
+
+  left: 16px;
+  bottom: 15px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 7px 11px;
+
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+
+  color: #ffffff;
+  background: rgba(12, 28, 49, 0.62);
+
+  backdrop-filter: blur(8px);
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   SECTION LABEL
+   ========================================================================== */
+
+.slaughter-section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  color: var(--slaughter-red);
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+}
+
+/* ==========================================================================
+   OVERVIEW
+   ========================================================================== */
+
+.slaughter-overview {
+  padding: 108px 5%;
 
   text-align: center;
 
-  background: #f7f9fc;
+  background: linear-gradient(180deg, #f4f7fb 0%, #ffffff 100%);
 }
 
-.enterprise-overview h2 {
+.slaughter-overview h2,
+.slaughter-services-header h2,
+.slaughter-information-content h2 {
   margin: 17px 0 0;
 
-  color: var(--ink);
+  color: var(--slaughter-ink);
 
   font:
     800 clamp(30px, 4vw, 48px) / 1.15
     "Plus Jakarta Sans",
+    "Inter",
     sans-serif;
+
+  letter-spacing: -1px;
 }
 
-.enterprise-overview h2 span {
+.slaughter-overview h2 span,
+.slaughter-services-header h2 span,
+.slaughter-information-content h2 span {
   display: block;
-  color: #d25b43;
+  color: var(--slaughter-red);
 }
 
-.enterprise-overview > p {
-  max-width: 700px;
+.slaughter-overview > p {
+  max-width: 760px;
+  margin: 20px auto 0;
 
-  margin: 18px auto 0;
+  color: var(--slaughter-muted);
 
-  color: var(--muted);
-
-  line-height: 1.8;
+  font-size: 14px;
+  line-height: 1.85;
 }
 
 /* ==========================================================================
-   Overview Cards
+   OVERVIEW CARDS
    ========================================================================== */
 
-.enterprise-overview-grid {
-  max-width: 900px;
+.slaughter-overview-grid {
+  max-width: 1000px;
 
   margin: 48px auto 0;
 
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-
-  gap: 12px;
+  gap: 14px;
 }
 
-.enterprise-overview-grid div {
+.slaughter-overview-grid div {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 9px;
 
-  gap: 8px;
+  min-height: 155px;
 
-  padding: 24px 15px;
+  padding: 27px 18px;
 
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 1px solid var(--slaughter-line);
+  border-top: 3px solid var(--slaughter-red);
+  border-radius: 11px;
 
-  background: #fff;
+  background: #ffffff;
+
+  box-sizing: border-box;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.enterprise-overview-grid svg {
-  color: #d25b43;
-  font-size: 22px;
+.slaughter-overview-grid div:hover {
+  transform: translateY(-4px);
+
+  border-color: #e3b3a8;
+
+  box-shadow: 0 14px 30px rgba(12, 28, 49, 0.08);
 }
 
-.enterprise-overview-grid strong {
-  color: var(--ink);
+.slaughter-overview-grid svg {
+  color: var(--slaughter-red);
+  font-size: 24px;
+}
+
+.slaughter-overview-grid strong {
+  color: var(--slaughter-ink);
   font-size: 13px;
+  font-weight: 800;
 }
 
-.enterprise-overview-grid small {
-  color: var(--quiet);
+.slaughter-overview-grid small {
+  max-width: 220px;
+
+  color: var(--slaughter-quiet);
+
   font-size: 11px;
+  line-height: 1.6;
 }
 
 /* ==========================================================================
-   Enterprise Actions
+   SERVICES
    ========================================================================== */
 
-.enterprise-actions {
-  padding-bottom: 55px;
+.slaughter-services {
+  padding: 108px 5%;
+
+  background: #ffffff;
+  border-top: 1px solid #edf0f4;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.slaughter-services-header {
+  max-width: 800px;
+  margin: 0 auto;
+
+  text-align: center;
+}
+
+.slaughter-services-header p {
+  max-width: 700px;
+
+  margin: 20px auto 0;
+
+  color: var(--slaughter-muted);
+
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.slaughter-services-grid {
+  max-width: 1100px;
+
+  margin: 50px auto 0;
+
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.slaughter-service-card {
+  position: relative;
+
+  min-height: 205px;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 25px;
+
+  border: 1px solid var(--slaughter-line);
+  border-top: 3px solid var(--slaughter-blue);
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  box-sizing: border-box;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.slaughter-service-card:hover {
+  transform: translateY(-5px);
+
+  border-color: #b7cdec;
+
+  box-shadow: 0 18px 38px rgba(12, 28, 49, 0.09);
+}
+
+.slaughter-service-icon {
+  width: 45px;
+  height: 45px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 20px;
+
+  border-radius: 10px;
+
+  color: var(--slaughter-red);
+  border: 1px solid #f0c9c0;
+  background: var(--slaughter-red-soft);
+
+  font-size: 20px;
+}
+
+.slaughter-service-content {
+  padding-right: 20px;
+}
+
+.slaughter-service-content h3 {
+  margin: 0 0 9px;
+
+  color: var(--slaughter-ink);
+
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.slaughter-service-content p {
+  margin: 0;
+
+  color: var(--slaughter-muted);
+
+  font-size: 11px;
+  line-height: 1.75;
+}
+
+.slaughter-service-check {
+  position: absolute;
+
+  right: 20px;
+  top: 25px;
+
+  color: #8bc9ad;
+
+  font-size: 15px;
 }
 
 /* ==========================================================================
-   Slaughter Hero Animations
+   INFORMATION SECTION
+   ========================================================================== */
+
+.slaughter-information {
+  padding: 108px 5%;
+
+  background:
+    linear-gradient(
+      135deg,
+      #f0f5fb 0%,
+      #fff7f4 100%
+    );
+}
+
+.slaughter-information-inner {
+  max-width: 1100px;
+
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 70px;
+
+  align-items: center;
+}
+
+.slaughter-information-content h2 {
+  font-size: clamp(30px, 4vw, 46px);
+}
+
+.slaughter-information-content p {
+  max-width: 550px;
+
+  margin: 20px 0 0;
+
+  color: var(--slaughter-muted);
+
+  font-size: 13px;
+  line-height: 1.85;
+}
+
+.slaughter-information-list {
+  display: grid;
+  gap: 12px;
+}
+
+.slaughter-information-list > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+
+  padding: 18px 20px;
+
+  border: 1px solid #e2e7ee;
+  border-left: 3px solid var(--slaughter-red);
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  box-shadow: 0 7px 20px rgba(12, 28, 49, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.slaughter-information-list > div:hover {
+  transform: translateX(4px);
+  border-color: #e3b3a8;
+  box-shadow: 0 12px 26px rgba(12, 28, 49, 0.08);
+}
+
+.slaughter-information-list > div > svg {
+  flex: 0 0 auto;
+
+  margin-top: 2px;
+
+  color: var(--slaughter-red);
+
+  font-size: 19px;
+}
+
+.slaughter-information-list div div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.slaughter-information-list strong {
+  color: var(--slaughter-ink);
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.slaughter-information-list span {
+  color: var(--slaughter-muted);
+
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+/* ==========================================================================
+   PAGE ACTIONS
+   ========================================================================== */
+
+.slaughter-actions {
+  width: 100%;
+
+  padding: 30px 5% 55px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+
+  background: var(--slaughter-soft);
+  box-sizing: border-box;
+}
+
+.slaughter-back-top-button,
+.slaughter-bottom-get-started {
+  min-height: 44px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 0 18px;
+
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.slaughter-back-top-button {
+  color: #475467;
+  background: #ffffff;
+  border: 1px solid #dfe5ec;
+}
+
+.slaughter-back-top-button:hover {
+  color: var(--slaughter-blue);
+  border-color: #c8d9ef;
+  background: #f8fbff;
+
+  transform: translateY(-2px);
+}
+
+.slaughter-bottom-get-started {
+  color: #ffffff;
+  background: var(--slaughter-blue);
+  border: 1px solid var(--slaughter-blue);
+
+  box-shadow: 0 8px 18px rgba(23, 105, 224, 0.2);
+}
+
+.slaughter-bottom-get-started:hover {
+  color: #ffffff;
+  background: #125dcc;
+  border-color: #125dcc;
+
+  transform: translateY(-2px);
+
+  box-shadow: 0 11px 24px rgba(23, 105, 224, 0.28);
+}
+
+/* ==========================================================================
+   ANIMATIONS
    ========================================================================== */
 
 @keyframes slaughterContentReveal {
@@ -390,11 +994,7 @@
   }
 }
 
-/* ==========================================================================
-   Slaughter Hero Animation Setup
-   ========================================================================== */
-
-.slaughter-hero .enterprise-hero-content > * {
+.slaughter-hero-content > * {
   opacity: 0;
 
   animation:
@@ -404,37 +1004,27 @@
     forwards;
 }
 
-.slaughter-hero
-  .enterprise-hero-content
-  > :nth-child(1) {
+.slaughter-hero-content > :nth-child(1) {
   animation-delay: 0.12s;
 }
 
-.slaughter-hero
-  .enterprise-hero-content
-  > :nth-child(2) {
+.slaughter-hero-content > :nth-child(2) {
   animation-delay: 0.22s;
 }
 
-.slaughter-hero
-  .enterprise-hero-content
-  > :nth-child(3) {
+.slaughter-hero-content > :nth-child(3) {
   animation-delay: 0.32s;
 }
 
-.slaughter-hero
-  .enterprise-hero-content
-  > :nth-child(4) {
+.slaughter-hero-content > :nth-child(4) {
   animation-delay: 0.42s;
 }
 
-.slaughter-hero
-  .enterprise-hero-content
-  > :nth-child(5) {
+.slaughter-hero-content > :nth-child(5) {
   animation-delay: 0.52s;
 }
 
-.slaughter-hero .enterprise-gallery {
+.slaughter-gallery {
   opacity: 0;
 
   animation:
@@ -445,10 +1035,11 @@
     forwards;
 }
 
-.slaughter-hero .enterprise-gallery::after {
+.slaughter-gallery::after {
   content: "";
 
   position: absolute;
+  z-index: 10;
 
   top: -20%;
   bottom: -20%;
@@ -473,313 +1064,456 @@
     both;
 
   pointer-events: none;
-
-  z-index: 10;
-}
-
-/* Keep gallery dots above the shine animation */
-
-.slaughter-hero
-  .enterprise-gallery
-  .hero-gallery-dots {
-  z-index: 30;
 }
 
 /* ==========================================================================
-   Slaughter Hero Actions
-   ========================================================================== */
-
-.slaughter-hero .hero-buttons {
-  margin-left: 0;
-  margin-right: 0;
-
-  justify-content: stretch;
-}
-
-/* ==========================================================================
-   Large Desktop
+   LARGE DESKTOP
    ========================================================================== */
 
 @media (min-width: 1200px) {
-  .enterprise-hero {
-    padding-right: 6%;
+  .slaughter-hero {
     padding-left: 6%;
+    padding-right: 6%;
   }
 
-  .enterprise-hero-content {
+  .slaughter-hero-content {
     width: min(700px, 56vw);
   }
 
-  .enterprise-gallery {
+  .slaughter-gallery {
     width: min(500px, 38vw);
   }
 }
 
 /* ==========================================================================
-   Tablet / Medium Screens
+   TABLET / MEDIUM
    ========================================================================== */
 
 @media (max-width: 1100px) {
-  .enterprise-hero {
+  .slaughter-hero {
+    gap: 35px;
+  }
+
+  .slaughter-hero-content {
+    width: min(600px, 100%);
+  }
+
+  .slaughter-gallery {
+    width: min(460px, 42vw);
+  }
+
+  .slaughter-information-inner {
     gap: 40px;
   }
 
-  .enterprise-hero-content {
-    width: min(650px, 100%);
-  }
-
-  .enterprise-gallery {
-    width: min(520px, 100%);
-  }
-
-  .slaughter-hero .hero-buttons {
-    margin-right: auto;
-    margin-left: auto;
+  .slaughter-services-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 /* ==========================================================================
-   Tablet
+   TABLET
    ========================================================================== */
 
 @media (max-width: 800px) {
-  .enterprise-detail-page .landing-navbar {
-    position: relative;
+  .slaughter-navbar {
+    min-height: 70px;
+    padding: 12px 24px;
   }
 
-  .enterprise-hero {
+  .slaughter-brand-logo,
+  .slaughter-brand-logo img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .slaughter-brand-logo {
+    flex-basis: 42px;
+  }
+
+  .slaughter-brand-text strong {
+    font-size: 12px;
+  }
+
+  .slaughter-brand-text span {
+    font-size: 9px;
+  }
+
+  .slaughter-nav-links {
+    gap: 5px;
+  }
+
+  .slaughter-nav-link {
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 10px;
+  }
+
+  .slaughter-hero {
     min-height: auto;
 
-    padding: 76px 24px 64px;
+    padding: 76px 24px 70px;
 
     flex-direction: column;
     align-items: stretch;
   }
 
-  .enterprise-hero-content {
+  .slaughter-hero-content {
     width: 100%;
   }
 
-  .enterprise-hero h1 {
+  .slaughter-hero h1 {
     font-size: clamp(38px, 9vw, 58px);
   }
 
-  .enterprise-hero p {
-    max-width: 680px;
+  .slaughter-hero p {
+    max-width: 700px;
     font-size: 14px;
   }
 
-  .enterprise-gallery {
+  .slaughter-gallery {
     width: 100%;
-    max-width: 520px;
+    max-width: 600px;
 
-    margin: 10px auto 0;
+    margin: 15px auto 0;
   }
 
-  .enterprise-overview {
-    padding: 72px 20px;
+  .slaughter-overview {
+    padding: 75px 24px;
   }
 
-  .enterprise-overview-grid {
+  .slaughter-overview-grid {
     grid-template-columns: 1fr;
+    max-width: 600px;
   }
 
-  .enterprise-detail-page
-    .hero-buttons
-    > button {
-    padding: 0 9px;
-    font-size: 11px;
+  .slaughter-services {
+    padding: 75px 24px;
   }
 
-  /* Tablet gallery dots */
+  .slaughter-services-grid {
+    max-width: 650px;
+    grid-template-columns: 1fr 1fr;
+  }
 
-  .enterprise-detail-page
-    .enterprise-gallery
-    .hero-gallery-dots {
-    left: 50%;
-    right: auto;
+  .slaughter-information {
+    padding: 75px 24px;
+  }
 
-    bottom: 16px;
-
-    width: max-content;
-
-    transform: translateX(-50%);
+  .slaughter-information-inner {
+    grid-template-columns: 1fr;
+    gap: 45px;
   }
 }
 
 /* ==========================================================================
-   Mobile
+   MOBILE
    ========================================================================== */
 
 @media (max-width: 600px) {
-  .enterprise-hero {
-    padding: 64px 16px 48px;
+  .slaughter-navbar {
+    padding: 10px 16px;
+
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
   }
 
-  .enterprise-kicker {
+  .slaughter-brand {
+    gap: 8px;
+  }
+
+  .slaughter-brand-logo,
+  .slaughter-brand-logo img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .slaughter-brand-logo {
+    flex-basis: 48px;
+  }
+
+  .slaughter-brand-text strong {
+    font-size: 14px;
+  }
+
+  .slaughter-brand-text span {
+    font-size: 10px;
+  }
+
+  .slaughter-nav-links {
+    width: 100%;
+
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    gap: 6px;
+  }
+
+  .slaughter-nav-link {
+    width: 100%;
+    min-height: 34px;
+
+    padding: 0 6px;
+
     font-size: 9px;
-    letter-spacing: 1px;
   }
 
-  .enterprise-hero h1 {
-    margin: 16px 0;
+  .slaughter-hero {
+    padding: 64px 16px 50px;
+  }
+
+  .slaughter-kicker {
+    font-size: 9px;
+    letter-spacing: 0.9px;
+  }
+
+  .slaughter-hero h1 {
+    margin: 17px 0;
 
     font-size: clamp(34px, 11vw, 48px);
+
+    letter-spacing: -1px;
   }
 
-  .enterprise-hero p {
+  .slaughter-hero p {
     font-size: 13px;
-    line-height: 1.65;
+    line-height: 1.7;
   }
 
-  .enterprise-points {
+  .slaughter-points {
     flex-direction: column;
-
     gap: 9px;
 
-    margin: 20px 0 24px;
-
-    font-size: 11px;
-  }
-
-  .enterprise-detail-page .hero-buttons {
-    width: 100%;
-    max-width: none;
-
-    flex-direction: column;
-  }
-
-  .enterprise-detail-page
-    .hero-buttons
-    > button {
-    width: 100%;
-  }
-
-  .enterprise-gallery {
-    aspect-ratio: 4 / 3;
-
-    margin-top: 18px;
-  }
-
-  /* Mobile gallery dots */
-
-  .enterprise-detail-page
-    .enterprise-gallery
-    .hero-gallery-dots {
-    left: 50%;
-    right: auto;
-
-    bottom: 14px;
-
-    width: max-content;
-
-    gap: 8px;
-
-    transform: translateX(-50%);
-  }
-
-  .enterprise-detail-page
-    .enterprise-gallery
-    .hero-gallery-dots
-    button {
-    width: 8px;
-    height: 8px;
-
-    min-width: 8px;
-    min-height: 8px;
-  }
-
-  .enterprise-overview h2 {
-    font-size: clamp(28px, 9vw, 40px);
-  }
-
-  .enterprise-overview-grid div {
-    min-width: 0;
-  }
-}
-
-/* ==========================================================================
-   Small Mobile
-   ========================================================================== */
-
-@media (max-width: 380px) {
-  .enterprise-nav-link {
-    padding: 0 6px;
-    font-size: 9px;
-  }
-
-  .enterprise-nav-link:last-child::after {
-    font-size: 9px;
-  }
-
-  .enterprise-hero h1 {
-    font-size: 34px;
-  }
-
-  .enterprise-detail-page
-    .hero-buttons
-    > button {
-    min-height: 46px;
-
-    padding-right: 6px;
-    padding-left: 6px;
+    margin: 20px 0 25px;
 
     font-size: 10px;
   }
 
-  .enterprise-gallery .gallery-arrow {
-    width: 32px;
-    height: 32px;
+  .slaughter-hero-buttons {
+    width: 100%;
+    max-width: none;
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 8px;
   }
 
-  .enterprise-detail-page
-    .enterprise-gallery
-    .hero-gallery-dots {
-    left: 50%;
-    right: auto;
+  .slaughter-hero-buttons > button {
+    width: 100%;
+    min-height: 52px;
 
+    padding: 8px 10px;
+
+    line-height: 1.2;
+  }
+
+  .slaughter-button-label {
+    white-space: normal;
+    text-align: center;
+  }
+
+  .slaughter-gallery {
+    aspect-ratio: 4 / 3;
+    margin-top: 20px;
+  }
+
+  .slaughter-gallery-arrow {
+    width: 34px;
+    height: 34px;
+  }
+
+  .slaughter-gallery-caption {
+    left: 10px;
+    bottom: 10px;
+
+    padding: 6px 9px;
+
+    font-size: 8px;
+  }
+
+  .slaughter-gallery-dots {
     bottom: 12px;
-
-    gap: 7px;
-
-    transform: translateX(-50%);
+    gap: 8px;
   }
 
-  .enterprise-detail-page
-    .enterprise-gallery
-    .hero-gallery-dots
-    button {
-    width: 7px;
-    height: 7px;
+  .slaughter-gallery-dots button {
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
+    min-height: 8px;
+  }
 
-    min-width: 7px;
-    min-height: 7px;
+  .slaughter-overview {
+    padding: 65px 16px;
+  }
+
+  .slaughter-overview h2,
+  .slaughter-services-header h2,
+  .slaughter-information-content h2 {
+    font-size: clamp(28px, 9vw, 40px);
+  }
+
+  .slaughter-overview > p {
+    font-size: 12px;
+  }
+
+  .slaughter-overview-grid {
+    margin-top: 35px;
+  }
+
+  .slaughter-services {
+    padding: 65px 16px;
+  }
+
+  .slaughter-services-header p {
+    font-size: 12px;
+  }
+
+  .slaughter-services-grid {
+    grid-template-columns: 1fr;
+
+    margin-top: 35px;
+  }
+
+  .slaughter-service-card {
+    min-height: 180px;
+  }
+
+  .slaughter-information {
+    padding: 65px 16px;
+  }
+
+  .slaughter-information-content p {
+    font-size: 12px;
+  }
+
+  .slaughter-information-list > div {
+    padding: 16px;
+  }
+
+  .slaughter-information-list span {
+    font-size: 9px;
+  }
+
+  .slaughter-actions {
+    padding: 24px 16px 45px;
+
+    flex-direction: column;
+  }
+
+  .slaughter-back-top-button,
+  .slaughter-bottom-get-started {
+    width: 100%;
+    max-width: 360px;
   }
 }
 
 /* ==========================================================================
-   Accessibility
+   SMALL MOBILE
+   ========================================================================== */
+
+@media (max-width: 380px) {
+  .slaughter-navbar {
+    padding: 9px 10px;
+  }
+
+  .slaughter-brand-logo,
+  .slaughter-brand-logo img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .slaughter-brand-logo {
+    flex-basis: 40px;
+  }
+
+  .slaughter-brand-text strong {
+    font-size: 11px;
+  }
+
+  .slaughter-brand-text span {
+    display: none;
+  }
+
+  .slaughter-nav-links {
+    gap: 3px;
+  }
+
+  .slaughter-nav-link {
+    min-height: 31px;
+    padding: 0 4px;
+
+    font-size: 8px;
+  }
+
+  .slaughter-hero {
+    padding: 55px 12px 42px;
+  }
+
+  .slaughter-hero h1 {
+    font-size: 33px;
+  }
+
+  .slaughter-hero-buttons > button {
+    min-height: 46px;
+
+    padding-right: 5px;
+    padding-left: 5px;
+
+    font-size: 9px;
+  }
+
+  .slaughter-gallery {
+    border-radius: 10px;
+  }
+
+  .slaughter-gallery-arrow {
+    width: 30px;
+    height: 30px;
+  }
+
+  .slaughter-gallery-dots {
+    bottom: 10px;
+    gap: 7px;
+  }
+
+  .slaughter-gallery-dots button {
+    width: 7px;
+    height: 7px;
+    min-width: 7px;
+    min-height: 7px;
+  }
+
+  .slaughter-overview,
+  .slaughter-services,
+  .slaughter-information {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+/* ==========================================================================
+   ACCESSIBILITY
    ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
-  .slaughter-hero
-    .enterprise-hero-content
-    > *,
-  .slaughter-hero .enterprise-gallery,
-  .slaughter-hero .enterprise-gallery::after {
+  .slaughter-hero-content > *,
+  .slaughter-gallery,
+  .slaughter-gallery::after {
     animation: none;
-
     opacity: 1;
-
     transform: none;
   }
 
-  .enterprise-gallery
-    .hero-gallery-dots
-    button,
-  .enterprise-detail-page
-    .hero-buttons
-    button {
+  .slaughter-gallery-arrow,
+  .slaughter-gallery-dots button,
+  .slaughter-hero-buttons > button,
+  .slaughter-overview-grid div,
+  .slaughter-service-card,
+  .slaughter-back-top-button,
+  .slaughter-bottom-get-started {
     transition: none;
   }
 }

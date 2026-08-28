@@ -13,48 +13,49 @@ import {
   RocketOutlined,
   SafetyCertificateOutlined,
   ShopOutlined,
+  ClockCircleOutlined,
+  FileProtectOutlined,
+  DollarOutlined,
+  MedicineBoxOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
 
 import Footer from "./Footer";
+import EnterpriseNavbar from "./EnterpriseNavbar";
 
-import Market1 from "../assets/Market1.jpg";
 import meeoLogo from "../assets/logo_meeo.png";
 import hog from "../assets/paa_baboy.jpg";
-import pork from "../assets/pork belly.jpg";
-import beef from "../assets/images/baka_unod.jpg";
-import chicken from "../assets/whole_chicken.jpg";
-import liver from "../assets/liver.jpg";
+import slaughter from "../assets/slaughter.jpg";
+import pig1 from "../assets/pig.jpg";
+import pig2 from "../assets/pig2.jpg";
+import pig3 from "../assets/pig3.jpg";
 
 import "./Slaughter.css";
 
 // =============================================================================
-// CONSTANTS
+// HERO IMAGES
 // =============================================================================
 
 const HERO_IMAGES = [
   {
-    source: Market1,
-    alt: "Market Layout",
+    source: slaughter,
+    alt: "Municipal Slaughterhouse",
+  },
+  {
+    source: pig1,
+    alt: "Livestock Processing",
+  },
+  {
+    source: pig2,
+    alt: "Pig Processing",
+  },
+  {
+    source: pig3,
+    alt: "Slaughterhouse Operations",
   },
   {
     source: hog,
-    alt: "Pork Products",
-  },
-  {
-    source: pork,
     alt: "Fresh Pork",
-  },
-  {
-    source: beef,
-    alt: "Beef Products",
-  },
-  {
-    source: chicken,
-    alt: "Chicken Products",
-  },
-  {
-    source: liver,
-    alt: "Fresh Liver",
   },
 ];
 
@@ -64,7 +65,6 @@ const HERO_IMAGES = [
 
 const Slaughter = () => {
   const navigate = useNavigate();
-
   const [heroIndex, setHeroIndex] = useState(0);
 
   // ---------------------------------------------------------------------------
@@ -75,29 +75,16 @@ const Slaughter = () => {
     navigate("/homepage");
   };
 
-  const goToMarket = () => {
-    navigate("/");
-  };
-
-  const goToSlaughter = () => {
-    navigate("/slaughter");
-  };
-
-  const goToWharf = () => {
-    navigate("/wharf");
-  };
-
   // ---------------------------------------------------------------------------
-  // Hero Gallery
+  // Gallery
   // ---------------------------------------------------------------------------
 
   const changeHero = (direction) => {
     setHeroIndex((currentIndex) => {
-      const nextIndex =
+      return (
         (currentIndex + direction + HERO_IMAGES.length) %
-        HERO_IMAGES.length;
-
-      return nextIndex;
+        HERO_IMAGES.length
+      );
     });
   };
 
@@ -107,7 +94,7 @@ const Slaughter = () => {
 
   const viewServices = () => {
     document
-      .querySelector(".enterprise-overview")
+      .querySelector(".slaughter-services")
       ?.scrollIntoView({
         behavior: "smooth",
         block: "start",
@@ -126,12 +113,8 @@ const Slaughter = () => {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="get-started-page enterprise-detail-page">
-      <Navbar
-        onMarket={goToMarket}
-        onSlaughter={goToSlaughter}
-        onWharf={goToWharf}
-      />
+    <div className="slaughter-page">
+      <EnterpriseNavbar />
 
       <HeroSection
         heroIndex={heroIndex}
@@ -144,9 +127,17 @@ const Slaughter = () => {
 
       <OverviewSection />
 
-      <div className="more-info-actions enterprise-actions">
+      <ServicesSection />
+
+      <InformationSection />
+
+      {/* =====================================================================
+          PAGE ACTIONS
+          ===================================================================== */}
+
+      <div className="slaughter-actions">
         <button
-          className="back-top-button"
+          className="slaughter-back-top-button"
           type="button"
           onClick={backToTop}
         >
@@ -155,7 +146,7 @@ const Slaughter = () => {
         </button>
 
         <button
-          className="bottom-get-started"
+          className="slaughter-bottom-get-started"
           type="button"
           onClick={goToHome}
         >
@@ -167,68 +158,6 @@ const Slaughter = () => {
 
       <Footer />
     </div>
-  );
-};
-
-// =============================================================================
-// NAVBAR
-// =============================================================================
-
-const Navbar = ({
-  onMarket,
-  onSlaughter,
-  onWharf,
-}) => {
-  return (
-    <nav
-      className="landing-navbar"
-      aria-label="Economic enterprises"
-    >
-      {/* Brand */}
-      <div className="landing-brand">
-        <div className="brand-logo">
-          <img
-            src={meeoLogo}
-            alt="MEEO Opol logo"
-          />
-        </div>
-
-        <div className="brand-text">
-          <strong>MEEO OPOL</strong>
-
-          <span>
-            Municipal Economic Enterprise Office
-          </span>
-        </div>
-      </div>
-
-      {/* Navigation Links */}
-      <div className="enterprise-nav-links">
-        <button
-          className="enterprise-nav-link"
-          type="button"
-          onClick={onMarket}
-        >
-          Market
-        </button>
-
-        <button
-          className="enterprise-nav-link active"
-          type="button"
-          onClick={onSlaughter}
-        >
-          Slaughter
-        </button>
-
-        <button
-          className="enterprise-nav-link"
-          type="button"
-          onClick={onWharf}
-        >
-          Wharf
-        </button>
-      </div>
-    </nav>
   );
 };
 
@@ -248,26 +177,23 @@ const HeroSection = ({
 
   return (
     <section
-      className="enterprise-hero slaughter-hero"
+      className="slaughter-hero"
       style={{
         backgroundImage: `
           linear-gradient(
             90deg,
-            rgba(12, 28, 49, 0.92),
-            rgba(12, 28, 49, 0.35)
+            rgba(12, 28, 49, 0.94),
+            rgba(12, 28, 49, 0.72) 45%,
+            rgba(12, 28, 49, 0.30)
           ),
           url(${image.source})
         `,
       }}
     >
-      {/* =====================================================================
-          HERO CONTENT
-          ===================================================================== */}
-
-      <div className="enterprise-hero-content">
-        <span className="enterprise-kicker">
+      <div className="slaughter-hero-content">
+        <span className="slaughter-kicker">
           <SafetyCertificateOutlined />
-          MUNICIPAL SLAUGHTERHOUSE
+          MUNICIPAL ECONOMIC ENTERPRISE OFFICE — SLAUGHTERHOUSE
         </span>
 
         <h1>
@@ -276,41 +202,38 @@ const HeroSection = ({
         </h1>
 
         <p>
-          The municipal slaughterhouse is where the
-          slaughtering and dressing of animals such as
-          cattle, cows, hogs, and goats can be carried out
-          in an orderly and properly managed facility for
-          the community.
+          The Municipal Slaughterhouse provides an organized facility for
+          the slaughtering and dressing of livestock such as hogs, cattle,
+          cows, and goats. It supports clean, orderly, and properly managed
+          meat-processing activities for the local community.
         </p>
 
-        {/* Key Features */}
-        <div className="enterprise-points">
+        <div className="slaughter-points">
           <span>
             <CheckCircleOutlined />
-            Cattle and cows
+            Organized livestock processing
           </span>
 
           <span>
             <CheckCircleOutlined />
-            Hogs and goats
+            Sanitary handling
           </span>
 
           <span>
             <CheckCircleOutlined />
-            Sanitary operations
+            Managed facility use
           </span>
         </div>
 
-        {/* Hero Actions */}
-        <div className="hero-buttons">
+        <div className="slaughter-hero-buttons">
           <button
-            className="get-started-button"
+            className="slaughter-get-started-button"
             type="button"
             onClick={onGetStarted}
           >
             <RocketOutlined />
 
-            <span className="button-label">
+            <span className="slaughter-button-label">
               Get Started
             </span>
 
@@ -318,14 +241,14 @@ const HeroSection = ({
           </button>
 
           <button
-            className="hero-more-info"
+            className="slaughter-hero-more-info"
             type="button"
             onClick={onLearnMore}
           >
             <InfoCircleOutlined />
 
-            <span className="button-label">
-              Learn More
+            <span className="slaughter-button-label">
+             Explore Services
             </span>
 
             <ArrowDownOutlined />
@@ -334,20 +257,18 @@ const HeroSection = ({
       </div>
 
       {/* =====================================================================
-          HERO IMAGE GALLERY
+          IMAGE GALLERY
           ===================================================================== */}
 
-      <div className="enterprise-gallery">
-        {/* Main Image */}
+      <div className="slaughter-gallery">
         <img
           src={image.source}
           alt={image.alt}
-          className="enterprise-gallery-image"
+          className="slaughter-gallery-image"
         />
 
-        {/* Previous */}
         <button
-          className="gallery-arrow gallery-arrow-left"
+          className="slaughter-gallery-arrow gallery-arrow-left"
           type="button"
           onClick={onPrevious}
           aria-label="Previous slaughterhouse image"
@@ -355,9 +276,8 @@ const HeroSection = ({
           <LeftOutlined />
         </button>
 
-        {/* Next */}
         <button
-          className="gallery-arrow gallery-arrow-right"
+          className="slaughter-gallery-arrow gallery-arrow-right"
           type="button"
           onClick={onNext}
           aria-label="Next slaughterhouse image"
@@ -365,20 +285,15 @@ const HeroSection = ({
           <RightOutlined />
         </button>
 
-        {/* Gallery Indicators */}
         <div
-          className="hero-gallery-dots"
+          className="slaughter-gallery-dots"
           role="tablist"
           aria-label="Slaughterhouse gallery images"
         >
           {HERO_IMAGES.map((heroImage, index) => (
             <button
               key={heroImage.alt}
-              className={
-                index === heroIndex
-                  ? "active"
-                  : ""
-              }
+              className={index === heroIndex ? "active" : ""}
               type="button"
               onClick={() => onSelectImage(index)}
               aria-label={`Show ${heroImage.alt}`}
@@ -386,6 +301,8 @@ const HeroSection = ({
             />
           ))}
         </div>
+
+       
       </div>
     </section>
   );
@@ -397,38 +314,34 @@ const HeroSection = ({
 
 const OverviewSection = () => {
   return (
-    <section className="enterprise-overview">
-      {/* Section Label */}
-      <span className="section-label">
+    <section className="slaughter-overview">
+      <span className="slaughter-section-label">
         <InfoCircleOutlined />
-        SLAUGHTERHOUSE SERVICES
+        ABOUT THE SLAUGHTERHOUSE
       </span>
 
-      {/* Heading */}
       <h2>
-        Responsible processing for{" "}
-        <span>safe local food supply.</span>
+        Supporting safe and orderly{" "}
+        <span>livestock processing.</span>
       </h2>
 
-      {/* Description */}
       <p>
-        MEEO supports the orderly use of the municipal
-        slaughterhouse so livestock processing can be
-        coordinated with sanitation, inspection,
-        scheduling, and responsible facility management.
+        The municipal slaughterhouse serves as a designated facility where
+        livestock can be processed in an organized and sanitary environment.
+        MEEO helps support the proper administration and collection of
+        applicable slaughterhouse fees and the orderly use of the facility.
       </p>
 
-      {/* Service Cards */}
-      <div className="enterprise-overview-grid">
+      <div className="slaughter-overview-grid">
         <div>
           <ShopOutlined />
 
           <strong>
-            Animal processing
+            Livestock processing
           </strong>
 
           <small>
-            For cattle, cows, hogs, and goats
+            Facility use for hogs, cattle, cows, and goats.
           </small>
         </div>
 
@@ -436,11 +349,11 @@ const OverviewSection = () => {
           <SafetyCertificateOutlined />
 
           <strong>
-            Sanitary facility
+            Sanitary operations
           </strong>
 
           <small>
-            Supporting clean and safe operations
+            Supporting clean and responsible handling practices.
           </small>
         </div>
 
@@ -448,16 +361,194 @@ const OverviewSection = () => {
           <BankOutlined />
 
           <strong>
-            Managed scheduling
+            Managed facility
           </strong>
 
           <small>
-            Organized use of the facility
+            Organized use and administration of the slaughterhouse.
           </small>
         </div>
       </div>
     </section>
   );
 };
+
+// =============================================================================
+// SERVICES SECTION
+// =============================================================================
+
+const ServicesSection = () => {
+  const services = [
+    {
+      icon: <MedicineBoxOutlined />,
+      title: "Slaughtering Services",
+      description:
+        "Provides a designated facility where livestock may be slaughtered in an orderly and properly managed environment.",
+    },
+    {
+      icon: <SafetyCertificateOutlined />,
+      title: "Dressing and Meat Handling",
+      description:
+        "Supports the proper dressing and handling of slaughtered animals while maintaining cleanliness within the facility.",
+    },
+    {
+      icon: <FileProtectOutlined />,
+      title: "Inspection and Compliance",
+      description:
+        "Supports compliance with applicable meat-safety, sanitation, and livestock-processing requirements.",
+    },
+    {
+      icon: <DollarOutlined />,
+      title: "Slaughterhouse Fee Collection",
+      description:
+        "MEEO is responsible for collecting and recording applicable slaughterhouse fees and ensuring proper payment.",
+    },
+    {
+      icon: <ClockCircleOutlined />,
+      title: "Facility Scheduling",
+      description:
+        "Helps organize the use of the facility and coordinate slaughterhouse activities based on applicable schedules.",
+    },
+    {
+      icon: <TeamOutlined />,
+      title: "Community Support",
+      description:
+        "Provides an organized facility that supports local livestock raisers, meat vendors, buyers, and consumers.",
+    },
+  ];
+
+  return (
+    <section className="slaughter-services">
+      <div className="slaughter-services-header">
+        <span className="slaughter-section-label">
+          <ShopOutlined />
+          SLAUGHTERHOUSE SERVICES
+        </span>
+
+        <h2>
+          Services designed for{" "}
+          <span>safe and organized operations.</span>
+        </h2>
+
+        <p>
+          The municipal slaughterhouse supports several activities involved
+          in livestock processing, facility administration, sanitation, and
+          compliance.
+        </p>
+      </div>
+
+      <div className="slaughter-services-grid">
+        {services.map((service) => (
+          <article
+            className="slaughter-service-card"
+            key={service.title}
+          >
+            <div className="slaughter-service-icon">
+              {service.icon}
+            </div>
+
+            <div className="slaughter-service-content">
+              <h3>{service.title}</h3>
+
+              <p>{service.description}</p>
+            </div>
+
+            <CheckCircleOutlined className="slaughter-service-check" />
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+// =============================================================================
+// INFORMATION SECTION
+// =============================================================================
+
+const InformationSection = () => {
+  return (
+    <section className="slaughter-information">
+      <div className="slaughter-information-inner">
+        <div className="slaughter-information-content">
+          <span className="slaughter-section-label">
+            <InfoCircleOutlined />
+            IMPORTANT INFORMATION
+          </span>
+
+          <h2>
+            Before using the{" "}
+            <span>slaughterhouse.</span>
+          </h2>
+
+          <p>
+            Requirements, applicable fees, operating schedules, and
+            slaughterhouse procedures may depend on the current rules and
+            policies of the municipality. For the most accurate and updated
+            information, coordinate directly with the MEEO or the
+            Municipal Slaughterhouse Office.
+          </p>
+        </div>
+
+        <div className="slaughter-information-list">
+          <div>
+            <ClockCircleOutlined />
+
+            <div>
+              <strong>Operating Schedule</strong>
+
+              <span>
+                Confirm the current operating days and hours before bringing
+                livestock to the facility.
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <DollarOutlined />
+
+            <div>
+              <strong>Applicable Fees</strong>
+
+              <span>
+                Confirm current slaughterhouse fees and payment procedures
+                with the responsible office.
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <FileProtectOutlined />
+
+            <div>
+              <strong>Requirements</strong>
+
+              <span>
+                Ask about required documents, livestock requirements, and
+                applicable inspection procedures.
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <SafetyCertificateOutlined />
+
+            <div>
+              <strong>Facility Regulations</strong>
+
+              <span>
+                Follow the sanitation, safety, handling, and facility-use
+                rules implemented by the slaughterhouse.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// =============================================================================
+// EXPORT
+// =============================================================================
 
 export default Slaughter;

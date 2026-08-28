@@ -8,6 +8,7 @@ import AdminDashboard from './admin/Dashboard';
 import GetStarted from './Auth/GetStarted';
 import Slaughter from './Auth/Slaughter';
 import Wharf from './Auth/Wharf';
+import MeeoOffice from './Auth/MeeoOffice';
 
 import Homepage from './Auth/Homepage';
 import AutoLogoutProvider from './components/AutoLogoutProvider';
@@ -22,9 +23,12 @@ function App() {
       <Router basename="/">
         <AutoLogoutProvider>
           <Routes>
-              <Route path="/" element={<GetStarted />} />
+    
+                  <Route path="/" element={<MeeoOffice />} />
+                  <Route path="/market" element={<GetStarted />} />
                   <Route path="/slaughter" element={<Slaughter />} />
                   <Route path="/wharf" element={<Wharf />} />
+ 
       <Route path="/homepage" element={<Homepage />} />
 
           <Route path="/login" element={<Login />} />
