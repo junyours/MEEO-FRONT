@@ -269,6 +269,12 @@
   object-fit: cover;
 }
 
+.meeo-office-gallery-image-contain {
+  padding: 30px;
+  object-fit: contain;
+  background: #f7f9fc;
+}
+
 .meeo-office-gallery-arrow {
   position: absolute;
   top: 50%;
@@ -709,7 +715,14 @@
 }
 
 .meeo-office-activities-state {
-  padding: 55px 20px;
+  min-height: 220px;
+  padding: 42px 24px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
 
   color: #5f6f86;
 
@@ -718,8 +731,74 @@
   font-size: 14px;
 }
 
+.meeo-office-activities-state > svg {
+  width: 42px;
+  height: 42px;
+  padding: 10px;
+  margin-bottom: 4px;
+
+  border: 1px solid #cfe0f3;
+  border-radius: 50%;
+
+  color: #1769e0;
+  background: #eef5fd;
+  font-size: 20px;
+}
+
+.meeo-office-activities-state strong {
+  color: #14213d;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.meeo-office-activities-state > span {
+  max-width: 430px;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.meeo-office-activities-state button {
+  min-height: 38px;
+  margin-top: 7px;
+  padding: 0 15px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  border: 1px solid #1769e0;
+  border-radius: 7px;
+
+  color: #ffffff;
+  background: #1769e0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.meeo-office-activities-state button:hover {
+  background: #125dcc;
+  transform: translateY(-2px);
+}
+
 .meeo-office-activities-state-error {
+  border: 1px solid #f0d2d2;
+  border-left: 3px solid #b54b4b;
+  background: #fff8f8;
+}
+
+.meeo-office-activities-state-error > svg {
+  border-color: #f0d2d2;
   color: #b54b4b;
+  background: #fff0f0;
+}
+
+.meeo-office-activities-state-error strong {
+  color: #8f3737;
 }
 
 .meeo-office-activities-layout {
@@ -2004,7 +2083,7 @@
   border: 1px solid #c2666c;
   border-radius: 14px;
   color: #38171b;
-  background: linear-gradient(145deg, #ffd0d1 0%, #ee959b 100%);
+  background: linear-gradient(145deg, #f7080c 0%, #f5a51f 100%);
   box-shadow: 0 14px 28px rgba(160, 64, 72, .18);
 }
 

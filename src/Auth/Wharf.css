@@ -365,6 +365,21 @@
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
 }
 
+.wharf-hero-fees-button {
+  color: #ffffff;
+  background: #16845d;
+  border: 1px solid #16845d;
+  box-shadow: 0 10px 22px rgba(22, 132, 93, 0.24);
+}
+
+.wharf-hero-fees-button:hover {
+  color: #ffffff;
+  background: #116d4d;
+  border-color: #116d4d;
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px rgba(22, 132, 93, 0.3);
+}
+
 .wharf-button-label {
   white-space: nowrap;
 }
@@ -634,6 +649,175 @@
   font-weight: 500;
   line-height: 1.6;
   text-align: center;
+}
+
+/* ============================================================================
+   FEE SCHEDULE
+   ============================================================================ */
+
+.wharf-fees {
+  padding: 104px 5%;
+  background: #f7fbfa;
+  border-top: 1px solid #dce9e5;
+  border-bottom: 1px solid #dce9e5;
+}
+
+.wharf-fees-header {
+  max-width: 780px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.wharf-fees-header h2 {
+  margin: 17px 0 0;
+  color: #0c1c31;
+  font-family: "Plus Jakarta Sans", "Inter", Arial, sans-serif;
+  font-size: clamp(30px, 4vw, 48px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -1px;
+}
+
+.wharf-fees-header h2 span {
+  display: block;
+  color: #1769e0;
+}
+
+.wharf-fees-header > p {
+  max-width: 680px;
+  margin: 18px auto 0;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.wharf-fees-grid {
+  max-width: 1100px;
+  margin: 48px auto 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.wharf-fee-card {
+  overflow: hidden;
+  border: 1px solid #dce9e5;
+  border-top: 3px solid #16845d;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 7px 20px rgba(12, 28, 49, 0.045);
+}
+
+.wharf-fee-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px 15px;
+  background: #f1f8f5;
+  border-bottom: 1px solid #dce9e5;
+}
+
+.wharf-fee-card-header h3 {
+  margin: 0;
+  color: #0c1c31;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.wharf-fee-card-header span {
+  display: block;
+  margin-top: 4px;
+  color: #667085;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.wharf-fee-card-header svg {
+  flex: 0 0 auto;
+  color: #16845d;
+  font-size: 20px;
+}
+
+.wharf-fee-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.wharf-fee-table th,
+.wharf-fee-table td {
+  padding: 10px 22px;
+  border-bottom: 1px solid #edf3f1;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: left;
+  vertical-align: top;
+}
+
+.wharf-fee-table tr:last-child th,
+.wharf-fee-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.wharf-fee-table th {
+  width: 58%;
+  color: #000000;
+  font-weight: 800;
+}
+
+.wharf-fee-table td {
+  color: #0c1c31;
+  font-weight: 800;
+  text-align: right;
+}
+
+.wharf-fee-note {
+  margin: 0;
+  padding: 12px 22px 15px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #116d4d;
+  background: #f1f8f5;
+  border-top: 1px solid #dce9e5;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.wharf-fee-note svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.wharf-fees-notice {
+  max-width: 1100px;
+  margin: 22px auto 0;
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #0c1c31;
+  background: #eaf3f0;
+  border: 1px solid #cfe2dc;
+  border-left: 3px solid #1769e0;
+  border-radius: 8px;
+}
+
+.wharf-fees-notice svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #1769e0;
+  font-size: 17px;
+}
+
+.wharf-fees-notice p {
+  margin: 0;
+  color: #475467;
+  font-size: 11px;
+  line-height: 1.65;
 }
 
 
@@ -1207,6 +1391,7 @@
   }
 
   .wharf-overview,
+  .wharf-fees,
   .wharf-users,
   .wharf-process,
   .wharf-catch,
@@ -1454,6 +1639,10 @@
     font-size: 10px;
   }
 
+  .wharf-hero-fees-button {
+    grid-column: 1 / -1;
+  }
+
   .wharf-button-label {
     white-space: normal;
     text-align: center;
@@ -1538,6 +1727,40 @@
   .wharf-overview-grid {
     grid-template-columns: 1fr;
     margin-top: 38px;
+  }
+
+  .wharf-fees {
+    padding: 72px 16px;
+  }
+
+  .wharf-fees-header h2 {
+    font-size: clamp(28px, 9vw, 40px);
+  }
+
+  .wharf-fees-header > p {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .wharf-fees-grid {
+    grid-template-columns: 1fr;
+    margin-top: 38px;
+  }
+
+  .wharf-fee-table th,
+  .wharf-fee-table td {
+    padding: 10px 16px;
+    font-size: 10px;
+  }
+
+  .wharf-fee-note {
+    padding-right: 16px;
+    padding-left: 16px;
+    font-size: 9px;
+  }
+
+  .wharf-fees-notice {
+    padding: 14px 16px;
   }
 
 

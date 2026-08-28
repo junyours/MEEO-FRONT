@@ -23,7 +23,6 @@ import {
 import Footer from "./Footer";
 import EnterpriseNavbar from "./EnterpriseNavbar";
 
-import meeoLogo from "../assets/logo_meeo.png";
 import hog from "../assets/paa_baboy.jpg";
 import slaughter from "../assets/slaughter.jpg";
 import pig1 from "../assets/pig.jpg";
@@ -56,6 +55,58 @@ const HERO_IMAGES = [
   {
     source: hog,
     alt: "Fresh Pork",
+  },
+];
+
+const SLAUGHTER_FEES = [
+  {
+    animal: "Hog(s)",
+    note: "Per head / per kilo",
+    rows: [
+      ["Slaughter fee", "X 3.20 per kilo"],
+      ["Ante mortem (AM)", "20 per head"],
+      ["Post mortem (PM)", "X 0.50 per kilo"],
+      ["Coral fee", "10 per head"],
+      ["Permit to SLH (slaughter)", "5 per head"],
+      ["Minimum weight", "78 kgs. and below 250.00"],
+    ],
+  },
+  {
+    animal: "Cattle",
+    note: "Per head / per kilo",
+    rows: [
+      ["Slaughter fee", "X 4.00 per kilo"],
+      ["Ante mortem (AM)", "40 per head"],
+      ["Post mortem (PM)", "X 0.50 per kilo"],
+      ["Coral fee", "20 per head"],
+      ["Permit to SLH (slaughter)", "10 per head"],
+      ["Minimum weight", "112 kgs. and below 450.00"],
+      ["Hides", "200 per head"],
+    ],
+  },
+  {
+    animal: "Carabeef",
+    note: "Per head / per kilo",
+    rows: [
+      ["Slaughter fee", "X 4.50 per kilo"],
+      ["Ante mortem (AM)", "40 per head"],
+      ["Post mortem (PM)", "X 0.50 per kilo"],
+      ["Coral fee", "20 per head"],
+      ["Permit to SLH (slaughter)", "10 per head"],
+      ["Minimum weight", "112 kgs. and below 500.00"],
+      ["Hides", "200 per head"],
+    ],
+  },
+  {
+    animal: "Goat / Chevron",
+    note: "Per head / per kilo",
+    rows: [
+      ["Slaughter fee", "Minimum 500"],
+      ["Ante mortem (AM)", "20 per head"],
+      ["Post mortem (PM)", "X 0.50 per kilo"],
+      ["Coral fee", "10 per head"],
+      ["Permit to SLH (slaughter)", "5 per head"],
+    ],
   },
 ];
 
@@ -101,6 +152,15 @@ const Slaughter = () => {
       });
   };
 
+  const viewFees = () => {
+    document
+      .querySelector(".slaughter-fees")
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+  };
+
   const backToTop = () => {
     window.scrollTo({
       top: 0,
@@ -123,12 +183,15 @@ const Slaughter = () => {
         onSelectImage={setHeroIndex}
         onGetStarted={goToHome}
         onLearnMore={viewServices}
+        onViewFees={viewFees}
       />
 
       <OverviewSection />
 
-      <ServicesSection />
+   
 
+      <ServicesSection />
+     <FeeScheduleSection />
       <InformationSection />
 
       {/* =====================================================================
@@ -151,7 +214,7 @@ const Slaughter = () => {
           onClick={goToHome}
         >
           <RocketOutlined />
-          Get Started
+         Go To Homepage
           <ArrowRightOutlined />
         </button>
       </div>
@@ -172,6 +235,7 @@ const HeroSection = ({
   onSelectImage,
   onGetStarted,
   onLearnMore,
+  onViewFees,
 }) => {
   const image = HERO_IMAGES[heroIndex];
 
@@ -209,20 +273,7 @@ const HeroSection = ({
         </p>
 
         <div className="slaughter-points">
-          <span>
-            <CheckCircleOutlined />
-            Organized livestock processing
-          </span>
-
-          <span>
-            <CheckCircleOutlined />
-            Sanitary handling
-          </span>
-
-          <span>
-            <CheckCircleOutlined />
-            Managed facility use
-          </span>
+         
         </div>
 
         <div className="slaughter-hero-buttons">
@@ -234,7 +285,7 @@ const HeroSection = ({
             <RocketOutlined />
 
             <span className="slaughter-button-label">
-              Get Started
+              Go To Homepage
             </span>
 
             <ArrowRightOutlined />
@@ -249,6 +300,20 @@ const HeroSection = ({
 
             <span className="slaughter-button-label">
              Explore Services
+            </span>
+
+            <ArrowDownOutlined />
+          </button>
+
+          <button
+            className="slaughter-hero-fees-button"
+            type="button"
+            onClick={onViewFees}
+          >
+            <DollarOutlined />
+
+            <span className="slaughter-button-label">
+              View Slaughter Fees
             </span>
 
             <ArrowDownOutlined />
@@ -368,6 +433,62 @@ const OverviewSection = () => {
             Organized use and administration of the slaughterhouse.
           </small>
         </div>
+      </div>
+    </section>
+  );
+};
+
+// =============================================================================
+// FEE SCHEDULE SECTION
+// =============================================================================
+
+const FeeScheduleSection = () => {
+  return (
+    <section className="slaughter-fees" aria-labelledby="slaughter-fees-title">
+      <div className="slaughter-fees-header">
+        <div>
+          <span className="slaughter-section-label">
+            <DollarOutlined />
+             SLAUGHTER FEE AND CHARGES 
+          </span>
+
+          <h2 id="slaughter-fees-title">
+            Slaughterhouse <span>fees and charges.</span>
+          </h2>
+        </div>
+
+        <p>
+          Applicable charges for livestock processing, inspection, facility
+          use, and related services. Confirm current rates with the
+          Municipal Slaughterhouse Office before bringing livestock.
+        </p>
+      </div>
+
+      <div className="slaughter-fees-grid">
+        {SLAUGHTER_FEES.map((fee) => (
+          <article className="slaughter-fee-card" key={fee.animal}>
+            <div className="slaughter-fee-card-header">
+              <div>
+                <h3>{fee.animal}</h3>
+                <span>{fee.note}</span>
+              </div>
+              <DollarOutlined />
+            </div>
+
+            <div className="slaughter-fee-table-wrap">
+              <table className="slaughter-fee-table">
+                <tbody>
+                  {fee.rows.map(([label, value]) => (
+                    <tr key={label}>
+                      <th scope="row">{label}</th>
+                      <td>{value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   );

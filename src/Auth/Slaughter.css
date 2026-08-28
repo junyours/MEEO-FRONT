@@ -309,7 +309,8 @@
 .slaughter-hero-buttons > button:focus-visible,
 .slaughter-gallery-arrow:focus-visible,
 .slaughter-gallery-dots button:focus-visible,
-.slaughter-nav-link:focus-visible {
+.slaughter-nav-link:focus-visible,
+.slaughter-hero-fees-button:focus-visible {
   outline: 3px solid rgba(141, 224, 187, 0.9);
   outline-offset: 3px;
 }
@@ -344,6 +345,21 @@
   background: #f8fbff;
   border-color: #f8fbff;
   transform: translateY(-3px);
+}
+
+.slaughter-hero-fees-button {
+  color: #ffffff;
+  background: var(--slaughter-red);
+  border: 1px solid var(--slaughter-red);
+  box-shadow: 0 10px 22px rgba(210, 91, 67, 0.24);
+}
+
+.slaughter-hero-fees-button:hover {
+  color: #ffffff;
+  background: #c94f37;
+  border-color: #c94f37;
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px rgba(210, 91, 67, 0.3);
 }
 
 .slaughter-button-label {
@@ -649,6 +665,159 @@
   line-height: 1.6;
 }
 
+/* ============================================================================
+   FEE SCHEDULE
+   ============================================================================ */
+
+.slaughter-fees {
+  padding: 108px 5%;
+
+  background: #f8fafc;
+  border-top: 1px solid #edf0f4;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.slaughter-fees-header {
+  max-width: 900px;
+  margin: 0 auto;
+
+  display: block;
+  text-align: center;
+}
+
+.slaughter-fees-header .slaughter-section-label {
+  justify-content: center;
+}
+
+.slaughter-fees-header h2 {
+  margin: 17px 0 0;
+
+  color: var(--slaughter-ink);
+
+  font:
+    800 clamp(30px, 4vw, 48px) / 1.15
+    "Plus Jakarta Sans",
+    "Inter",
+    sans-serif;
+
+  letter-spacing: -1px;
+}
+
+.slaughter-fees-header h2 span {
+  display: block;
+  color: var(--slaughter-red);
+}
+
+.slaughter-fees-header p {
+  max-width: 700px;
+  margin: 22px auto 0;
+  padding-top: 0;
+
+  color: var(--slaughter-muted);
+
+  font-size: 13px;
+  line-height: 1.85;
+  text-wrap: balance;
+}
+
+.slaughter-fees-grid {
+  max-width: 1100px;
+  margin: 50px auto 0;
+
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.slaughter-fee-card {
+  overflow: hidden;
+
+  border: 1px solid var(--slaughter-line);
+  border-top: 3px solid var(--slaughter-red);
+  border-radius: 10px;
+
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(12, 28, 49, 0.04);
+}
+
+.slaughter-fee-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 19px 22px 16px;
+
+  background: #fffaf8;
+  border-bottom: 1px solid #f0e2de;
+}
+
+.slaughter-fee-card-header h3 {
+  margin: 0;
+
+  color: var(--slaughter-ink);
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.slaughter-fee-card-header span {
+  display: block;
+  margin-top: 4px;
+
+  color: var(--slaughter-quiet);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.slaughter-fee-card-header svg {
+  flex: 0 0 auto;
+
+  color: var(--slaughter-red);
+  font-size: 20px;
+}
+
+.slaughter-fee-table-wrap {
+  overflow-x: auto;
+}
+
+.slaughter-fee-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.slaughter-fee-table th,
+.slaughter-fee-table td {
+  padding: 11px 22px;
+  border-bottom: 1px solid #eef1f4;
+  font-size: 11px;
+  line-height: 1.35;
+  text-align: left;
+  vertical-align: top;
+}
+
+.slaughter-fee-table tr:last-child th,
+.slaughter-fee-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.slaughter-fee-table th {
+  width: 56%;
+
+  color: var(--slaughter-muted);
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.slaughter-fee-table td {
+  color: var(--slaughter-ink);
+  font-weight: 800;
+  text-align: right;
+  text-transform: uppercase;
+}
+
 /* ==========================================================================
    SERVICES
    ========================================================================== */
@@ -662,21 +831,26 @@
 }
 
 .slaughter-services-header {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
 
   text-align: center;
 }
 
+.slaughter-services-header .slaughter-section-label {
+  justify-content: center;
+}
+
 .slaughter-services-header p {
   max-width: 700px;
 
-  margin: 20px auto 0;
+  margin: 22px auto 0;
 
   color: var(--slaughter-muted);
 
   font-size: 14px;
   line-height: 1.8;
+  text-wrap: balance;
 }
 
 .slaughter-services-grid {
@@ -1187,6 +1361,22 @@
     max-width: 600px;
   }
 
+  .slaughter-fees {
+    padding: 75px 24px;
+  }
+
+  .slaughter-fees-header {
+    max-width: 700px;
+  }
+
+  .slaughter-fees-header p {
+    max-width: 700px;
+  }
+
+  .slaughter-fees-grid {
+    max-width: 650px;
+  }
+
   .slaughter-services {
     padding: 75px 24px;
   }
@@ -1309,6 +1499,10 @@
     line-height: 1.2;
   }
 
+  .slaughter-hero-fees-button {
+    grid-column: 1 / -1;
+  }
+
   .slaughter-button-label {
     white-space: normal;
     text-align: center;
@@ -1361,6 +1555,29 @@
 
   .slaughter-overview-grid {
     margin-top: 35px;
+  }
+
+  .slaughter-fees {
+    padding: 65px 16px;
+  }
+
+  .slaughter-fees-header h2 {
+    font-size: clamp(28px, 9vw, 40px);
+  }
+
+  .slaughter-fees-header p {
+    font-size: 12px;
+  }
+
+  .slaughter-fees-grid {
+    grid-template-columns: 1fr;
+    margin-top: 35px;
+  }
+
+  .slaughter-fee-table th,
+  .slaughter-fee-table td {
+    padding: 10px 16px;
+    font-size: 10px;
   }
 
   .slaughter-services {
@@ -1487,6 +1704,7 @@
   }
 
   .slaughter-overview,
+  .slaughter-fees,
   .slaughter-services,
   .slaughter-information {
     padding-left: 12px;

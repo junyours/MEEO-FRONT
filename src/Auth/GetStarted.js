@@ -39,6 +39,7 @@ RestOutlined ,
   RightOutlined,
   PictureOutlined,
   CustomerServiceOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import "./GetStarted.css";
 
@@ -53,7 +54,7 @@ const GetStarted = () => {
   const [activitiesVisible, setActivitiesVisible] = useState(false);
   const [activities, setActivities] = useState([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
-  const [activitiesError, setActivitiesError] = useState(false);
+  const [activitiesError, setActivitiesError] = useState("");
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [activeInfoModal, setActiveInfoModal] = useState(null);
@@ -70,8 +71,7 @@ const GetStarted = () => {
     { source: Market2, alt: "Market Layout 2 ", fit: "Cover" },
     { source: Market3, alt: "Market Layout 3 ", fit: "Cover" },
       {source: bg, alt: "Opol Public Market", fit: "cover"},
- { source: opolLogo, alt: "Municipality of Opol official seal", fit: "contain" },
-    { source: meeoLogo, alt: "MEEO Logo ", fit: "contain" },
+
 
   ];
   const [heroImageIndex, setHeroImageIndex] = useState(0);
@@ -126,13 +126,17 @@ const getActivityImages = (activity) => [
  const loadActivities = async () => {
   try {
     setActivitiesLoading(true);
-    setActivitiesError(false);
+    setActivitiesError("");
 
     const response = await api.get("/office-activities");
 
-   
-    const loadedActivities = response.data?.data || [];
+    if (response.data?.success === false) {
+      throw new Error(response.data.message || "Unable to load activities.");
+    }
 
+    const loadedActivities = Array.isArray(response.data?.data)
+      ? response.data.data
+      : [];
 
 
     setActivities(loadedActivities);
@@ -149,7 +153,9 @@ const getActivityImages = (activity) => [
     console.error("Status:", error.response?.status);
     console.error("Response:", error.response?.data);
 
-    setActivitiesError(true);
+    setActivities([]);
+    setSelectedActivity(null);
+    setActivitiesError("Market activities are temporarily unavailable.");
   } finally {
     setActivitiesLoading(false);
   }
@@ -190,7 +196,7 @@ const getActivityImages = (activity) => [
     try {
       setStallSectionsLoading(true);
       setStallSectionsError(false);
-      const response = await api.get("/sections/available-stalls");
+      const response = await api.get("/public/available-stalls");
       setStallSections(response.data?.data || response.data || []);
     } catch (error) {
       console.error("Failed to load stall availability:", error);
@@ -411,7 +417,7 @@ const getActivityImages = (activity) => [
                 title="Get Started"
               >
                 <RocketOutlined />
-                <span className="button-label">Get Started</span>
+                <span className="button-label">Go To Homepage</span>
                 <ArrowRightOutlined />
               </button>
 
@@ -948,50 +954,43 @@ const getActivityImages = (activity) => [
                   <>
                     <span className="section-label"><ShopOutlined /> MARKET INFORMATION</span>
                     <h2 id="market-info-modal-title">Stall Availability</h2>
-                    <p className="market-info-modal-intro">Current availability for wet, dry, and open-space market areas.</p>
+                    <p className="market-info-modal-intro">Only currently available stalls are shown below, grouped by market section.</p>
                     {stallSectionsLoading && <div className="market-info-modal-state">Loading stall availability...</div>}
                     {!stallSectionsLoading && stallSectionsError && <div className="market-info-modal-state market-info-modal-state-error">Unable to load stall availability right now.</div>}
                     {!stallSectionsLoading && !stallSectionsError && stallSections.length === 0 && <div className="market-info-modal-state">No stall availability information is currently available.</div>}
                     {!stallSectionsLoading && !stallSectionsError && stallSections.length > 0 && (
                       <div className="market-availability-panels">
-                        {["market", "open space"].map((areaName) => {
-                          const summary = areaName === "market"
-                            ? getMarketAvailabilitySummary()
-                            : getAvailabilitySummary(areaName);
-                          if (summary.sections.length === 0) return null;
-
+                        {stallSections.map((section) => {
                           return (
-                            <section className={`market-availability-panel market-availability-panel-${areaName.replace(" ", "-")}`} key={areaName}>
+                            <section className="market-availability-panel market-availability-panel-open-space" key={section.section_id}>
                               <div className="market-availability-panel-banner">
                                 <HomeOutlined />
-                                <strong>{areaName === "open space" ? "Open Space" : "Market Stalls"}</strong>
-                                <span>{areaName === "open space" ? "Outdoor Market Areas" : "Wet & Dry Market Areas"}</span>
+                                <strong>{section.section_name}</strong>
+                                <span>{section.area?.name || "Market area"}</span>
                               </div>
                               <div className="market-availability-panel-heading">
                                 <div>
-                                  <span className="market-availability-kicker">{areaName === "open space" ? "OUTDOOR AREA" : "WET & DRY MARKET"}</span>
-                                    <h3>{areaName === "open space" ? "Open Space" : "Market Stalls"}</h3>
+                                  <span className="market-availability-kicker">AVAILABLE SECTION</span>
+                                  <h3>{section.section_name}</h3>
                                 </div>
-                                <strong>{summary.total} <small>Total</small></strong>
-                              </div>
-                              <div className="market-availability-stats">
-                                <div><strong>{summary.available}</strong><span>Available</span></div>
-                                <div><strong>{summary.occupied}</strong><span>Occupied</span></div>
-                                <div><strong>{summary.total}</strong><span>Total</span></div>
+                                <strong>{section.available_stalls_count} <small>Available</small></strong>
                               </div>
                               <div className="market-availability-sections">
-                                {summary.sections.map((section) => (
-                                  <div className="market-availability-section-row" key={section.id}>
-                                    <strong>{section.name}</strong>
-                                    <span>{section.available_stalls_count || 0} available</span>
-                                    <span>{section.occupied_stalls_count || 0} occupied</span>
+                                <div className="market-availability-section-row">
+                                  <strong>
+                                    {section.available_stalls_count} Available Stall{section.available_stalls_count === 1 ? "" : "s"}
+                                  </strong>
+                                  <div className="market-availability-stall-numbers">
+                                    {section.available_stalls.map((stall) => (
+                                      <span key={stall.id}>Stall {stall.stall_number}</span>
+                                    ))}
                                   </div>
-                                ))}
+                                </div>
                               </div>
                               <div className="market-availability-occupancy">
-                                <div><strong>Occupancy Rate</strong><span>{summary.total > 0 ? Math.round((summary.occupied / summary.total) * 100) : 0}%</span></div>
-                                <div className="market-availability-progress"><span style={{ width: `${summary.total > 0 ? (summary.occupied / summary.total) * 100 : 0}%` }} /></div>
-                                <div className="market-availability-occupancy-counts"><span>◷ {summary.available} Available</span><span>⊗ {summary.occupied} Occupied</span></div>
+                                <div><strong>Section availability</strong><span>{section.available_stalls_count} Stall{section.available_stalls_count === 1 ? "" : "s"} Ready</span></div>
+                                <div className="market-availability-progress"><span style={{ width: "100%" }} /></div>
+                                <div className="market-availability-occupancy-counts"><span>Available for application</span></div>
                               </div>
                             </section>
                           );
@@ -1089,9 +1088,31 @@ const getActivityImages = (activity) => [
                 <p>Explore announcements, programs, and community activities .</p>
               </div>
 
-              {activitiesLoading && <div className="activities-state">Loading market activities...</div>}
-              {!activitiesLoading && activitiesError && <div className="activities-state activities-state-error">Unable to load activities right now.</div>}
-              {!activitiesLoading && !activitiesError && activities.length === 0 && <div className="activities-state">No activities have been published yet.</div>}
+              {activitiesLoading && (
+                <div className="activities-state" role="status">
+                  <CalendarOutlined />
+                  <strong>Loading activities...</strong>
+                  <span>Please wait while we check for the latest market updates.</span>
+                </div>
+              )}
+              {!activitiesLoading && activitiesError && (
+                <div className="activities-state activities-state-error" role="alert">
+                  <InfoCircleOutlined />
+                  <strong>Activities unavailable</strong>
+                  <span>{activitiesError} Please try again.</span>
+                  <button type="button" onClick={loadActivities}>
+                    <ReloadOutlined />
+                    Try Again
+                  </button>
+                </div>
+              )}
+              {!activitiesLoading && !activitiesError && activities.length === 0 && (
+                <div className="activities-state" role="status">
+                  <CalendarOutlined />
+                  <strong>No Activity Right Now</strong>
+                  <span>New market announcements and activities will appear here when published.</span>
+                </div>
+              )}
               {!activitiesLoading && !activitiesError && activities.length > 0 && (
                 <div className="activities-layout">
                   <div className="activities-list">
@@ -1161,7 +1182,7 @@ const getActivityImages = (activity) => [
             >
                    <RocketOutlined />
               <span>
-                Get Started
+                Go To Homepage
               </span>
 
               <ArrowRightOutlined />

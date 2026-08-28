@@ -1095,10 +1095,7 @@
 }
 
 .market-availability-section-row {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto auto;
-	align-items: center;
-	gap: 10px;
+	display: block;
 	padding: 10px 11px;
 	border: 1px solid #e7eef6;
 	border-radius: 7px;
@@ -1107,13 +1104,31 @@
 }
 
 .market-availability-section-row strong {
-	min-width: 0;
-	overflow-wrap: anywhere;
+	display: block;
 	color: var(--ink);
 	font-size: 12px;
 }
 
-.market-availability-section-row span {
+.market-availability-stall-numbers {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.market-availability-stall-numbers span {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 7px;
+	border: 1px solid #d9e5f2;
+	border-radius: 5px;
+	color: #536681;
+	background: #f8fbff;
+	font-size: 10px;
+	white-space: nowrap;
+}
+
+.market-availability-occupancy > div:first-child span {
 	color: #536681;
 	white-space: nowrap;
 }
@@ -1341,6 +1356,87 @@
 	.information-card:focus-within {
 		transform: none;
 	}
+}
+
+/* ============================================================================
+	 ACTIVITY STATUS STATES
+	 ============================================================================ */
+
+.activities-section .activities-state {
+	min-height: 220px;
+	padding: 42px 24px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 9px;
+	color: var(--muted);
+	text-align: center;
+}
+
+.activities-section .activities-state > svg {
+	width: 42px;
+	height: 42px;
+	padding: 10px;
+	margin-bottom: 4px;
+	border: 1px solid #cfe0f3;
+	border-radius: 50%;
+	color: #1769e0;
+	background: #eef5fd;
+	font-size: 20px;
+}
+
+.activities-section .activities-state strong {
+	color: var(--ink);
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-size: 17px;
+	font-weight: 800;
+}
+
+.activities-section .activities-state > span {
+	max-width: 430px;
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.65;
+}
+
+.activities-section .activities-state button {
+	min-height: 38px;
+	margin-top: 7px;
+	padding: 0 15px;
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	border: 1px solid #1769e0;
+	border-radius: 7px;
+	color: #ffffff;
+	background: #1769e0;
+	font: inherit;
+	font-size: 11px;
+	font-weight: 800;
+	cursor: pointer;
+	transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.activities-section .activities-state button:hover {
+	background: #125dcc;
+	transform: translateY(-2px);
+}
+
+.activities-section .activities-state-error {
+	border: 1px solid #f0d2d2;
+	border-left: 3px solid #b54b4b;
+	background: #fff8f8;
+}
+
+.activities-section .activities-state-error > svg {
+	border-color: #f0d2d2;
+	color: #b54b4b;
+	background: #fff0f0;
+}
+
+.activities-section .activities-state-error strong {
+	color: #8f3737;
 }
 
 

@@ -8,6 +8,7 @@ import {
   ArrowUpOutlined,
   BankOutlined,
   CheckCircleOutlined,
+  DollarOutlined,
   EnvironmentOutlined,
   InfoCircleOutlined,
   LeftOutlined,
@@ -24,13 +25,14 @@ import Footer from "./Footer";
 import EnterpriseNavbar from "./EnterpriseNavbar";
 import tambakol from "../assets/tambakol.jpg";
 import yellowfin from "../assets/yellowFin.png";
-import bangus from "../assets/bangus.jpg";
+
 import galunggong from "../assets/galunggong.jpg";
-import tilapia from "../assets/fresh_tilapia.webp";
+
 import tamban from "../assets/tamban.jpg";
+import pantalan from "../assets/pantalan.jpg";
 
 import fish from "../assets/Fish.jpg";
-import FishPort from "../assets/Fishport.jpg";
+
 import LBB from "../assets/LBB.jpg";
 
 import "./Wharf.css";
@@ -45,8 +47,8 @@ const HERO_IMAGES = [
     alt: "Fish",
   },
   {
-    source: FishPort,
-    alt: "Fish Port",
+    source: pantalan,
+    alt: "Pantalan",
   },
   {
     source: LBB,
@@ -70,6 +72,96 @@ const HERO_IMAGES = [
   {
     source: tamban,
     alt: "Fresh Tamban",
+  },
+];
+
+const WHARF_FEES = [
+  {
+    title: "Stall Fee",
+    subtitle: "Per day",
+    rows: [
+      ["Fish stall", "P50.00"],
+      ["Food stall", "P50.00"],
+      ["Ambulant vendors", "P20.00"],
+    ],
+  },
+  {
+    title: "Unloading Fee",
+    subtitle: "Due from fish brokers, traders, and producers",
+    rows: [
+      ["Per banyera", "P18.00"],
+      ["Per tub", "P25.00"],
+      ["Big fish (malasugi, liplipan, etc.)", "P20.00 per piece"],
+    ],
+  },
+  {
+    title: "Transhipment Fee",
+    subtitle: "For fish products transferred at the port",
+    rows: [
+      ["Per banyera", "P10.00"],
+      ["Per tub", "P10.00"],
+      ["Big fish (malasugi, liplipan, etc.)", "P20.00 per piece"],
+    ],
+    note: "Fish producers are exempted from paying the transhipment fee.",
+  },
+  {
+    title: "Berthing Fee / Unholding",
+    subtitle: "Per day",
+    rows: [
+      ["Fish boat", "P100.00"],
+      ["Canter / service", "P50.00"],
+      ["Light boat / pump boat", "P20.00"],
+      ["Speedboat", "P100.00"],
+      ["Yacht", "P100.00"],
+      ["Transient fishing vessel", "P100.00"],
+    ],
+  },
+  {
+    title: "Entrance and Parking Fee",
+    subtitle: "Any fraction is considered one 6-hour period",
+    rows: [
+      ["Heavy vehicles, per 6 hours", "P50.00"],
+      ["Light vehicles, per 6 hours", "P30.00"],
+      ["Jeep / car / van, per 6 hours", "Rate not provided"],
+      ["Pedicab / tricycle, per entrance", "P10.00"],
+      ["Motorcycle, per entrance", "P10.00"],
+      ["Vehicle sticker, per year", "P1,000.00"],
+      ["Cart sticker, per year", "P300.00"],
+      ["Motorcycle sticker, per year", "P300.00"],
+    ],
+    note:
+      "Government vehicles are exempted from entrance and parking fees. Producers and local fish traders are exempted when they secure a sticker from the Municipal Treasurer.",
+  },
+  {
+    title: "Entry of Vehicle with Cargoes",
+    subtitle: "Per entry",
+    rows: [
+      ["Heavy vehicles (10-wheelers and above)", "P100.00"],
+      ["Light vehicles (6-wheelers)", "P80.00"],
+      ["Jeep, pick-up, and other 4-wheelers", "P50.00"],
+    ],
+  },
+  {
+    title: "Rental and Other Charges",
+    subtitle: "Facility use and basic services",
+    rows: [
+      ["Office space", "P300.00 / sq. m. / month"],
+      ["Land", "P200.00 / sq. m. / month"],
+      ["Repairing of fish nets", "P1,500.00 per 5 days"],
+      ["Repairing of fish nets beyond 5 days", "P200.00 per day"],
+      ["Electricity, separate meter", "P200.00 / office / month"],
+      ["Water, separate meter", "P20.00 per day"],
+      ["Toilet fee (urinating)", "P3.00"],
+      ["Toilet fee (defecating / shower)", "P5.00"],
+    ],
+  },
+  {
+    title: "Sharing",
+    subtitle: "Distribution per banyera or tub",
+    rows: [
+      ["Barangay share, every banyera or tub", "P5.00"],
+      ["Laborer share, every banyera", "P3.00"],
+    ],
   },
 ];
 
@@ -114,6 +206,13 @@ const Wharf = () => {
     });
   };
 
+  const viewFees = () => {
+    document.querySelector(".wharf-fees")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
   // ---------------------------------------------------------------------------
   // Back To Top
   // ---------------------------------------------------------------------------
@@ -148,6 +247,7 @@ const Wharf = () => {
         onSelectImage={setHeroIndex}
         onGetStarted={goToHome}
         onLearnMore={viewServices}
+        onViewFees={viewFees}
       />
 
       {/* =====================================================================
@@ -155,6 +255,8 @@ const Wharf = () => {
           ===================================================================== */}
 
       <OverviewSection />
+
+      <FeeScheduleSection />
 
       {/* =====================================================================
           BOTTOM ACTIONS
@@ -176,7 +278,7 @@ const Wharf = () => {
           onClick={goToHome}
         >
           <RocketOutlined />
-          <span>Get Started</span>
+          <span>Go To Homepage</span>
           <ArrowRightOutlined />
         </button>
       </div>
@@ -201,6 +303,7 @@ const HeroSection = ({
   onSelectImage,
   onGetStarted,
   onLearnMore,
+  onViewFees,
 }) => {
   const image = HERO_IMAGES[heroIndex];
 
@@ -251,20 +354,7 @@ const HeroSection = ({
         {/* KEY FEATURES */}
 
         <div className="wharf-points">
-          <span>
-            <CheckCircleOutlined />
-            Fish landing
-          </span>
-
-          <span>
-            <CheckCircleOutlined />
-            Fish trading
-          </span>
-
-          <span>
-            <CheckCircleOutlined />
-            Fisheries support
-          </span>
+          
         </div>
 
         {/* HERO ACTIONS */}
@@ -278,7 +368,7 @@ const HeroSection = ({
             <RocketOutlined />
 
             <span className="wharf-button-label">
-              Get Started
+              Go To Homepage
             </span>
 
             <ArrowRightOutlined />
@@ -293,6 +383,20 @@ const HeroSection = ({
 
             <span className="wharf-button-label">
               Explore Services
+            </span>
+
+            <ArrowDownOutlined />
+          </button>
+
+          <button
+            className="wharf-hero-fees-button"
+            type="button"
+            onClick={onViewFees}
+          >
+            <DollarOutlined />
+
+            <span className="wharf-button-label">
+              View Wharf Fees
             </span>
 
             <ArrowDownOutlined />
@@ -721,6 +825,73 @@ const OverviewSection = () => {
         </div>
       </section>
     </>
+  );
+};
+
+// =============================================================================
+// FEE SCHEDULE
+// =============================================================================
+
+const FeeScheduleSection = () => {
+  return (
+    <section className="wharf-fees" aria-labelledby="wharf-fees-title">
+      <div className="wharf-fees-header">
+        <span className="wharf-section-label">
+          <DollarOutlined />
+          FISH PORT FEES AND CHARGES
+        </span>
+
+        <h2 id="wharf-fees-title">
+          Clear rates for <span>fish port services.</span>
+        </h2>
+
+        <p>
+          Review the applicable fees for stalls, unloading, transhipment,
+          berthing, parking, rentals, and other fish port services.
+        </p>
+      </div>
+
+      <div className="wharf-fees-grid">
+        {WHARF_FEES.map((fee) => (
+          <article className="wharf-fee-card" key={fee.title}>
+            <div className="wharf-fee-card-header">
+              <div>
+                <h3>{fee.title}</h3>
+                <span>{fee.subtitle}</span>
+              </div>
+              <DollarOutlined />
+            </div>
+
+            <table className="wharf-fee-table">
+              <tbody>
+                {fee.rows.map(([label, value]) => (
+                  <tr key={label}>
+                    <th scope="row">{label}</th>
+                    <td>{value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {fee.note && (
+              <p className="wharf-fee-note">
+                <InfoCircleOutlined />
+                <span>{fee.note}</span>
+              </p>
+            )}
+          </article>
+        ))}
+      </div>
+
+      <div className="wharf-fees-notice">
+        <ReconciliationOutlined />
+        <p>
+          All fees and charges collected shall have an official receipt and/or
+          cash ticket. Please confirm current rates and payment procedures with
+          the Fish Port Office.
+        </p>
+      </div>
+    </section>
   );
 };
 

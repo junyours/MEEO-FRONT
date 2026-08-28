@@ -10,6 +10,7 @@ import {
   FileTextOutlined,
   InfoCircleOutlined,
   LeftOutlined,
+  ReloadOutlined,
   RightOutlined,
   RocketOutlined,
   SafetyCertificateOutlined,
@@ -19,9 +20,10 @@ import {
 import Footer from "./Footer";
 import EnterpriseNavbar from "./EnterpriseNavbar";
 import marketImage from "../assets/Market1.jpg";
-import slaughterImage from "../assets/paa_baboy.jpg";
+
 import wharfImage from "../assets/Fishport.jpg";
 import meeoProfilePhoto from "../assets/logo_meeo.png";
+import logo_opol from "../assets/logo_Opol.png";
 import bag_ong_Opol from "../assets/bag-ong_opol.jpg";
 import nathanielAba from "../assets/TanixProf.jpg";
 import dean from "../assets/dean.jpg";
@@ -40,7 +42,7 @@ import danCraig from "../assets/danCraig.png";
 import payla from "../assets/payla.png";
 import bendix from "../assets/bendix.png";
 import SirIan from "../assets/SirIan.png";
-import Mayor from "../assets/Mayor.jpg";
+import Mayor from "../assets/Mayor.png";
 import laguitin from "../assets/Laguitin.png";
 import daniel from "../assets/Daniel.png";
 import jojo from "../assets/jojo.png";
@@ -52,14 +54,24 @@ import nancy from "../assets/nancy.png";
 import daanoy from "../assets/daanoy.png";
 import gil from "../assets/gil.png";
 import nangcas from "../assets/nangcas.png";
+import wharfLogo from "../assets/Logo_Wharf.jpg";
+import slaughter from "../assets/slaughter.jpg";
+import pantalan from "../assets/pantalan.jpg";
 import "./MeeoOffice.css";
 
 const galleryImages = [
-  { source: bag_ong_Opol, alt: "Bag-ong Opol " },
-  { source: marketImage, alt: "Public market" },
+  { source: bag_ong_Opol, alt: "Bag-ong Opol ", fit: "cover" },
+  { source: marketImage, alt: "Public market", fit: "cover" },
 
-  { source: slaughterImage, alt: "Municipal slaughterhouse" },
-  { source: wharfImage, alt: "Municipal wharf" },
+  { source: slaughter, alt: "Municipal slaughterhouse", fit: "cover" },
+  { source: pantalan, alt: "Pantalan", fit: "cover" },
+
+  { source: meeoProfilePhoto, alt: "Meeo Office", fit: "contain" },
+  { source: logo_opol, alt: "Opol Logo", fit: "contain" },
+  { source: wharfLogo, alt: "Wharf Logo", fit: "contain" },
+
+
+
 ];
 
 const enterpriseSummaries = [
@@ -68,7 +80,7 @@ const enterpriseSummaries = [
     label: "MARKET",
     description: "Manages vendors, stalls, collections, rentals, and daily market operations.",
     icon: ShopOutlined,
-    path: "/",
+    path: "/market",
     color: "#1769e0",
     background: "#eaf2ff",
   },
@@ -193,7 +205,7 @@ const MeeoOffice = () => {
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [activities, setActivities] = useState([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
-  const [activitiesError, setActivitiesError] = useState(false);
+  const [activitiesError, setActivitiesError] = useState("");
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const galleryImage = galleryImages[galleryIndex];
@@ -231,15 +243,24 @@ const MeeoOffice = () => {
   const loadActivities = async () => {
     try {
       setActivitiesLoading(true);
-      setActivitiesError(false);
+      setActivitiesError("");
       const response = await api.get("/office-activities");
-      const loadedActivities = response.data?.data || [];
+      if (response.data?.success === false) {
+        throw new Error(response.data.message || "Unable to load activities.");
+      }
+
+      const loadedActivities = Array.isArray(response.data?.data)
+        ? response.data.data
+        : [];
+
       setActivities(loadedActivities);
       setSelectedActivity((currentActivity) => currentActivity || loadedActivities[0] || null);
       setSelectedImageIndex(0);
     } catch (error) {
       console.error("Failed to load MEEO activities:", error);
-      setActivitiesError(true);
+      setActivities([]);
+      setSelectedActivity(null);
+      setActivitiesError("Office activities are temporarily unavailable.");
     } finally {
       setActivitiesLoading(false);
     }
@@ -286,13 +307,13 @@ const MeeoOffice = () => {
                   <InfoCircleOutlined /> Exlpore Enterprises <ArrowDownOutlined />
                 </button>
                 <button className="meeo-office-hero-action meeo-office-hero-action-secondary" type="button" onClick={scrollToOfficeMembers}>
-                  <TeamOutlined /> View Office Members <ArrowDownOutlined />
+                  <TeamOutlined /> View Organizational Structure <ArrowDownOutlined />
                 </button>
               </div>
             </div>
 
             <div className="meeo-office-hero-gallery">
-              <img className="meeo-office-gallery-image" src={galleryImage.source} alt={galleryImage.alt} />
+              <img className={`meeo-office-gallery-image meeo-office-gallery-image-${galleryImage.fit}`} src={galleryImage.source} alt={galleryImage.alt} />
               <button className="meeo-office-gallery-arrow meeo-office-gallery-arrow-left" type="button" onClick={() => changeGalleryImage(-1)} aria-label="Previous MEEO image"><LeftOutlined /></button>
               <button className="meeo-office-gallery-arrow meeo-office-gallery-arrow-right" type="button" onClick={() => changeGalleryImage(1)} aria-label="Next MEEO image"><RightOutlined /></button>
               <div className="meeo-office-gallery-dots" aria-label="MEEO gallery images">
@@ -363,9 +384,31 @@ const MeeoOffice = () => {
             <h2 id="meeo-office-activities-heading">Life across MEEO enterprises.</h2>
             <p>Explore announcements, programs, and community activities from the MEEO office.</p>
           </div>
-          {activitiesLoading && <div className="meeo-office-activities-state">Loading MEEO activities...</div>}
-          {!activitiesLoading && activitiesError && <div className="meeo-office-activities-state meeo-office-activities-state-error">Unable to load MEEO activities right now.</div>}
-          {!activitiesLoading && !activitiesError && activities.length === 0 && <div className="meeo-office-activities-state">No MEEO activities have been published yet.</div>}
+          {activitiesLoading && (
+            <div className="meeo-office-activities-state" role="status">
+              <CalendarOutlined />
+              <strong>Loading activities...</strong>
+              <span>Please wait while we check for the latest updates.</span>
+            </div>
+          )}
+          {!activitiesLoading && activitiesError && (
+            <div className="meeo-office-activities-state meeo-office-activities-state-error" role="alert">
+              <InfoCircleOutlined />
+              <strong>Activities unavailable</strong>
+              <span>{activitiesError} Please try again.</span>
+              <button type="button" onClick={loadActivities}>
+                <ReloadOutlined />
+                Try Again
+              </button>
+            </div>
+          )}
+          {!activitiesLoading && !activitiesError && activities.length === 0 && (
+            <div className="meeo-office-activities-state" role="status">
+              <CalendarOutlined />
+              <strong>No Activity Right Now</strong>
+              <span>New announcements and community activities will appear here when published.</span>
+            </div>
+          )}
           {!activitiesLoading && !activitiesError && activities.length > 0 && (
             <div className="meeo-office-activities-layout">
               <div className="meeo-office-activities-list">

@@ -450,7 +450,7 @@ const ProductManagement = () => {
         <Image
           width={screens.xs ? 40 : 60}
           height={screens.xs ? 40 : 60}
-          src={image || '/placeholder-category.jpg'}
+          src={image}
           style={{ objectFit: 'cover', borderRadius: 8 }}
         />
       )
