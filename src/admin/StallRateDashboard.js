@@ -54,6 +54,7 @@ const StallRateDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedStall, setSelectedStall] = useState(null);
   const [stallModalVisible, setStallModalVisible] = useState(false);
+  const [loadingHistoryStallId, setLoadingHistoryStallId] = useState(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -150,9 +151,22 @@ const StallRateDashboard = () => {
     return { daily_rate: null, monthly_rate: null };
   };
 
-  const showStallDetails = (stall) => {
-    setSelectedStall(stall);
+  const showStallDetails = async (stall) => {
+    setSelectedStall({ ...stall, rate_changes: [] });
     setStallModalVisible(true);
+    setLoadingHistoryStallId(stall.id);
+
+    try {
+      const response = await api.get(`/stall-rate-history/stall/${stall.id}/recent`);
+      setSelectedStall((current) => current?.id === stall.id
+        ? { ...current, rate_changes: response.data.rate_changes || [] }
+        : current
+      );
+    } catch (error) {
+      message.error('Failed to load stall rate history');
+    } finally {
+      setLoadingHistoryStallId((current) => current === stall.id ? null : current);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -523,9 +537,23 @@ const StallRateDashboard = () => {
     <div className="stall-rate-dashboard">
       {/* Header */}
       <div className="dashboard-header">
-        <div className="header">
+        <div className="dashboard-heading">
           <HistoryOutlined className="title-icon" />
-          <h2>Stall Rate & Availability </h2>
+          <div>
+            <h2>Stall Rate & Availability</h2>
+            <div className="dashboard-counts" aria-label="Market overview">
+              <span className="dashboard-count">
+                <HomeOutlined />
+                <strong>{dashboardData?.summary?.total_areas || 0}</strong>
+                <span>Areas</span>
+              </span>
+              <span className="dashboard-count">
+                <ShopOutlined />
+                <strong>{dashboardData?.summary?.total_stalls || 0}</strong>
+                <span>Stalls</span>
+              </span>
+            </div>
+          </div>
         </div>
         <div className="header-actions">
           <Button 
@@ -546,74 +574,44 @@ const StallRateDashboard = () => {
 
       {/* Summary Statistics */}
       <Row gutter={[16, 16]} className="summary-section">
-        <Col xs={24} sm={12} md={8}>
-          <Card>
-            <Statistic
-              title="Total Areas"
-              value={dashboardData.summary.total_areas}
-              prefix={<HomeOutlined />}
-              valueStyle={{ color: '#722ed1' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8}>
+        <Col xs={24} sm={12} xl={6}>
           <Card>
             <Statistic
               title="Total Stalls"
               value={dashboardData.summary.total_stalls}
               prefix={<ShopOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              valueStyle={{ color: '#1d4e89' }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={8}>
+        <Col xs={24} sm={12} xl={6}>
           <Card>
             <Statistic
               title="Available"
               value={dashboardData.summary.available_stalls}
               prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              valueStyle={{ color: '#27864b' }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={8}>
+        <Col xs={24} sm={12} xl={6}>
+          <Card>
+            <Statistic
+              title="Occupied"
+              value={dashboardData.summary.occupied_stalls}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: '#cf5c36' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} xl={6}>
           <Card>
             <Statistic
               title="Occupancy Rate"
               value={dashboardData.summary.occupancy_rate}
               suffix="%"
-              prefix={<UserOutlined />}
-              valueStyle={{ color: '#fa8c16' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8}>
-          <Card>
-            <Statistic
-              title="Market Available Stalls"
-              value={(() => {
-                const marketAreas = dashboardData.areas.filter(area => area.type === 'dry' || area.type === 'wet');
-                return marketAreas.reduce((sum, area) => 
-                  sum + area.sections.reduce((sectionSum, section) => sectionSum + section.availability.available, 0), 0
-                );
-              })()}
-              prefix={<ShopOutlined />}
-              valueStyle={{ color: '#13c2c2' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8}>
-          <Card>
-            <Statistic
-              title="Open Space Available Stalls"
-              value={(() => {
-                const openSpaceAreas = dashboardData.areas.filter(area => area.type === 'open_space');
-                return openSpaceAreas.reduce((sum, area) => 
-                  sum + area.sections.reduce((sectionSum, section) => sectionSum + section.availability.available, 0), 0
-                );
-              })()}
-              prefix={<CloudOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              prefix={<ApartmentOutlined />}
+              valueStyle={{ color: '#c27a18' }}
             />
           </Card>
         </Col>
@@ -682,6 +680,7 @@ const StallRateDashboard = () => {
                                     />
                                     {section.name}
                                   </h4>
+                                  <span className="section-area-label">{area.name}</span>
                                   <div className="section-stats">
                                     <Space size="small">
                                       <Tag color="green">{availability.available} Available</Tag>
@@ -738,6 +737,7 @@ const StallRateDashboard = () => {
                                 <div key={section.id} className="section-item">
                                   <div className="section-header">
                                     <h4>{section.name}</h4>
+                                    <span className="section-area-label">{area.name}</span>
                                     <div className="section-stats">
                                       <Space size="small">
                                         <Tag color="green">{availability.available} Available</Tag>
@@ -903,12 +903,14 @@ const StallRateDashboard = () => {
               )}
             </Descriptions>
 
-            {selectedStall.rate_changes.length > 0 && (
-              <div className="rate-history">
-                <h4>Recent Rate Changes</h4>
+            <div className="rate-history">
+              <h4>Recent Rate Changes</h4>
+              {loadingHistoryStallId === selectedStall.id ? (
+                <div className="history-loading"><Spin /></div>
+              ) : selectedStall.rate_changes.length > 0 ? (
                 <Timeline>
-                  {selectedStall.rate_changes.map((change, index) => (
-                    <Timeline.Item key={index}>
+                  {selectedStall.rate_changes.map((change) => (
+                    <Timeline.Item key={change.id}>
                       <div className="rate-change-item">
                         <div className="rate-amounts">
                           Daily: ₱{change.daily_rate} | Monthly: ₱{change.monthly_rate}
@@ -920,8 +922,10 @@ const StallRateDashboard = () => {
                     </Timeline.Item>
                   ))}
                 </Timeline>
-              </div>
-            )}
+              ) : (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No rate history" />
+              )}
+            </div>
           </div>
         )}
       </Modal>

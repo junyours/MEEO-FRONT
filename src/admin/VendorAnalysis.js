@@ -8,9 +8,7 @@ import {
   Row,
   Col,
   Statistic,
-  Spin,
   Typography,
-  Alert,
   Space,
   Divider,
   Tag,
@@ -29,7 +27,6 @@ import {
   CalendarOutlined,
   DownloadOutlined,
   PrinterOutlined,
-  InfoCircleOutlined,
   ClockCircleOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
@@ -42,7 +39,7 @@ const { Option } = Select;
 const { TabPane } = Tabs;
 
 // Monthly Payment Analysis Table Component
-const MonthlyPaymentAnalysisTable = ({ paymentDetails, formatCurrency, onOrNumberUpdate, selectedYear }) => {
+const MonthlyPaymentAnalysisTable = ({ paymentDetails, formatCurrency, onOrNumberUpdate, selectedYear, loading }) => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monthColors = {
     'Jan': '#52c41a',
@@ -58,9 +55,6 @@ const MonthlyPaymentAnalysisTable = ({ paymentDetails, formatCurrency, onOrNumbe
     'Nov': '#f5222d',
     'Dec': '#52c41a'
   };
-
-  // Find the maximum number of payments in any month (set to 31 for days of month)
-  const maxPayments = 31;
 
   // Generate table columns
   const columns = [
@@ -266,6 +260,7 @@ const MonthlyPaymentAnalysisTable = ({ paymentDetails, formatCurrency, onOrNumbe
       <Table
         columns={columns}
         dataSource={dataSource}
+        loading={loading}
         pagination={false}
         scroll={{ x: 2800 }}
         size="small"
@@ -282,6 +277,7 @@ const VendorAnalysis = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [vendorData, setVendorData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [orModalVisible, setOrModalVisible] = useState(false);
   const [selectedPaymentDate, setSelectedPaymentDate] = useState('');
@@ -347,24 +343,33 @@ const VendorAnalysis = () => {
     }
   };
 
+  const fetchPaymentDetails = async (vendorId, year, tabKey) => {
+    const response = await api.get(`/vendor-analysis/vendor/${vendorId}/payment-details`, {
+      params: {
+        year,
+        section: tabKey === 'all' ? null : tabKey.replace('section-', '')
+      }
+    });
+
+    setVendorData(currentData => currentData
+      ? { ...currentData, monthly_payment_details: response.data }
+      : currentData
+    );
+  };
+
   const handleTabChange = async (activeKey) => {
     setActiveTab(activeKey);
     
     // Refetch data if vendor is selected
     if (selectedVendor) {
-      setLoading(true);
+      setDetailsLoading(true);
       try {
-        const response = await api.get(`/vendor-analysis/vendor/${selectedVendor.id}`, {
-          params: { 
-            year: selectedYear,
-            section: activeKey === 'all' ? null : activeKey.replace('section-', '')
-          }
-        });
-        setVendorData(response.data);
+        await fetchPaymentDetails(selectedVendor.id, selectedYear, activeKey);
       } catch (error) {
-        console.error('Error fetching vendor analysis:', error);
+        console.error('Error fetching vendor payment details:', error);
+        message.error('Unable to refresh daily payment details');
       } finally {
-        setLoading(false);
+        setDetailsLoading(false);
       }
     }
   };
@@ -1196,7 +1201,14 @@ const VendorAnalysis = () => {
       
       const stallData = [{
         vendor_name: vendorData.vendor_analysis.vendor_name,
-        stall_count: vendorData.vendor_analysis.stall_count,
+        stall_status: [
+          vendorData.vendor_analysis.stall_count > 0
+            ? `${vendorData.vendor_analysis.stall_count} Active`
+            : '',
+          vendorData.vendor_analysis.removed_stall_count > 0
+            ? `${vendorData.vendor_analysis.removed_stall_count} Removed`
+            : ''
+        ].filter(Boolean).join(', ') || 'No active stalls',
         daily: formatCurrencyForPDF(vendorData.vendor_analysis.daily),
         monthly: formatCurrencyForPDF(vendorData.vendor_analysis.monthly),
         annual: formatCurrencyForPDF(vendorData.vendor_analysis.annual),
@@ -1204,10 +1216,10 @@ const VendorAnalysis = () => {
       }];
       
       autoTable(doc, {
-        head: [['Vendor Name', 'Stalls Owned', 'Daily Rate', 'Monthly Rate', 'Annual Rate', 'Space Rights']],
+        head: [['Vendor Name', 'Stall Status', 'Daily Rate', 'Monthly Rate', 'Annual Rate', 'Space Rights']],
         body: stallData.map(row => [
           row.vendor_name,
-          `${row.stall_count} Stall${row.stall_count !== 1 ? 's' : ''}`,
+          row.stall_status,
           row.daily,
           row.monthly,
           row.annual,
@@ -1441,16 +1453,41 @@ const VendorAnalysis = () => {
       render: (text) => <Text strong>{text}</Text>
     },
     {
-      title: 'Stall Owned',
+      title: 'Stall Status',
       dataIndex: 'stall_count',
       key: 'stall_count',
-      width: 150,
+      width: 200,
       align: 'center',
-      render: (count) => (
-        <Tag color="blue" icon={<ShopOutlined />}>
-          {count} Stall{count !== 1 ? 's' : ''}
-        </Tag>
-      )
+      render: (count, record) => {
+        const removedStalls = record.removed_stalls || [];
+        const uniqueRemovedStalls = Array.from(new Map(
+          removedStalls.map(stall => [`${stall.section_name}-${stall.stall_number}`, stall])
+        ).values());
+
+        return (
+          <Space direction="vertical" size={4}>
+            <Space size={4} wrap>
+              {count > 0 ? (
+                <Tag color="blue" icon={<ShopOutlined />}>
+                  {count} Active
+                </Tag>
+              ) : removedStalls.length > 0 ? (
+                <Tag color="default" icon={<ShopOutlined />}>Removed</Tag>
+              ) : (
+                <Tag>No active stalls</Tag>
+              )}
+              {count > 0 && removedStalls.length > 0 && (
+                <Tag color="orange">{removedStalls.length} Removed</Tag>
+              )}
+            </Space>
+            {uniqueRemovedStalls.length > 0 && (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {uniqueRemovedStalls.map(stall => `${stall.section_name} · ${stall.stall_number}`).join(', ')}
+              </Text>
+            )}
+          </Space>
+        );
+      }
     },
     {
       title: 'Daily Rate',
@@ -1613,20 +1650,25 @@ const VendorAnalysis = () => {
   ];
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="vendor-analysis-screen p-6 bg-gray-50 min-h-screen">
       {/* Vendor Selection */}
-      <Card className="mb-6 shadow-sm">
-        <Title level={2} className="mb-4">
-          <DollarOutlined className="mr-2" />
-          Vendor Remaining Balance
-        </Title>
-
-        <Space size="large" align="center">
+      <Card className="vendor-analysis-toolbar mb-6 shadow-sm">
+        <div className="vendor-analysis-heading">
           <div>
-            <Text strong className="block mb-2">Select Vendor</Text>
+            <Title level={3} className="mb-1">
+              <DollarOutlined className="mr-2" />Vendor Balance Analysis
+            </Title>
+            <Text type="secondary">Review rental charges, payments, balances, and daily receipts.</Text>
+          </div>
+          {selectedVendor && <Tag color="blue">{selectedYear} · {selectedVendor.fullname}</Tag>}
+        </div>
+
+        <Row gutter={[16, 16]} align="bottom" className="vendor-analysis-controls">
+          <Col xs={24} md={9} lg={8}>
+            <Text strong className="vendor-control-label">Vendor</Text>
             <Select
-              style={{ width: 300 }}
-              placeholder="Choose a vendor..."
+              style={{ width: '100%' }}
+              placeholder="Search or choose a vendor"
               value={selectedVendor?.id}
               onChange={handleVendorChange}
               size="large"
@@ -1641,16 +1683,16 @@ const VendorAnalysis = () => {
                 </Option>
               ))}
             </Select>
-          </div>
+          </Col>
 
           {selectedVendor && (
-            <div>
-              <Text strong className="block mb-2">Select Year</Text>
+            <Col xs={12} md={4} lg={3}>
+              <Text strong className="vendor-control-label">Year</Text>
               <Select
                 value={selectedYear}
                 onChange={(year) => handleYearChange(null, year)}
                 size="large"
-                style={{ width: 120 }}
+                style={{ width: '100%' }}
                 placeholder="Select year"
               >
                 {Array.from({length: 10}, (_, i) => new Date().getFullYear() - i).map(year => (
@@ -1659,11 +1701,13 @@ const VendorAnalysis = () => {
                   </Option>
                 ))}
               </Select>
-            </div>
+            </Col>
           )}
 
           {selectedVendor && (
-            <>
+            <Col xs={24} md={11} lg={13}>
+              <Text strong className="vendor-control-label">Reports</Text>
+              <Space wrap>
               <Button
                 type="default"
                 icon={<ReloadOutlined />}
@@ -1673,7 +1717,6 @@ const VendorAnalysis = () => {
                     handleVendorChange(selectedVendor.id);
                   }
                 }}
-                size="large"
                 disabled={loading}
               >
                 Refresh
@@ -1682,10 +1725,7 @@ const VendorAnalysis = () => {
                 type="primary"
                 icon={<DownloadOutlined />}
                 onClick={exportToPDF}
-                size="large"
                 disabled={!vendorData || loading}
-                   style={{ backgroundColor: '#ffffffff', borderColor: '#52c41a', color: 'black' }}
-           
               >
                 Export PDF
               </Button>
@@ -1693,9 +1733,7 @@ const VendorAnalysis = () => {
                 type="default"
                 icon={<DownloadOutlined />}
                 onClick={exportYearlyPaymentLedgerPDF}
-                size="large"
                 disabled={!vendorData || loading}
-                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
               >
                 Export Ledger
               </Button>
@@ -1703,9 +1741,7 @@ const VendorAnalysis = () => {
                 type="default"
                 icon={<PrinterOutlined />}
                 onClick={generateDelinquencyNotice}
-                size="large"
                 disabled={!vendorData || loading}
-                style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f', color: 'white' }}
               >
                 Print Notice
               </Button>
@@ -1713,21 +1749,14 @@ const VendorAnalysis = () => {
                 type="default"
                 icon={<PrinterOutlined />}
                 onClick={generateAllDelinquencyNotices}
-                size="large"
                 disabled={loading}
-                style={{ backgroundColor: '#ff7875', borderColor: '#ff7875', color: 'white' }}
               >
                 Print All Notices
               </Button>
-              <Alert
-                message={`Displaying: ${selectedVendor.fullname} (${selectedYear})`}
-                type="info"
-                showIcon
-                className="flex-1"
-              />
-            </>
+              </Space>
+            </Col>
           )}
-        </Space>
+        </Row>
       </Card>
 
       {/* Loading */}
@@ -1972,10 +2001,17 @@ const VendorAnalysis = () => {
               formatCurrency={formatCurrency}
               onOrNumberUpdate={handleOrNumberUpdate}
               selectedYear={selectedYear}
+              loading={detailsLoading}
             />
           </Card>
 
         </Space>
+      )}
+
+      {!selectedVendor && !loading && (
+        <Card className="vendor-analysis-empty">
+          <Text type="secondary">Select a vendor to view their rental and payment analysis.</Text>
+        </Card>
       )}
 
       {/* OR Number Modal */}
@@ -2006,72 +2042,62 @@ const VendorAnalysis = () => {
 
       {/* CSS Overrides */}
       <style>{`
-  .plain-table .ant-table-thead > tr > th {
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    font-weight: 600;
-    border-bottom: 1px solid #f0f0f0;
+  .vendor-analysis-screen .vendor-analysis-toolbar {
+    border-top: 3px solid #1677a8;
   }
-  .plain-table .ant-table-thead > tr > th::before {
+  .vendor-analysis-screen .vendor-analysis-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+  .vendor-analysis-screen .vendor-control-label {
+    display: block;
+    margin-bottom: 7px;
+    color: #344054;
+  }
+  .vendor-analysis-screen .ant-card {
+    border-color: #e4e9ef;
+    box-shadow: 0 2px 8px rgba(16, 24, 40, 0.04);
+  }
+  .vendor-analysis-screen .plain-table .ant-table-thead > tr > th {
+    background-color: #f4f7fa !important;
+    color: #253746 !important;
+    font-weight: 600;
+    border-bottom: 1px solid #dfe5eb;
+  }
+  .vendor-analysis-screen .plain-table .ant-table-thead > tr > th::before {
     display: none !important;
   }
-  
-  /* Table border styling */
-  .ant-table {
-    border: 1px solid #000000 !important;
-    border-radius: 6px !important;
+  .vendor-analysis-screen .ant-table {
+    border: 1px solid #dfe5eb;
+    border-radius: 6px;
+    overflow: hidden;
   }
-  
-  .ant-table-container {
-    border: 1px solid #000000 !important;
-    border-radius: 6px !important;
+  .vendor-analysis-screen .ant-table-tbody > tr > td,
+  .vendor-analysis-screen .ant-table-thead > tr > th,
+  .vendor-analysis-screen .ant-table-summary > tr > td {
+    border-color: #e3e8ee !important;
   }
-  
-  .ant-table table {
-    border: 1px solid #000000 !important;
-    border-radius: 6px !important;
+  .vendor-analysis-screen .ant-table-tbody > tr:hover > td {
+    background: #f5faff;
   }
-  
-  .ant-table-tbody > tr > td {
-    border: 1px solid #000000 !important;
+  .vendor-analysis-screen .vendor-analysis-empty {
+    text-align: center;
+    padding: 22px;
   }
-  
-  .ant-table-thead > tr > th {
-    border: 1px solid #000000 !important;
-  }
-  
-  .ant-table-summary > tr > td {
-    border: 1px solid #000000 !important;
-  }
-  
-  /* Specific styling for bordered tables */
-  .ant-table-bordered .ant-table-tbody > tr > td {
-    border: 1px solid #000000 !important;
-  }
-  
-  .ant-table-bordered .ant-table-thead > tr > th {
-    border: 1px solid #000000 !important;
-  }
-  
-  .ant-table-bordered .ant-table-summary > tr > td {
-    border: 1px solid #000000 !important;
-  }
-  
-  /* Total row styling */
-  .total-row {
-    background-color: #f0f0f0 !important;
-    font-weight: bold !important;
-  }
-  
-  .total-row td {
-    background-color: #f0f0f0 !important;
-    font-weight: bold !important;
-    border-top: 2px solid #000000 !important;
-  }
-  
-  .total-row .ant-table-cell-fix-left {
-    background-color: #e6f7ff !important;
-    color: #1890ff !important;
+  @media (max-width: 767px) {
+    .vendor-analysis-screen {
+      padding: 16px !important;
+    }
+    .vendor-analysis-screen .vendor-analysis-heading {
+      flex-direction: column;
+      margin-bottom: 18px;
+    }
+    .vendor-analysis-screen .vendor-analysis-controls > .ant-col:last-child .ant-space {
+      width: 100%;
+    }
   }
 `}</style>
     </div>

@@ -9,6 +9,7 @@ import {
   Spin,
 
   Tooltip,
+  Button,
 } from "antd";
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -32,7 +33,7 @@ import {
   FaChartLine,
 
 } from "react-icons/fa";
-import { DollarOutlined } from "@ant-design/icons";
+import { DollarOutlined, MenuOutlined } from "@ant-design/icons";
 import Sidebar from "./Sidebar";
 import SectionManager from "./SectionManager";
 import VendorPaymentManagement from "./VendorPaymentManagement";
@@ -44,7 +45,11 @@ import CashTicketManagement from "./CashTicketManagement";
 import VendorPaymentCalendar from "./VendorPaymentCalendar";
 import ExpectedCollectionAnalysis from "./ExpectedCollectionAnalysis";
 import MarketOpenSpaceScreen from "./MarketOpenSpaceScreen";
+import DashboardSourceCollections from "./DashboardSourceCollections";
+import DashboardDepartmentBalances from "./DashboardDepartmentBalances";
 import VendorManagement from "./VendorManagement";
+import VendorQrCodeManagement from "./VendorQrCodeManagement";
+import CollectorAccountManagement from "./CollectorAccountManagement";
 import ProductManagement from "./ProductManagement";
 import AdminProfile from "./AdminProfile";
 import StallRateDashboard from "./StallRateDashboard";
@@ -55,16 +60,21 @@ import EventStallManagement from "./EventStallManagement";
 import EventPaymentManagement from "./EventPaymentManagement";
 import EventVendorManagement from "./EventVendorManagement";
 import EventSalesReporting from "./EventSalesReporting";
+import SlaughterCollectionManagement from "./SlaughterCollectionManagement";
+import SlaughterReports from "./SlaughterReports";
 import api from "../Api";
 import Footer from "../Auth/Footer";
+import "./Dashboard.css";
 
 import {
   ResponsiveContainer,
   BarChart,
+  LineChart,
   CartesianGrid,
   XAxis,
   YAxis,
   Bar,
+  Line,
   Legend,
   Tooltip as RechartsTooltip
 } from 'recharts';
@@ -73,6 +83,34 @@ import {
 const { Content, Header } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;
+
+const screenLabels = {
+  dashboard: "Dashboard",
+  "vendor-management": "Vendor Management",
+  "vendor-qr-codes": "Vendor QR Codes",
+  "collector-accounts": "Collector & Staff Accounts",
+  "product-management": "Product Management",
+  "office-activities": "Office Activities",
+  "cash-ticket": "Cash Ticket Payments",
+  "vendor-payment-calendar": "Payment Schedule",
+  "market-section-stalls": "Market Layout Management",
+  "stall-rate-dashboard": "Stall Rates",
+  "vendor-payment": "Payment Settlement",
+  "payment-management": "Payment Management",
+  target: "Targets Report",
+  "remaining-balance": "Vendor Balances",
+  "rental-report": "Rental Report",
+  estimated_collection: "Estimates Collection",
+  "market-open-space-collections": "Collections",
+  "slaughter-collections": "Slaughter Collections",
+  "slaughter-reports": "Slaughter Reports",
+  profile: "Admin Profile",
+  "event-activities": "Activities",
+  "event-stalls": "Event Stalls",
+  "event-payments": "Event Payments",
+  "event-vendors": "Event Vendors",
+  "event-sales-reports": "Sales Reports",
+};
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -114,6 +152,8 @@ const AdminDashboard = () => {
     const pathToScreenMap = {
       'dashboard': 'dashboard',
       'vendor-management': 'vendor-management',
+      'vendor-qr-codes': 'vendor-qr-codes',
+      'collector-accounts': 'collector-accounts',
       'product-management': 'product-management',
       'office-activities': 'office-activities',
 
@@ -128,6 +168,8 @@ const AdminDashboard = () => {
       'rental-report': 'rental-report',
       'estimated_collection': 'estimated_collection',
       'market-open-space-collections': 'market-open-space-collections',
+      'slaughter-collections': 'slaughter-collections',
+      'slaughter-reports': 'slaughter-reports',
       'profile': 'profile',
       // Event Management Routes
       'event-activities': 'event-activities',
@@ -144,21 +186,39 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({
     rentedStalls: 0,
     availableStalls: 0,
+    totalStalls: 0,
     vendors: 0,
-    incharges: 0,
-    main: 0,
-    meat: 0,
-    today_expected_collection: 0,
-    monthly_expected_collection: 0,
+    market_daily_collection: 0,
+    market_monthly_collection: 0,
+    market_monthly_revenue: 0,
+    open_space_daily_collection: 0,
+    open_space_monthly_collection: 0,
+    open_space_monthly_revenue: 0,
+    taboc_gym_daily_collection: 0,
+    taboc_gym_monthly_collection: 0,
+    taboc_gym_monthly_revenue: 0,
+    collection_comparison: { market_daily_vs_expected: 0 },
+    top_performer: null,
   });
   const [sectionStats, setSectionStats] = useState([]);
   const [departmentIncome, setDepartmentIncome] = useState([]);
+  const [monthlyCollectionTrend, setMonthlyCollectionTrend] = useState([]);
   const [financialSummary, setFinancialSummary] = useState({
     total_collected_this_year: 0,
     total_remaining_balance: 0,
     total_collected_all_time: 0,
     year_over_year_growth: 0,
+    year_over_year_change: 0,
     previous_year_collected: 0,
+    previous_year_collected_formatted: '0.00',
+  });
+  const [sourceComparison, setSourceComparison] = useState({
+    period: '',
+    current_total: 0,
+    previous_total: 0,
+    change: 0,
+    current_year: new Date().getFullYear(),
+    previous_year: new Date().getFullYear() - 1,
   });
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(null); // null for current/default, 1-12 for specific months
@@ -175,6 +235,10 @@ const AdminDashboard = () => {
   const cardBackground = "#ffffff";
   const textPrimary = "#0f172a";
   const textSecondary = "#64748b";
+  const formatCurrency = (amount) => `₱${Number(amount || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 
   // Month options for dropdown
   const monthOptions = [
@@ -231,6 +295,8 @@ const AdminDashboard = () => {
         setDepartmentIncome(data.department_income);
         setFinancialSummary(data.financial_summary);
         setAvailableYears(data.available_years);
+        setMonthlyCollectionTrend(data.monthly_collection_trend || []);
+        setSourceComparison(data.collection_sources?.comparison || {});
       } catch (error) {
         console.warn(error);
       } finally {
@@ -242,23 +308,14 @@ const AdminDashboard = () => {
 
   // Separate effect for revenue performance data
   useEffect(() => {
+    if (!selectedMonth) return;
+
     const fetchRevenueData = async () => {
       try {
-        let url = `/dashboard/stats?year=${selectedYear}`;
-        if (selectedMonth) {
-          url += `&month=${selectedMonth}`;
-        }
+        const url = `/dashboard/stats?year=${selectedYear}&month=${selectedMonth}&revenue_only=1`;
         const { data } = await api.get(url);
-        // Only update revenue-related stats
-        setStats(prevStats => ({
-          ...prevStats,
-          market_monthly_revenue: data.basic_stats.market_monthly_revenue,
-          open_space_monthly_revenue: data.basic_stats.open_space_monthly_revenue,
-          taboc_gym_monthly_revenue: data.basic_stats.taboc_gym_monthly_revenue,
-          market_monthly_collection: data.basic_stats.market_monthly_collection,
-          open_space_monthly_collection: data.basic_stats.open_space_monthly_collection,
-          taboc_gym_monthly_collection: data.basic_stats.taboc_gym_monthly_collection,
-        }));
+        setStats((current) => ({ ...current, ...data.basic_stats }));
+        setSourceComparison(data.collection_sources?.comparison || {});
       } catch (error) {
         console.warn('Failed to fetch revenue data:', error);
       }
@@ -348,6 +405,7 @@ const AdminDashboard = () => {
 
   const renderDashboard = () => (
     <div
+      className="admin-overview"
       style={{
         padding: window.innerWidth < 768 ? "16px" : window.innerWidth < 1024 ? "20px" : "24px",
         maxWidth: "100%",
@@ -358,18 +416,20 @@ const AdminDashboard = () => {
     >
       {/* Header */}
       <div
+        className="dashboard-overview-header"
         style={{
           marginBottom: window.innerWidth < 768 ? 24 : 32,
           display: "flex",
-          justifyContent: window.innerWidth < 768 ? "center" : "space-between",
+          justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
           gap: window.innerWidth < 768 ? 12 : 16,
         }}
       >
-        <div>
+        <div className="dashboard-overview-copy">
           <Title
             level={2}
+            className="dashboard-overview-title"
             style={{
               margin: 0,
               color: textPrimary,
@@ -381,12 +441,13 @@ const AdminDashboard = () => {
             {window.innerWidth < 768 ? 'Dashboard' : 'Dashboard Overview'}
           </Title>
           {window.innerWidth >= 768 && (
-            <Text style={{ color: textSecondary, fontSize: 14 }}>
+            <Text className="dashboard-overview-subtitle" style={{ color: textSecondary, fontSize: 14 }}>
               Municipal Economic Enterprise Office - Market Management System
             </Text>
           )}
         </div>
         <div
+          className="dashboard-overview-year-control"
           style={{
             display: "flex",
             alignItems: "center",
@@ -399,16 +460,26 @@ const AdminDashboard = () => {
           }}
         >
           <FiCalendar style={{ color: primaryColor, fontSize: window.innerWidth < 768 ? 14 : 16 }} />
-          {window.innerWidth >= 768 && (
-            <Text style={{ color: textSecondary, fontSize: window.innerWidth < 768 ? 12 : 14, fontWeight: 500 }}>
-              {new Date().getFullYear()}
-            </Text>
-          )}
+          <Text style={{ color: textSecondary, fontSize: 13, fontWeight: 500 }}>Year</Text>
+          <Select
+            aria-label="Select dashboard year"
+            value={selectedYear}
+            onChange={(year) => {
+              setSelectedYear(year);
+              setSelectedMonth(null);
+            }}
+            style={{ width: 104 }}
+            size="small"
+          >
+            {(availableYears.length ? availableYears : [selectedYear]).map((year) => (
+              <Option key={year} value={Number(year)}>{year}</Option>
+            ))}
+          </Select>
         </div>
       </div>
 
       {/* Statistics Overview */}
-      <Row gutter={[window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 24, window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 24]} style={{ marginBottom: window.innerWidth < 768 ? 20 : 32 }}>
+      <Row className="dashboard-metrics-row" gutter={[window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 24, window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 24]} style={{ marginBottom: window.innerWidth < 768 ? 20 : 32 }}>
         <Col xs={24} sm={12} md={12} lg={6} xl={6}>
           <StatCard
             title="Available Stalls"
@@ -421,12 +492,22 @@ const AdminDashboard = () => {
         </Col>
         <Col xs={24} sm={12} md={12} lg={6} xl={6}>
           <StatCard
-            title="Rented Stalls"
+            title="Total Stalls"
+            value={stats.totalStalls}
+            icon={<FaStore />}
+            color="#3b82f6"
+            targetView="market-section-stalls"
+            subtitle={window.innerWidth < 768 ? "Total" : "across all sections"}
+          />
+        </Col>
+        <Col xs={24} sm={12} md={12} lg={6} xl={6}>
+          <StatCard
+            title="Occupied Stalls"
             value={stats.rentedStalls}
             icon={<FaStore />}
             color="#f59e0b"
             targetView="market-section-stalls"
-            subtitle={window.innerWidth < 768 ? "Rented" : "currently occupied"}
+            subtitle={window.innerWidth < 768 ? "Occupied" : "currently rented"}
           />
         </Col>
         <Col xs={24} sm={12} md={12} lg={6} xl={6}>
@@ -434,25 +515,17 @@ const AdminDashboard = () => {
             title="Active Vendors"
             value={stats.vendors}
             icon={<FaUsers />}
-            color="#3b82f6"
+            color="#16717a"
             targetView="vendor-management"
-            subtitle={window.innerWidth < 768 ? "Vendors" : "registered vendors"}
-          />
-        </Col>
-        <Col xs={24} sm={12} md={12} lg={6} xl={6}>
-          <StatCard
-            title="Active Rentals"
-            value={stats.rentedStalls}
-            icon={<FaClipboardList />}
-            color="#8b5cf6"
-            targetView="vendor-management"
-            subtitle={window.innerWidth < 768 ? "Rentals" : "active contracts"}
+            subtitle={window.innerWidth < 768 ? "Vendors" : "active vendors"}
           />
         </Col>
       </Row>
 
+      <DashboardSourceCollections year={selectedYear} />
+
       {/* Revenue Overview */}
-      <div style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
+      <div className="legacy-revenue-overview" style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
         <Title
           level={3}
           style={{
@@ -465,7 +538,7 @@ const AdminDashboard = () => {
          {window.innerWidth < 768 ? 'Revenue Analytics' : 'Revenue Projections Analytics'}
         </Title>
       </div>
-      <Row gutter={[window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 20, window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 20]} style={{ marginBottom: window.innerWidth < 768 ? 20 : 32 }}>
+      <Row className="revenue-summary-row legacy-revenue-summary-row" gutter={[window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 20, window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 20]} style={{ marginBottom: window.innerWidth < 768 ? 20 : 32 }}>
         <Col xs={24} sm={12} md={12} lg={8} xl={6}>
           <Card
             hoverable
@@ -756,7 +829,7 @@ const AdminDashboard = () => {
       </Row>
 
       {/* Performance Analytics */}
-      <Row gutter={[window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 24, window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 24]} style={{ marginBottom: window.innerWidth < 768 ? 20 : 32 }}>
+      <Row className="legacy-performance-row" gutter={[window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 24, window.innerWidth < 768 ? 12 : window.innerWidth < 1024 ? 16 : 24]} style={{ marginBottom: window.innerWidth < 768 ? 20 : 32 }}>
         <Col xs={24} lg={24} xl={16}>
           <Card
             hoverable
@@ -1029,7 +1102,7 @@ const AdminDashboard = () => {
       </Row>
 
       {/* Financial Summary */}
-      <Row gutter={window.innerWidth < 768 ? [12, 12] : [16, 16]} style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
+      <Row className="financial-summary-row" gutter={window.innerWidth < 768 ? [12, 12] : [16, 16]} style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card
             hoverable
@@ -1079,6 +1152,7 @@ const AdminDashboard = () => {
                 >
                   ₱{financialSummary.total_collected_this_year_formatted || '0.00'}
                 </Text>
+                <Text className="financial-summary-note">Recorded in {selectedYear}</Text>
               </div>
             </div>
           </Card>
@@ -1133,6 +1207,7 @@ const AdminDashboard = () => {
                 >
                   ₱{financialSummary.total_remaining_balance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
                 </Text>
+                <Text className="financial-summary-note">Outstanding rental balances</Text>
               </div>
             </div>
           </Card>
@@ -1152,7 +1227,7 @@ const AdminDashboard = () => {
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div
                 style={{
-                  background: financialSummary.year_over_year_growth >= 0 
+                  background: financialSummary.year_over_year_change >= 0 
                     ? successColor 
                     : dangerColor,
                   color: "white",
@@ -1177,17 +1252,20 @@ const AdminDashboard = () => {
                     marginBottom: 2,
                   }}
                 >
-                  Year-over-Year Growth
+                  Annual Collection Change
                 </Text>
                 <Text
                   strong
                   style={{
                     fontSize: 16,
-                    color: financialSummary.year_over_year_growth >= 0 ? successColor : dangerColor,
+                    color: financialSummary.year_over_year_change >= 0 ? successColor : dangerColor,
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
-                  {financialSummary.year_over_year_growth >= 0 ? "+" : ""}{financialSummary.year_over_year_growth.toFixed(2)}%
+                  {financialSummary.year_over_year_change >= 0 ? "+" : "−"}{formatCurrency(Math.abs(financialSummary.year_over_year_change))}
+                </Text>
+                <Text style={{ display: "block", marginTop: 3, color: textSecondary, fontSize: 11 }}>
+                  vs ₱{financialSummary.previous_year_collected_formatted} in {selectedYear - 1}
                 </Text>
               </div>
             </div>
@@ -1243,16 +1321,79 @@ const AdminDashboard = () => {
                 >
                   ₱{financialSummary.total_collected_all_time_formatted || '0.00'}
                 </Text>
+                <Text className="financial-summary-note">Cumulative recorded collections</Text>
               </div>
             </div>
           </Card>
         </Col>
       </Row>
 
+      {/* Collection Trend Analytics */}
+      <Row gutter={[16, 16]} style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
+        <Col span={24}>
+          <Card
+            title="Monthly Collections by Source"
+            extra={<span className="collection-trend-period">{selectedYear}</span>}
+            className="collection-trend-card"
+            style={{ background: cardBackground, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}
+            bodyStyle={{ padding: window.innerWidth < 768 ? 12 : 20 }}
+          >
+            <div className="collection-trend-summary">
+              <span className="collection-trend-description">
+                Year-to-date collections through the selected month, compared with the same period last year.
+              </span>
+              <div className="collection-period-comparison">
+                <div className="collection-period-total">
+                  <span>{sourceComparison.period} {sourceComparison.current_year || selectedYear}</span>
+                  <strong>{formatCurrency(sourceComparison.current_total)}</strong>
+                </div>
+                <span className="collection-period-vs">vs</span>
+                <div className="collection-period-total">
+                  <span>{sourceComparison.period} {sourceComparison.previous_year || selectedYear - 1}</span>
+                  <strong>{formatCurrency(sourceComparison.previous_total)}</strong>
+                </div>
+                <div className={`collection-period-change ${Number(sourceComparison.change) >= 0 ? 'positive' : 'negative'}`}>
+                  <span>Difference</span>
+                  <strong>{Number(sourceComparison.change) >= 0 ? '+' : '−'}{formatCurrency(Math.abs(Number(sourceComparison.change) || 0))}</strong>
+                </div>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={monthlyCollectionTrend} margin={{ top: 12, right: 16, left: 8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7ecef" />
+                <XAxis dataKey="month" tick={{ fill: textSecondary, fontSize: 12 }} axisLine={{ stroke: '#dbe3e6' }} />
+                <YAxis
+                  tick={{ fill: textSecondary, fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(value) => `₱${Number(value).toLocaleString()}`}
+                />
+                <RechartsTooltip
+                  formatter={(value, name) => [`₱${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, name]}
+                  contentStyle={{ border: '1px solid #dbe3e6', borderRadius: 6 }}
+                />
+                <Legend />
+                <Line type="monotone" dataKey="market" name="Market" stroke={primaryColor} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                <Line type="monotone" dataKey="wharf" name="Wharf" stroke="#d97706" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="slaughter" name="Slaughter" stroke="#16717a" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+        </Col>
+      </Row>
+
       {/* Section Statistics and Department Income */}
-      <Row gutter={window.innerWidth < 768 ? [12, 12] : [16, 16]} style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
+      <Row className="dashboard-insights-row" gutter={window.innerWidth < 768 ? [12, 12] : [16, 16]} style={{ marginBottom: window.innerWidth < 768 ? 24 : 32 }}>
+        <Col xs={24} lg={12} xl={16}>
+          <DashboardDepartmentBalances
+            year={selectedYear}
+            departments={departmentIncome}
+            loading={loading}
+          />
+        </Col>
         <Col xs={24} lg={12} xl={8}>
           <Card
+            className="section-statistics-card"
             title={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <FiPieChart style={{ color: primaryColor, fontSize: window.innerWidth < 768 ? 14 : 16 }} />
@@ -1269,6 +1410,7 @@ const AdminDashboard = () => {
               {sectionStats.map((section, index) => (
                 <div
                   key={section.id}
+                  className="section-stat-item"
                   style={{
                     marginBottom: 12,
                     padding: 12,
@@ -1281,22 +1423,12 @@ const AdminDashboard = () => {
                     <Text strong style={{ fontSize: 14, color: textPrimary }}>
                       {section.name}
                     </Text>
-                    <div
-                      style={{
-                        background: section.occupancy_rate >= 80 ? successColor : 
-                                   section.occupancy_rate >= 50 ? warningColor : dangerColor,
-                        color: "white",
-                        padding: "4px 8px",
-                        borderRadius: 12,
-                        fontSize: 11,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {section.occupancy_rate.toFixed(1)}% Occupied
+                    <div className={`section-occupancy-badge ${section.occupancy_rate >= 80 ? 'high' : section.occupancy_rate >= 50 ? 'medium' : 'low'}`}>
+                      {section.occupancy_rate.toFixed(1)}% occupied
                     </div>
                   </div>
                   
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <div className="section-stall-status" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                     <div>
                       <Text style={{ fontSize: 12, color: textSecondary }}>
                         Stall Status
@@ -1323,7 +1455,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <div style={{ 
+                  <div className="section-occupancy-track" style={{ 
                     width: "100%", 
                     height: 4, 
                     background: "#e2e8f0", 
@@ -1331,11 +1463,10 @@ const AdminDashboard = () => {
                     overflow: "hidden",
                   }}>
                     <div
+                      className={`section-occupancy-fill ${section.occupancy_rate >= 80 ? 'high' : section.occupancy_rate >= 50 ? 'medium' : 'low'}`}
                       style={{
                         width: `${section.occupancy_rate}%`,
                         height: "100%",
-                        background: section.occupancy_rate >= 80 ? successColor : 
-                                   section.occupancy_rate >= 50 ? warningColor : dangerColor,
                         borderRadius: 2,
                       }}
                     />
@@ -1346,122 +1477,7 @@ const AdminDashboard = () => {
           </Card>
         </Col>
 
-        <Col xs={24} lg={12}>
-          <Card
-            title={
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <DollarOutlined style={{ color: successColor }} />
-                <span>Department Income & Targets</span>
-              </div>
-            }
-            style={{
-              borderRadius: 12,
-              border: "1px solid #e2e8f0",
-              background: cardBackground,
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            }}
-            bodyStyle={{ padding: 16 }}
-          >
-            <div style={{ maxHeight: 400, overflowY: "auto" }}>
-              {departmentIncome.map((dept) => (
-                <div
-                  key={dept.id}
-                  style={{
-                    marginBottom: 12,
-                    padding: 12,
-                    background: backgroundColor,
-                    borderRadius: 8,
-                    border: "1px solid #e2e8f0",
-                  }}
-                >
-                  <div style={{ marginBottom: 8 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Text strong style={{ fontSize: 14, color: textPrimary }}>
-                        {dept.name}
-                      </Text>
-                      {dept.annual_target > 0 ? (
-                        <div
-                          style={{
-                            background: dept.progress_percentage >= 100 ? successColor : 
-                                       dept.progress_percentage >= 75 ? warningColor : dangerColor,
-                            color: "white",
-                            padding: "4px 8px",
-                            borderRadius: 12,
-                            fontSize: 11,
-                            fontWeight: 600,
-                          }}
-                        >
-                          {dept.progress_percentage.toFixed(1)}% Complete
-                        </div>
-                      ) : (
-                        <div
-                          style={{
-                            background: neutralColor,
-                            color: "white",
-                            padding: "4px 8px",
-                            borderRadius: 12,
-                            fontSize: 11,
-                            fontWeight: 600,
-                          }}
-                        >
-                          No Target Set
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {dept.annual_target > 0 ? (
-                    <>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                        <Text style={{ fontSize: 11, color: textSecondary }}>
-                          Target: ₱{dept.annual_target_formatted?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </Text>
-                        <Text style={{ fontSize: 11, color: textSecondary }}>
-                          Collected: ₱{dept.current_year_collection_formatted?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </Text>
-                      </div>
-                      
-                      <div style={{ width: "100%", background: "#e2e8f0", borderRadius: 2, height: 4 }}>
-                        <div
-                          style={{
-                            width: `${Math.min(dept.progress_percentage, 100)}%`,
-                            background: dept.progress_percentage >= 100 ? successColor : 
-                                       dept.progress_percentage >= 75 ? warningColor : dangerColor,
-                            height: "100%",
-                            borderRadius: 2,
-                          }}
-                        />
-                      </div>
-                      
-                      <div style={{ marginTop: 6, textAlign: "right" }}>
-                        <Text 
-                          style={{ 
-                            fontSize: 11, 
-                            fontWeight: 600,
-                            color: dept.remaining_balance <= 0 ? successColor : dangerColor,
-                          }}
-                        >
-                          {dept.remaining_balance <= 0 ? "Target Met" : `Remaining: ₱${dept.remaining_amount_formatted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                        </Text>
-                      </div>
-                    </>
-                  ) : (
-                    <div style={{ textAlign: "center", padding: "12px 0" }}>
-                      <Text style={{ fontSize: 12, color: textSecondary }}>
-                        No annual target set for this department
-                      </Text>
-                      <div style={{ marginTop: 6 }}>
-                        <Text style={{ fontSize: 12, color: successColor, fontWeight: 600 }}>
-                          Collected: ₱{dept.total_collected?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
-                        </Text>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </Card>
-        </Col>
+        
       </Row>
     </div>
   );
@@ -1476,6 +1492,12 @@ const AdminDashboard = () => {
    
 case "vendor-management":
   return <VendorManagement />;
+
+case "vendor-qr-codes":
+  return <VendorQrCodeManagement />;
+
+case "collector-accounts":
+  return <CollectorAccountManagement />;
    
 case "product-management":
   return <ProductManagement />;
@@ -1510,6 +1532,12 @@ return <ExpectedCollectionAnalysis />;
 
 case "market-open-space-collections":
 return <MarketOpenSpaceScreen />;
+
+case "slaughter-collections":
+  return <SlaughterCollectionManagement />;
+
+case "slaughter-reports":
+  return <SlaughterReports />;
 
 case "stall-rate-dashboard":
   return <StallRateDashboard />;
@@ -1579,39 +1607,22 @@ case "payment-management":
             zIndex: 1000,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: window.innerWidth < 768 ? 8 : 12 }}>
-            <img
-              src="/logo_meeo.png"
-              alt="logo"
-              style={{
-                width: window.innerWidth < 768 ? 28 : 32,
-                height: window.innerWidth < 768 ? 28 : 32,
-                borderRadius: "8px",
-                objectFit: "cover",
-              }}
+          <div className="admin-header-breadcrumb">
+            <Button
+              type="text"
+              className="admin-header-menu-button"
+              icon={<MenuOutlined />}
+              onClick={() => setIsSidebarCollapsed((previous) => !previous)}
+              aria-label="Toggle sidebar"
             />
-            {window.innerWidth >= 768 && (
-              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
-                <span
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 600,
-                    color: textPrimary,
-                  }}
-                >
-                  Admin Dashboard
-                </span>
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: textSecondary,
-                    fontWeight: 400,
-                  }}
-                >
-                  Municipal Economic Enterprise Office
-                </span>
-              </div>
+            <span className="admin-header-divider" />
+            {activeView !== "dashboard" && (
+              <>
+                <span className="admin-header-parent">Dashboard</span>
+                <span className="admin-header-chevron">›</span>
+              </>
             )}
+            <strong>{screenLabels[activeView] || "Dashboard"}</strong>
           </div>
 
           <div
@@ -1690,4 +1701,3 @@ case "payment-management":
 
 
 export default AdminDashboard;
-

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import dayjs from "dayjs";
 import {
   Button,
   Input,
@@ -90,6 +91,7 @@ const SectionManager = () => {
   const [vacantStalls, setVacantStalls] = useState([]);
   const [selectedStalls, setSelectedStalls] = useState([]);
   const [paymentType, setPaymentType] = useState('daily');
+  const [assignmentDate, setAssignmentDate] = useState(dayjs());
   const [customDailyRate, setCustomDailyRate] = useState(null);
   const [customMonthlyRate, setCustomMonthlyRate] = useState(null);
   
@@ -617,6 +619,7 @@ const handleUpdateSection = async () => {
         vendor_id: selectedVendor,
         stall_ids: selectedStalls,
         payment_type: paymentType,
+        assignment_date: assignmentDate.format('YYYY-MM-DD'),
       };
 
       const response = await api.post('/market-layout/multi-assign-stalls', payload);
@@ -643,6 +646,7 @@ const handleUpdateSection = async () => {
     setVacantStalls([]);
     setSelectedStalls([]);
     setPaymentType('both');
+    setAssignmentDate(dayjs());
     setCustomDailyRate(null);
     setCustomMonthlyRate(null);
   };
@@ -1361,6 +1365,17 @@ const handleUpdateSection = async () => {
                   <Option value="monthly">Monthly</Option>
                  
                 </Select>
+              </Form.Item>
+
+              <Form.Item label="Assignment Date" required>
+                <DatePicker
+                  style={{ width: '100%' }}
+                  value={assignmentDate}
+                  onChange={setAssignmentDate}
+                  allowClear={false}
+                  disabledDate={(current) => current && current.isAfter(dayjs(), 'day')}
+                  format="YYYY-MM-DD"
+                />
               </Form.Item>
             </Form>
           </Col>

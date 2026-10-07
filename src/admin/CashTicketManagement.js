@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import api from "../Api";
 import {
   Card,
@@ -33,6 +33,7 @@ import {
   CalendarOutlined,
   SettingOutlined,
   ReloadOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import LoadingOverlay from "./Loading";
 import dayjs from "dayjs";
@@ -47,6 +48,11 @@ const { Option } = Select;
 // Helper function to format amount with commas
 const formatAmount = (amount) => {
   return parseFloat(amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+
+const getTicketLabel = (ticket) => {
+  if (!ticket) return 'Ticket';
+  return ticket.enterprise ? `${ticket.enterprise} · ${ticket.type}` : ticket.type;
 };
 
 // Minimalist color scheme
@@ -80,8 +86,39 @@ const CashTicketManagement = () => {
   const [paymentForm] = Form.useForm();
   const [selectedTicketType, setSelectedTicketType] = useState('all'); // 'all' or specific type id
 
+  const selectedTypeName = useMemo(() => {
+    if (selectedTicketType === 'all') return 'All Cash Ticket Types';
+    const foundType = cashTicketTypes.find(type => type.id.toString() === selectedTicketType);
+    return foundType ? getTicketLabel(foundType) : 'Selected Ticket Type';
+  }, [selectedTicketType, cashTicketTypes]);
+
+  const summaryStats = useMemo(() => {
+    const visibleTypes = selectedTicketType === 'all'
+      ? cashTicketTypes
+      : cashTicketTypes.filter(type => type.id.toString() === selectedTicketType);
+
+    const totalCollected = data.reduce((sum, row) => {
+      const rowTotal = visibleTypes.reduce((rowSum, type) => {
+        return rowSum + parseFloat(row.types?.[type.id]?.amount || 0);
+      }, 0);
+      return sum + rowTotal;
+    }, 0);
+
+    return {
+      totalCollected,
+      totalTypes: cashTicketTypes.length,
+      entries: data.length,
+      currentView: viewMode === 'daily'
+        ? `${dayjs().month(selectedMonth - 1).format('MMMM')} ${selectedYear}`
+        : `${selectedYear}`,
+    };
+  }, [data, selectedTicketType, cashTicketTypes, viewMode, selectedMonth, selectedYear]);
+
   useEffect(() => {
     fetchCashTicketTypes();
+  }, []);
+
+  useEffect(() => {
     fetchData();
   }, [selectedYear, selectedMonth, viewMode]);
 
@@ -310,8 +347,8 @@ const CashTicketManagement = () => {
       
       // Prepare table data
       const tableColumns = viewMode === 'daily' 
-        ? ['Date', ...typesToShow.map(t => t.type), 'Total']
-        : ['Month', ...typesToShow.map(t => t.type), 'Total'];
+        ? ['Date', ...typesToShow.map(getTicketLabel), 'Total']
+        : ['Month', ...typesToShow.map(getTicketLabel), 'Total'];
       
       const tableData = data.map(row => {
         const rowData = viewMode === 'daily'
@@ -391,59 +428,99 @@ const CashTicketManagement = () => {
     return targetDate.isSame(today, 'day') || targetDate.isBefore(today, 'day');
   };
 
-  const generateColumns = () => {
-    const columns = [
-      {
-        title: viewMode === 'daily' ? "Date" : "Month",
-        dataIndex: viewMode === 'daily' ? "date" : "month_name",
-        key: "date",
-        width: 120,
-        fixed: 'left',
-        render: (date, record) => (
+ const getRowKey = (record, index) => {
+  if (viewMode === 'daily') {
+    return record.date
+      ? `daily-${record.date}`
+      : `daily-row-${index}`;
+  }
+
+  return record.month_name
+    ? `monthly-${record.month_name}-${index}`
+    : `monthly-row-${index}`;
+};
+
+const generateColumns = () => {
+  const columns = [
+    {
+      title: viewMode === 'daily' ? "Date" : "Month",
+      dataIndex: viewMode === 'daily' ? "date" : "month_name",
+      key: viewMode === 'daily' ? "date" : "month",
+      width: 160,
+      fixed: 'left',
+      align: 'left',
+      render: (date, record) => {
+        const hasCollection = viewMode === 'daily'
+          ? Object.values(record.types || {}).some(value => parseFloat(value?.amount || 0) > 0)
+          : true;
+
+        return (
           <div className="date-cell">
             <Text strong>
-              {viewMode === 'daily' ? dayjs(date).format("MMM DD, YYYY") : date}
+              {viewMode === 'daily'
+                ? dayjs(date).format("MMM DD, YYYY")
+                : date}
             </Text>
+
             {viewMode === 'daily' && (
-              <Text type="secondary" className="date-weekday">
-                {dayjs(date).format('dddd')}
-              </Text>
+              <div className="date-meta">
+                <Text type="secondary" className="date-weekday">
+                  {dayjs(date).format('dddd')}
+                </Text>
+               
+              </div>
             )}
           </div>
-        ),
+        );
       },
-    ];
+    },
+  ];
 
-    // Add dynamic columns for each cash ticket type or just the selected one
-    const typesToShow = selectedTicketType === 'all' 
-      ? cashTicketTypes 
-      : cashTicketTypes.filter(type => type.id.toString() === selectedTicketType);
+  // Add dynamic columns for each cash ticket type
+  const typesToShow =
+    selectedTicketType === 'all'
+      ? cashTicketTypes
+      : cashTicketTypes.filter(
+          type => type.id.toString() === selectedTicketType
+        );
 
-    if (typesToShow.length === 0) {
+  if (typesToShow.length === 0) {
+    columns.push({
+      title:
+        selectedTicketType === 'all'
+          ? "No Types Available"
+          : "Type Not Found",
+      key: "no_types",
+      width: 200,
+      align: "center",
+      render: () => (
+        <Text type="secondary">
+          {selectedTicketType === 'all'
+            ? "Please add cash ticket types first"
+            : "Selected type not found"}
+        </Text>
+      ),
+    });
+  } else {
+    typesToShow.forEach(type => {
       columns.push({
-        title: selectedTicketType === 'all' ? "No Types Available" : "Type Not Found",
-        key: "no_types",
-        width: 200,
-        align: "center",
-        render: () => (
-          <Text type="secondary">
-            {selectedTicketType === 'all' ? "Please add cash ticket types first" : "Selected type not found"}
-          </Text>
-        ),
-      });
-    } else {
-      typesToShow.forEach(type => {
-      columns.push({
-        title: type.type,
+        title: getTicketLabel(type),
         key: `type_${type.id}`,
-        width: 120,
-        align: "right",
+        width: 160,
+        align: "center",
         render: (_, record) => {
-          const amount = parseFloat(record.types[type.id]?.amount || 0);
+          const amount = parseFloat(
+            record.types?.[type.id]?.amount || 0
+          );
+
           return (
-            <Text 
-              strong 
-              className={amount > 0 ? "amount-active" : "amount-inactive"}
+            <Text
+              strong
+              className={
+                amount > 0
+                  ? "amount-active"
+                  : "amount-inactive"
+              }
             >
               ₱{formatAmount(amount)}
             </Text>
@@ -451,82 +528,85 @@ const CashTicketManagement = () => {
         },
       });
     });
-    }
+  }
 
+  // Total column
+  columns.push({
+    title: "Total Collected",
+    dataIndex: "total",
+    key: "total",
+    width: 140,
+    align: "center",
+    fixed: 'right',
+    render: (_, record) => {
+      const filteredTotal = typesToShow.reduce((sum, type) => {
+        return (
+          sum +
+          parseFloat(
+            record.types?.[type.id]?.amount || 0
+          )
+        );
+      }, 0);
+
+      return (
+        <Text
+          strong
+          className="total-amount"
+        >
+          ₱{formatAmount(filteredTotal)}
+        </Text>
+      );
+    },
+  });
+
+  // Actions column - Daily only
+  if (viewMode === 'daily') {
     columns.push({
-      title: "Total Collected",
-      dataIndex: "total",
-      key: "total",
-      width: 140,
-      align: "right",
+      title: "Actions",
+      key: "actions",
+      width: 100,
+      align: "center",
       fixed: 'right',
       render: (_, record) => {
-        // Calculate total based on selected ticket type
-        const typesToShow = selectedTicketType === 'all' 
-          ? cashTicketTypes 
-          : cashTicketTypes.filter(type => type.id.toString() === selectedTicketType);
-        
-        const filteredTotal = typesToShow.reduce((sum, type) => {
-          return sum + parseFloat(record.types[type.id]?.amount || 0);
-        }, 0);
-        
+        const editable = canEdit(record.date);
+
         return (
-          <Text 
-            strong 
-            className="total-amount"
+          <Tooltip
+            title={
+              editable
+                ? "Record or update this day's collections"
+                : "Collection editing is only available for current and past dates"
+            }
           >
-            ₱{formatAmount(filteredTotal)}
-          </Text>
+            <Button
+              size="small"
+              icon={<EditOutlined />}
+              className={
+                editable
+                  ? "btn-edit"
+                  : "btn-disabled"
+              }
+              onClick={() => {
+                if (editable) {
+                  openPaymentModal(record.date);
+                } else {
+                  message.warning(
+                    "You can only record collections for today or earlier dates"
+                  );
+                }
+              }}
+              disabled={!editable}
+            >
+              {editable ? 'Record' : 'Locked'}
+            </Button>
+          </Tooltip>
         );
       },
     });
+  }
 
-    if (viewMode === 'daily') {
-      columns.push({
-        title: "Actions",
-        key: "actions",
-        width: 100,
-        align: "center",
-        fixed: 'right',
-        render: (_, record) => (
-          <Tooltip title={canEdit(record.date) ? "Edit Today's Collections" : "Cannot edit - not today"}>
-            <Button
-              style={{
-                backgroundColor: 'white',
-                color: 'black',
-                borderColor: 'black'
-              }}
-              size="small"
-              icon={<EditOutlined />}
-              className={canEdit(record.date) ? "btn-edit" : "btn-disabled"}
-              onClick={() => {
-                if (canEdit(record.date)) {
-                  openPaymentModal(record.date);
-                } else {
-                  message.warning("You can only edit collections for today");
-                }
-              }}
-              disabled={!canEdit(record.date)}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#f0f0f0';
-                e.target.style.color = 'black';
-                e.target.style.borderColor = '#404040';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'white';
-                e.target.style.color = 'black';
-                e.target.style.borderColor = 'black';
-              }}
-            >
-              Edit
-            </Button>
-          </Tooltip>
-        ),
-      });
-    }
-
-    return columns;
-  };
+  return columns;
+};
 
   return (
     <div className="cash-ticket-management">
@@ -538,79 +618,37 @@ const CashTicketManagement = () => {
           <div className="header-content">
             <div className="header-text">
               <Title level={1} className="page-title">
-                Cash Tickets Management
+                Cash Ticket Collections
               </Title>
               <Text className="page-subtitle">
                 {viewMode === 'daily' 
-                  ? `${dayjs().month(selectedMonth - 1).format('MMMM')} ${selectedYear} - Daily View`
-                  : `${selectedYear} - Monthly View`
+                  ? `Log and review daily cash ticket collections for ${dayjs().month(selectedMonth - 1).format('MMMM')} ${selectedYear}`
+                  : `Review monthly cash ticket collections and totals for ${selectedYear}`
                 }
               </Text>
             </div>
             <div className="header-actions">
               <Button
-                style={{
-                  backgroundColor: 'white',
-                  color: 'black',
-                  borderColor: 'black'
-                }}
+                className="action-button-secondary"
                 icon={<ReloadOutlined />}
                 onClick={() => {
                   fetchCashTicketTypes();
                   fetchData();
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f0f0f0';
-                  e.target.style.color = 'black';
-                  e.target.style.borderColor = '#404040';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'white';
-                  e.target.style.color = 'black';
-                  e.target.style.borderColor = 'black';
-                }}
               >
                 Refresh
               </Button>
               <Button
-                style={{
-                  backgroundColor: 'white',
-                  color: 'black',
-                  borderColor: 'black'
-                }}
+                className="action-button-primary"
                 icon={<PlusOutlined />}
                 onClick={() => openTypeModal()}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f0f0f0';
-                  e.target.style.color = 'black';
-                  e.target.style.borderColor = '#404040';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'white';
-                  e.target.style.color = 'black';
-                  e.target.style.borderColor = 'black';
-                }}
               >
                 Add Type
               </Button>
               <Button
-                style={{
-                  backgroundColor: 'white',
-                  color: 'black',
-                  borderColor: 'black'
-                }}
+                className="action-button-secondary"
                 icon={<FilePdfOutlined />}
                 onClick={exportToPDF}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f0f0f0';
-                  e.target.style.color = 'black';
-                  e.target.style.borderColor = '#404040';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'white';
-                  e.target.style.color = 'black';
-                  e.target.style.borderColor = 'black';
-                }}
               >
                 Export PDF
               </Button>
@@ -623,41 +661,71 @@ const CashTicketManagement = () => {
           <Card className="controls-card">
             <div className="controls-content">
               <div className="view-controls">
+                <span className="control-label">Collection View</span>
                 <Radio.Group
                   value={viewMode}
                   onChange={(e) => setViewMode(e.target.value)}
                   className="view-toggle"
                 >
-                  <Radio.Button value="daily">Daily View</Radio.Button>
-                  <Radio.Button value="monthly">Monthly View</Radio.Button>
+                  <Radio.Button value="daily">Daily Collection</Radio.Button>
+                  <Radio.Button value="monthly">Monthly Summary</Radio.Button>
                 </Radio.Group>
               </div>
               <div className="date-controls">
-                <DatePicker.YearPicker
-                  value={dayjs().year(selectedYear)}
-                  onChange={(date) => setSelectedYear(date?.year() || dayjs().year())}
-                  placeholder="Select year"
-                  className="date-picker"
-                />
-                {viewMode === 'daily' && (
-                  <DatePicker.MonthPicker
-                    value={dayjs().month(selectedMonth - 1)}
-                    onChange={(date) => setSelectedMonth(date?.month() + 1 || dayjs().month() + 1)}
-                    placeholder="Select month"
+                <div className="date-field">
+                  <span className="control-label">Year</span>
+                  <DatePicker.YearPicker
+                    value={dayjs().year(selectedYear)}
+                    onChange={(date) => setSelectedYear(date?.year() || dayjs().year())}
+                    placeholder="Select year"
                     className="date-picker"
                   />
+                </div>
+                {viewMode === 'daily' && (
+                  <div className="date-field">
+                    <span className="control-label">Month</span>
+                    <DatePicker.MonthPicker
+                      value={dayjs().month(selectedMonth - 1)}
+                      onChange={(date) => setSelectedMonth(date?.month() + 1 || dayjs().month() + 1)}
+                      placeholder="Select month"
+                      className="date-picker"
+                    />
+                  </div>
                 )}
               </div>
             </div>
           </Card>
         </section>
 
+        <section className="summary-section">
+          <div className="summary-grid">
+            <div className="summary-card summary-card-primary">
+              <span className="summary-label">Collection Total</span>
+              <strong>₱{formatAmount(summaryStats.totalCollected)}</strong>
+              <small>{selectedTypeName}</small>
+            </div>
+            <div className="summary-card summary-card-secondary">
+              <span className="summary-label">Recorded Entries</span>
+              <strong>{summaryStats.entries}</strong>
+              <small>{viewMode === 'daily' ? 'Daily collection rows' : 'Monthly collection rows'}</small>
+            </div>
+            <div className="summary-card summary-card-success">
+              <span className="summary-label">Collection Mode</span>
+              <strong>{viewMode === 'daily' ? 'Daily' : 'Monthly'}</strong>
+              <small>{summaryStats.currentView}</small>
+            </div>
+          </div>
+        </section>
+
         {/* Ticket Types Section */}
         <section className="ticket-types-section">
           <Card className="ticket-types-card">
-            <Title level={3} className="section-title">
-              Cash Ticket Types
-            </Title>
+            <div className="section-header-row">
+              <Title level={3} className="section-title">
+                Cash Ticket Types
+              </Title>
+              <span className="section-badge">{cashTicketTypes.length} Active</span>
+            </div>
             {cashTicketTypes.length === 0 ? (
               <Alert
                 message="No Cash Ticket Types"
@@ -679,9 +747,12 @@ const CashTicketManagement = () => {
                         <DollarOutlined />
                       </div>
                       <div className="ticket-type-info">
+                        <div className="ticket-type-enterprise">
+                          {type.enterprise || 'Enterprise not assigned'}
+                        </div>
                         <div className="ticket-type-name">{type.type}</div>
                         <div className="ticket-type-amount">
-                          ₱{formatAmount(type.amount || 0)}
+                          ₱{formatAmount(type.amount || 0)} per ticket
                         </div>
                       </div>
                     </div>
@@ -728,7 +799,7 @@ const CashTicketManagement = () => {
                       tab={
                         <span className="tab-label">
                           <DollarOutlined />
-                          {type.type}
+                          {getTicketLabel(type)}
                         </span>
                       } 
                       key={type.id.toString()} 
@@ -738,27 +809,37 @@ const CashTicketManagement = () => {
               )}
             </div>
             
-            <Table
-              columns={generateColumns()}
-              dataSource={data}
-              rowKey={record => viewMode === 'daily' ? record.date : record.month_name}
-              pagination={{
-                pageSize: viewMode === 'daily' ? 31 : 12,
-                showSizeChanger: false,
-                showQuickJumper: true,
-                showTotal: (total, range) =>
-                  `${range[0]}-${range[1]} of ${total} items`,
-              }}
-              scroll={{ x: (selectedTicketType === 'all' ? cashTicketTypes.length : 1) * 120 + 400 }}
-              className="data-table"
-            />
+          <Table
+  columns={generateColumns()}
+  dataSource={data}
+  rowKey={getRowKey}
+  pagination={{
+    pageSize: viewMode === 'daily' ? 31 : 12,
+    showSizeChanger: false,
+    showQuickJumper: true,
+    showTotal: (total, range) =>
+      `${range[0]}-${range[1]} of ${total} items`,
+  }}
+  scroll={{
+    x:
+      (selectedTicketType === 'all'
+        ? cashTicketTypes.length
+        : 1) * 160 + 400,
+  }}
+  className="data-table"
+/>
           </Card>
         </section>
       </div>
 
       {/* Add/Edit Cash Ticket Type Modal */}
       <Modal
-        title={editingType ? "Edit Cash Ticket Type" : "Add Cash Ticket Type"}
+        title={
+          <div className="modal-title-wrap">
+            <span className="modal-title-badge">{editingType ? 'Update' : 'New'}</span>
+            <span>{editingType ? "Cash Ticket Type" : "Cash Ticket Type"}</span>
+          </div>
+        }
         open={isTypeModalVisible}
         onCancel={() => {
           setIsTypeModalVisible(false);
@@ -766,8 +847,27 @@ const CashTicketManagement = () => {
           typeForm.resetFields();
         }}
         footer={null}
+        width={760}
+        centered
+        closeIcon={<CloseOutlined />}
+        styles={{
+          mask: {
+            backgroundColor: 'rgba(20, 33, 61, 0.58)',
+            backdropFilter: 'blur(6px)',
+          },
+        }}
         className="type-modal"
       >
+        <div className="modal-intro">
+          <div className="modal-intro-icon">
+            <PlusOutlined />
+          </div>
+          <div className="modal-intro-copy">
+            <strong>{editingType ? 'Update account details' : 'Create a new ticket category'}</strong>
+            <span>{editingType ? 'Adjust the selected ticket type and pricing.' : 'Define the ticket category used for daily cash collection entries.'}</span>
+          </div>
+        </div>
+
         <Form
           form={typeForm}
           layout="vertical"
@@ -786,6 +886,18 @@ const CashTicketManagement = () => {
             rules={[{ required: true, message: "Please enter type name" }]}
           >
             <Input placeholder="e.g., Market, Toilet, Parking" />
+          </Form.Item>
+
+          <Form.Item
+            name="enterprise"
+            label="Enterprise"
+            rules={[{ required: true, message: "Please enter the enterprise name" }]}
+          >
+            <Select placeholder="Select an enterprise">
+              <Option value="Market">Market</Option>
+              <Option value="Wharf">Wharf</Option>
+              <Option value="Slaughterhouse">Slaughterhouse</Option>
+            </Select>
           </Form.Item>
 
           <Form.Item
@@ -822,44 +934,15 @@ const CashTicketManagement = () => {
           <Divider />
           
           <div className="form-actions">
-            <Button 
-              style={{
-                backgroundColor: 'white',
-                color: 'black',
-                borderColor: 'black'
-              }}
+            <Button
+              className="modal-button-secondary"
               onClick={() => setIsTypeModalVisible(false)}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#f0f0f0';
-                e.target.style.color = 'black';
-                e.target.style.borderColor = '#404040';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'white';
-                e.target.style.color = 'black';
-                e.target.style.borderColor = 'black';
-              }}
             >
               Cancel
             </Button>
-            <Button 
-              style={{
-                backgroundColor: 'white',
-                color: 'black',
-                borderColor: 'black'
-              }}
+            <Button
               htmlType="submit" 
               className="btn-primary"
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#f0f0f0';
-                e.target.style.color = 'black';
-                e.target.style.borderColor = '#404040';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'white';
-                e.target.style.color = 'black';
-                e.target.style.borderColor = 'black';
-              }}
             >
               {editingType ? "Update" : "Create"}
             </Button>
@@ -869,22 +952,46 @@ const CashTicketManagement = () => {
 
       {/* Daily Payments Modal */}
       <Modal
-        title={`Edit Collections for ${dayjs(selectedDate).format('MMMM DD, YYYY')}`}
+        title={
+          <div className="modal-title-wrap">
+            <span className="modal-title-badge">Collection</span>
+            <span>{dayjs(selectedDate).format('MMMM DD, YYYY')}</span>
+          </div>
+        }
         open={isPaymentModalVisible}
         onCancel={() => {
           setIsPaymentModalVisible(false);
           setDailyPayments({});
         }}
         footer={null}
+        width={760}
+        centered
+        closeIcon={<CloseOutlined />}
+        styles={{
+          mask: {
+            backgroundColor: 'rgba(20, 33, 61, 0.58)',
+            backdropFilter: 'blur(6px)',
+          },
+        }}
         className="payment-modal"
       >
+        <div className="modal-summary-card">
+          <span className="summary-chip">Selected Collection</span>
+          <strong>{dayjs(selectedDate).format('dddd, MMMM DD, YYYY')}</strong>
+          <small>{selectedTypeName}</small>
+        </div>
+
         <Form layout="vertical" className="payment-form" onFinish={handleSaveDailyPayments}>
           <div className="payment-items">
             {cashTicketTypes
               .filter(type => selectedTicketType === 'all' || type.id.toString() === selectedTicketType)
               .map(type => (
                 <div key={type.id} className="payment-item">
-                  <Form.Item label={type.type}>
+                  <div className="payment-item-header">
+                    <span>{getTicketLabel(type)}</span>
+                    <span className="payment-item-tag">Ticket</span>
+                  </div>
+                  <Form.Item className="payment-field">
                     <InputNumber
                       placeholder="0.00"
                       min={0}
@@ -911,44 +1018,15 @@ const CashTicketManagement = () => {
           <Divider />
           
           <div className="form-actions">
-            <Button 
-              style={{
-                backgroundColor: 'white',
-                color: 'black',
-                borderColor: 'black'
-              }}
+            <Button
+              className="modal-button-secondary"
               onClick={() => setIsPaymentModalVisible(false)}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#f0f0f0';
-                e.target.style.color = 'black';
-                e.target.style.borderColor = '#404040';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'white';
-                e.target.style.color = 'black';
-                e.target.style.borderColor = 'black';
-              }}
             >
               Cancel
             </Button>
-            <Button 
-              style={{
-                backgroundColor: 'white',
-                color: 'black',
-                borderColor: 'black'
-              }}
+            <Button
               htmlType="submit" 
               className="btn-primary"
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#f0f0f0';
-                e.target.style.color = 'black';
-                e.target.style.borderColor = '#404040';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'white';
-                e.target.style.color = 'black';
-                e.target.style.borderColor = 'black';
-              }}
             >
               Save Collections
             </Button>

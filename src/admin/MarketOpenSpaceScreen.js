@@ -3,7 +3,6 @@ import dayjs from 'dayjs';
 import {
   Card,
   Table,
-  DatePicker,
   Button,
   Space,
   Typography,
@@ -13,9 +12,6 @@ import {
   Row,
   Col,
   Statistic,
-  Alert,
-  Empty,
-  Spin,
   Tabs,
   message,
   Select
@@ -41,15 +37,14 @@ import './MarketOpenSpaceScreen.css';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
-const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const MarketOpenSpaceScreen = () => {
   const [loading, setLoading] = useState(false);
-  const [collectionsData, setCollectionsData] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
   const [yearlyData, setYearlyData] = useState(null);
   const [selectedYear, setSelectedYear] = useState(dayjs().year());
-  const [activeTab, setActiveTab] = useState('market');
   const [mainTableTab, setMainTableTab] = useState('all');
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
@@ -77,10 +72,11 @@ const MarketOpenSpaceScreen = () => {
       if (response.data.success) {
         setYearlyData(response.data.data);
       } else {
-        console.error('Failed to fetch yearly data');
+        message.error(response.data.message || 'Unable to load yearly collection totals');
       }
     } catch (error) {
       console.error('Error fetching yearly data:', error);
+      message.error('Unable to load yearly collection totals');
     } finally {
       setLoading(false);
     }
@@ -110,10 +106,11 @@ const MarketOpenSpaceScreen = () => {
           setMonthlyDetailsTab(mainTableTab === 'market' ? 'market' : mainTableTab === 'open-space' ? 'open-space' : 'taboc-gym');
         }
       } else {
-        console.error('Failed to fetch monthly details');
+        message.error(response.data.message || 'Unable to load monthly payment details');
       }
     } catch (error) {
       console.error('Error fetching monthly details:', error);
+      message.error('Unable to load monthly payment details');
     } finally {
       setLoading(false);
     }
@@ -123,13 +120,21 @@ const MarketOpenSpaceScreen = () => {
     fetchYearlyData();
   };
 
-  const exportToPDF = () => {
+  const waitForBrowserPaint = () => new Promise(resolve => {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(resolve));
+  });
+
+  const exportToPDF = async () => {
     if (!yearlyData) {
       message.error('No data available to export');
       return;
     }
 
+    setIsExporting(true);
+    setExportProgress(8);
     try {
+      await waitForBrowserPaint();
+
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -179,6 +184,8 @@ const MarketOpenSpaceScreen = () => {
       doc.text(`Generated on: ${currentDate}`, pageWidth / 2, yPosition, { align: 'center' });
       
       yPosition += 15;
+      setExportProgress(28);
+      await waitForBrowserPaint();
       
       const monthlyData = yearlyData.monthly_data || [];
       
@@ -187,38 +194,31 @@ const MarketOpenSpaceScreen = () => {
         let tableHeaders = [];
         
         if (mainTableTab === 'market') {
-          tableHeaders = ['Month', 'Market Collections', 'Market Payments'];
+          tableHeaders = ['Month', 'Market Collections'];
           tableData = monthlyData.map(month => [
             month.month,
-            Number(month.market_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            month.market_payment_count
+            Number(month.market_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
           ]);
         } else if (mainTableTab === 'open-space') {
-          tableHeaders = ['Month', 'Open Space Collections', 'Open Space Payments'];
+          tableHeaders = ['Month', 'Open Space Collections'];
           tableData = monthlyData.map(month => [
             month.month,
-            Number(month.open_space_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            month.open_space_payment_count
+            Number(month.open_space_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
           ]);
         } else if (mainTableTab === 'taboc-gym') {
-          tableHeaders = ['Month', 'Taboc Gym Collections', 'Taboc Gym Payments'];
+          tableHeaders = ['Month', 'Taboc Gym Collections'];
           tableData = monthlyData.map(month => [
             month.month,
-            Number(month.taboc_gym_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            month.taboc_gym_payment_count
+            Number(month.taboc_gym_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
           ]);
         } else {
-          tableHeaders = ['Month', 'Market Collections', 'Market Payments', 'Open Space Collections', 'Open Space Payments', 'Taboc Gym Collections', 'Taboc Gym Payments', 'Total Collections', 'Total Payments'];
+          tableHeaders = ['Month', 'Market Collections', 'Open Space Collections', 'Taboc Gym Collections', 'Total Collections'];
           tableData = monthlyData.map(month => [
             month.month,
             Number(month.market_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            month.market_payment_count,
             Number(month.open_space_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            month.open_space_payment_count,
             Number(month.taboc_gym_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            month.taboc_gym_payment_count,
-            Number(month.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            month.total_payment_count
+            Number(month.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
           ]);
         }
         
@@ -226,94 +226,79 @@ const MarketOpenSpaceScreen = () => {
         let totalRow = [];
         if (mainTableTab === 'market') {
           const totalMarketAmount = monthlyData.reduce((sum, month) => sum + month.market_amount, 0);
-          const totalMarketPayments = monthlyData.reduce((sum, month) => sum + month.market_payment_count, 0);
           totalRow = [
             'Total',
-            Number(totalMarketAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            totalMarketPayments
+            Number(totalMarketAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
           ];
         } else if (mainTableTab === 'open-space') {
           const totalOpenSpaceAmount = monthlyData.reduce((sum, month) => sum + month.open_space_amount, 0);
-          const totalOpenSpacePayments = monthlyData.reduce((sum, month) => sum + month.open_space_payment_count, 0);
           totalRow = [
             'Total',
-            Number(totalOpenSpaceAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            totalOpenSpacePayments
+            Number(totalOpenSpaceAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
           ];
         } else if (mainTableTab === 'taboc-gym') {
           const totalTabocGymAmount = monthlyData.reduce((sum, month) => sum + month.taboc_gym_amount, 0);
-          const totalTabocGymPayments = monthlyData.reduce((sum, month) => sum + month.taboc_gym_payment_count, 0);
           totalRow = [
             'Total',
-            Number(totalTabocGymAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            totalTabocGymPayments
+            Number(totalTabocGymAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
           ];
         } else {
           const totalMarketAmount = monthlyData.reduce((sum, month) => sum + month.market_amount, 0);
-          const totalMarketPayments = monthlyData.reduce((sum, month) => sum + month.market_payment_count, 0);
           const totalOpenSpaceAmount = monthlyData.reduce((sum, month) => sum + month.open_space_amount, 0);
-          const totalOpenSpacePayments = monthlyData.reduce((sum, month) => sum + month.open_space_payment_count, 0);
           const totalTabocGymAmount = monthlyData.reduce((sum, month) => sum + month.taboc_gym_amount, 0);
-          const totalTabocGymPayments = monthlyData.reduce((sum, month) => sum + month.taboc_gym_payment_count, 0);
           const totalAmount = monthlyData.reduce((sum, month) => sum + month.total_amount, 0);
-          const totalPayments = monthlyData.reduce((sum, month) => sum + month.total_payment_count, 0);
           totalRow = [
             'Total',
             Number(totalMarketAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            totalMarketPayments,
             Number(totalOpenSpaceAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            totalOpenSpacePayments,
             Number(totalTabocGymAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            totalTabocGymPayments,
-            Number(totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            totalPayments
+            Number(totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
           ];
         }
+
+        setExportProgress(62);
+        await waitForBrowserPaint();
 
         // Dynamic column styles based on selected tab
         const getColumnStyles = () => {
           if (mainTableTab === 'all') {
             return {
-              0: { cellWidth: 20, halign: 'left' }, // Month
-              1: { cellWidth: 25, halign: 'right' }, // Market Collections
-              2: { cellWidth: 18, halign: 'center' }, // Market Payments
-              3: { cellWidth: 25, halign: 'right' }, // Open Space Collections
-              4: { cellWidth: 18, halign: 'center' }, // Open Space Payments
-              5: { cellWidth: 25, halign: 'right' }, // Taboc Gym Collections
-              6: { cellWidth: 18, halign: 'center' }, // Taboc Gym Payments
-              7: { cellWidth: 25, halign: 'right' }, // Total Collections
-              8: { cellWidth: 18, halign: 'center' }  // Total Payments
+              0: { cellWidth: 23, halign: 'left' },
+              1: { cellWidth: 35, halign: 'right' },
+              2: { cellWidth: 35, halign: 'right' },
+              3: { cellWidth: 35, halign: 'right' },
+              4: { cellWidth: 37, halign: 'right' }
             };
           } else {
             return {
               0: { cellWidth: 30, halign: 'left' },
-              1: { cellWidth: 40, halign: 'right' },
-              2: { cellWidth: 25, halign: 'center' }
+              1: { cellWidth: 60, halign: 'right' }
             };
           }
         };
 
-        let startYValue;
-        let marginLeftValue;
-        
+        let startYValue = yPosition + 15;
+        let tableMargins;
+
         if (mainTableTab === 'all') {
-          startYValue = yPosition + 40;
-          marginLeftValue = 17;
+          const centeredMargin = (pageWidth - 165) / 2;
+          tableMargins = {
+            left: centeredMargin + 8,
+            right: centeredMargin - 8,
+            bottom: 15,
+          };
         } else {
-          // For single collection types, move higher and center the table
-          startYValue = yPosition + 15; // Move higher for single collection
-          
-          // Calculate table width based on column styles
-          let tableWidth = 0;
-          if (mainTableTab === 'market' || mainTableTab === 'open-space' || mainTableTab === 'taboc-gym') {
-            // 3 columns: Month (30mm) + Collection (40mm) + Payments (25mm) = 95mm
-            tableWidth = 95;
-          }
-          
-          // Center the table on the page
-          const pageWidth = doc.internal.pageSize.getWidth();
-          marginLeftValue = (pageWidth - tableWidth) / 2; // Center the table
+          const tableWidth = 90;
+          const centeredMargin = (pageWidth - tableWidth) / 2;
+          tableMargins = {
+            left: centeredMargin,
+            right: centeredMargin,
+            bottom: 15,
+          };
         }
+
+        setExportProgress(82);
+        await waitForBrowserPaint();
 
         autoTable(doc, {
           head: [tableHeaders],
@@ -348,7 +333,7 @@ const MarketOpenSpaceScreen = () => {
             valign: 'middle'
           },
           columnStyles: getColumnStyles(),
-          margin: { left: marginLeftValue, right: marginLeftValue, bottom: 15 },
+          margin: tableMargins,
           didParseCell: function(data) {
             // Center align all data cells except for first column (Month)
             if (data.column.index !== 0) {
@@ -367,6 +352,9 @@ const MarketOpenSpaceScreen = () => {
         doc.text('No monthly data available', margin, yPosition);
         yPosition += 20;
       }
+
+      setExportProgress(94);
+      await waitForBrowserPaint();
       
       // Save PDF
       const fileName = mainTableTab === 'market' ? `market-collections-${selectedYear}.pdf` : 
@@ -375,10 +363,15 @@ const MarketOpenSpaceScreen = () => {
                      `market-open-space-taboc-gym-collections-${selectedYear}.pdf`;
       
       doc.save(fileName);
+      setExportProgress(100);
       message.success('PDF exported successfully');
     } catch (error) {
       console.error('Error exporting PDF:', error);
       message.error('Failed to export PDF');
+    } finally {
+      await new Promise(resolve => window.setTimeout(resolve, 250));
+      setIsExporting(false);
+      setExportProgress(0);
     }
   };
 
@@ -1129,34 +1122,29 @@ const MarketOpenSpaceScreen = () => {
       return sum + (type === 'market' ? month.market_amount : type === 'open-space' ? month.open_space_amount : month.taboc_gym_amount);
     }, 0);
 
-    const average = total / yearlyData.monthly_data.length;
+    const monthsElapsed = selectedYear === currentYear ? dayjs().month() + 1 : 12;
+    const average = total / monthsElapsed;
     return `₱${Number(average).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  const getGrowthRate = (type) => {
-    // This would typically compare with previous year data
-    // For now, returning a placeholder
-    const growthRates = {
-      'market': '+12.5%',
-      'open-space': '+8.3%',
-      'taboc-gym': '+15.2%'
-    };
-    return growthRates[type] || '+0%';
+  const getMonthlyAveragePeriod = () => {
+    if (selectedYear === currentYear) {
+      return `Year-to-date average through ${dayjs().format('MMMM')}`;
+    }
+
+    return `12-month average for ${selectedYear}`;
   };
 
-  const getCollectionEfficiency = () => {
+  const getRecordedPaymentCount = () => {
     if (!yearlyData?.monthly_data || yearlyData.monthly_data.length === 0) {
-      return '0%';
+      return '0';
     }
 
     const totalPayments = yearlyData.monthly_data.reduce((sum, month) => 
       sum + month.total_payment_count, 0
     );
-    
-    const expectedPayments = yearlyData.monthly_data.length * 100; // Assuming 100 expected payments per month
-    const efficiency = Math.min((totalPayments / expectedPayments) * 100, 100);
-    
-    return `${efficiency.toFixed(1)}%`;
+
+    return totalPayments.toLocaleString();
   };
 
   const getBestMonth = () => {
@@ -1171,164 +1159,97 @@ const MarketOpenSpaceScreen = () => {
     return bestMonth.month;
   };
 
-  const renderMarketTable = () => (
-    <Card 
-      title={
-        <span>
-          <ShopOutlined style={{ color: '#52c41a' }} /> Market Collections
-        </span>
-      }
-      extra={
-        <Text type="secondary">
-          {collectionsData?.market_collections?.payments?.length || 0} payments
-        </Text>
-      }
-    >
-      <Table
-        dataSource={collectionsData?.market_collections?.payments || []}
-        columns={marketColumns}
-        rowKey="id"
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) => `Showing ${range[0]}-${range[1]} of ${total} payments`,
-        }}
-        scroll={{ x: 1000 }}
-        loading={loading}
-        size="middle"
-      />
-    </Card>
-  );
-
-  const renderOpenSpaceTable = () => (
-    <Card 
-      title={
-        <span>
-          <HomeOutlined style={{ color: '#1890ff' }} /> Open Space Collections
-        </span>
-      }
-      extra={
-        <Text type="secondary">
-          {collectionsData?.open_space_collections?.payments?.length || 0} payments
-        </Text>
-      }
-    >
-      <Table
-        dataSource={collectionsData?.open_space_collections?.payments || []}
-        columns={openSpaceColumns}
-        rowKey="id"
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) => `Showing ${range[0]}-${range[1]} of ${total} payments`,
-        }}
-        scroll={{ x: 1000 }}
-        loading={loading}
-        size="middle"
-      />
-    </Card>
-  );
-
-  if (loading && !collectionsData) {
+  if (loading && !yearlyData) {
     return <LoadingOverlay message="Loading collections data..." />;
   }
 
   return (
     <div className="market-open-space-screen">
-      {/* Header Section */}
-      <Card className="header-card" style={{ marginBottom: 24, background: 'linear-gradient(135deg, #fafbfc 0%, #ffffff 100%)' }}>
-        <Row justify="space-between" align="middle">
-          <Col>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ 
-                width: '48px', 
-                height: '48px', 
-                borderRadius: '12px', 
-                background: 'linear-gradient(135deg, #3b82f6, #2563eb)', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-              }}>
-                <ShopOutlined style={{ color: '#ffffff', fontSize: '20px' }} />
-              </div>
-              <div>
-                <Title level={4} style={{ margin: 0, color: '#1f2937', fontWeight: 700 }}>
-                    Collections
-                </Title>
-                <Text type="secondary" style={{ fontSize: '14px' }}>
-                  Comprehensive revenue overview for {selectedYear}
-                </Text>
-              </div>
+      {isExporting && (
+        <div className="pdf-export-overlay" role="status" aria-live="polite">
+          <div className="pdf-export-loader">
+            <div
+              className="pdf-export-progress"
+              style={{ '--pdf-progress': `${exportProgress}%` }}
+              aria-label={`Generating PDF: ${exportProgress}%`}
+            >
+              <span>{exportProgress}%</span>
             </div>
-          </Col>
-          <Col>
-            <Space size="middle">
-              <div>
-                <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>Select Year</Text>
-                <Select
-                  style={{ width: 120 }}
-                  value={selectedYear}
-                  onChange={setSelectedYear}
-                  placeholder="Select Year"
-                  size="large"
-                >
-                  {yearOptions.map(year => (
-                    <Option key={year} value={year}>
-                      {year}
-                    </Option>
-                  ))}
-                </Select>
-              </div>
-              <Button 
+            <strong>Exporting PDF</strong>
+            <span className="pdf-export-caption">Preparing collections report</span>
+          </div>
+        </div>
+      )}
+      {/* Header Section */}
+      <Card className="header-card market-report-masthead">
+        <div className="market-report-masthead-row">
+          <div className="market-report-title-wrap">
+            <div className="market-report-mark"><ShopOutlined /></div>
+            <div>
+              <Text className="market-report-eyebrow">COLLECTIONS REPORT</Text>
+              <Title level={2} className="market-report-title">Annual Collections Overview</Title>
+              <Text type="secondary">Yearly totals, monthly trends, and payment details.</Text>
+            </div>
+          </div>
+          <div className="market-report-controls">
+            <div className="market-year-control">
+              <Text strong className="market-control-label">Report year</Text>
+              <Select
+                aria-label="Report year"
+                style={{ width: 132 }}
+                value={selectedYear}
+                onChange={setSelectedYear}
+                size="large"
+              >
+                {yearOptions.map(year => (
+                  <Option key={year} value={year}>{year}</Option>
+                ))}
+              </Select>
+            </div>
+            <Space wrap>
+              <Button
                 icon={<DownloadOutlined />}
                 onClick={exportToPDF}
                 type="primary"
                 size="large"
-                style={{ borderRadius: '10px' }}
+                disabled={!yearlyData || loading || isExporting}
               >
                 Export PDF
               </Button>
-              <Button 
-                icon={<ReloadOutlined />} 
+              <Button
+                icon={<ReloadOutlined />}
                 onClick={handleRefresh}
                 loading={loading}
                 size="large"
-                style={{ borderRadius: '10px' }}
               >
                 Refresh
               </Button>
             </Space>
-          </Col>
-        </Row>
+          </div>
+        </div>
+        <div className="market-report-guide">
+          <span className="market-report-guide-label">INCLUDED AREAS</span>
+          <span>Market <span aria-hidden="true">·</span> Open Space <span aria-hidden="true">·</span> Taboc Gym</span>
+        </div>
       </Card>
 
       {/* Key Performance Indicators */}
+      <div className="report-section-heading">
+        <div>
+          <span className="report-section-eyebrow">01 / FINANCIAL SUMMARY</span>
+          <span className="report-section-title">Annual collections at a glance</span>
+        </div>
+        <span className="report-section-note">Amounts shown in Philippine pesos</span>
+      </div>
       <Row gutter={[20, 20]} style={{ marginBottom: 32 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card className="summary-card market-card">
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ 
-                width: '40px', 
-                height: '40px', 
-                borderRadius: '10px', 
-                background: 'linear-gradient(135deg, #10b981, #34d399)', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                margin: '0 auto 12px'
-              }}>
-                <ShopOutlined style={{ color: '#ffffff', fontSize: '18px' }} />
-              </div>
-            </div>
             <Statistic
               title="Market Collections"
               value={yearlyData?.yearly_totals?.market_amount || 0}
               precision={2}
               valueStyle={{ color: '#10b981', fontSize: '28px', fontWeight: 700 }}
-              prefix={<DollarOutlined />}
+              prefix={<ShopOutlined />}
               formatter={(value) => `₱${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             />
             <div className="stat-details">
@@ -1340,20 +1261,6 @@ const MarketOpenSpaceScreen = () => {
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card className="summary-card open-space-card">
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ 
-                width: '40px', 
-                height: '40px', 
-                borderRadius: '10px', 
-                background: 'linear-gradient(135deg, #3b82f6, #60a5fa)', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                margin: '0 auto 12px'
-              }}>
-                <HomeOutlined style={{ color: '#ffffff', fontSize: '18px' }} />
-              </div>
-            </div>
             <Statistic
               title="Open Space Collections"
               value={yearlyData?.yearly_totals?.open_space_amount || 0}
@@ -1371,20 +1278,6 @@ const MarketOpenSpaceScreen = () => {
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card className="summary-card taboc-gym-card">
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ 
-                width: '40px', 
-                height: '40px', 
-                borderRadius: '10px', 
-                background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                margin: '0 auto 12px'
-              }}>
-                <TrophyOutlined style={{ color: '#ffffff', fontSize: '18px' }} />
-              </div>
-            </div>
             <Statistic
               title="Taboc Gym Collections"
               value={yearlyData?.yearly_totals?.taboc_gym_amount || 0}
@@ -1402,23 +1295,9 @@ const MarketOpenSpaceScreen = () => {
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card className="summary-card total-card">
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ 
-                width: '40px', 
-                height: '40px', 
-                borderRadius: '10px', 
-                background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                margin: '0 auto 12px'
-              }}>
-                <DollarOutlined style={{ color: '#ffffff', fontSize: '18px' }} />
-              </div>
-            </div>
             <Statistic
               title="Total Collections"
-              value={(yearlyData?.yearly_totals?.market_amount || 0) + (yearlyData?.yearly_totals?.open_space_amount || 0) + (yearlyData?.yearly_totals?.taboc_gym_amount || 0)}
+              value={yearlyData?.yearly_totals?.total_amount || 0}
               precision={2}
               valueStyle={{ color: '#8b5cf6', fontSize: '28px', fontWeight: 700 }}
               prefix={<DollarOutlined />}
@@ -1431,39 +1310,16 @@ const MarketOpenSpaceScreen = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="summary-card vendors-card">
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ 
-                width: '40px', 
-                height: '40px', 
-                borderRadius: '10px', 
-                background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                margin: '0 auto 12px'
-              }}>
-                <CalendarOutlined style={{ color: '#ffffff', fontSize: '18px' }} />
-              </div>
-            </div>
-            <Statistic
-              title="Selected Year"
-              value={selectedYear}
-              valueStyle={{ color: '#f59e0b', fontSize: '28px', fontWeight: 700 }}
-              prefix={<CalendarOutlined />}
-              formatter={(value) => value.toString()}
-            />
-            <div className="stat-details">
-              <Text type="secondary">
-                Annual performance overview
-              </Text>
-            </div>
-          </Card>
-        </Col>
       </Row>
 
       {/* Analytics & Performance Insights */}
+      <div className="report-section-heading">
+        <div>
+          <span className="report-section-eyebrow">02 / PERFORMANCE ANALYSIS</span>
+          <span className="report-section-title">Trends and peak collection periods</span>
+        </div>
+        <span className="report-section-note">Monthly view for {selectedYear}</span>
+      </div>
       <Row gutter={[20, 20]} style={{ marginBottom: 32 }}>
         {/* Revenue Trends Chart */}
         <Col xs={24} lg={16}>
@@ -1580,7 +1436,13 @@ const MarketOpenSpaceScreen = () => {
       </Row>
 
       {/* Performance Metrics Dashboard */}
-      <Row gutter={[20, 20]} style={{ marginBottom: 32 }}>
+      <div className="report-section-heading compact-section-heading">
+        <div>
+          <span className="report-section-eyebrow">03 / OPERATING METRICS</span>
+          <span className="report-section-title">Monthly averages and transaction volume</span>
+        </div>
+      </div>
+      <Row className="performance-metrics-row" gutter={[20, 20]} style={{ marginBottom: 32 }}>
         <Col xs={24} sm={8}>
           <Card className="metric-card" size="small">
             <div style={{ textAlign: 'center' }}>
@@ -1589,7 +1451,7 @@ const MarketOpenSpaceScreen = () => {
               </div>
               <div style={{ fontSize: '15px', color: '#374151', marginBottom: '6px', fontWeight: 600 }}>Avg Monthly Market</div>
               <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                {getGrowthRate('market')} vs last year
+                {getMonthlyAveragePeriod()}
               </div>
             </div>
           </Card>
@@ -1602,7 +1464,7 @@ const MarketOpenSpaceScreen = () => {
               </div>
               <div style={{ fontSize: '15px', color: '#374151', marginBottom: '6px', fontWeight: 600 }}>Avg Monthly Open Space</div>
               <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                {getGrowthRate('open-space')} vs last year
+                {getMonthlyAveragePeriod()}
               </div>
             </div>
           </Card>
@@ -1615,7 +1477,7 @@ const MarketOpenSpaceScreen = () => {
               </div>
               <div style={{ fontSize: '15px', color: '#374151', marginBottom: '6px', fontWeight: 600 }}>Avg Monthly Taboc Gym</div>
               <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                {getGrowthRate('taboc-gym')} vs last year
+                {getMonthlyAveragePeriod()}
               </div>
             </div>
           </Card>
@@ -1624,38 +1486,20 @@ const MarketOpenSpaceScreen = () => {
           <Card className="metric-card" size="small">
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '28px', fontWeight: 700, color: '#8b5cf6', marginBottom: '12px' }}>
-                {getCollectionEfficiency()}
+                {getRecordedPaymentCount()}
               </div>
-              <div style={{ fontSize: '15px', color: '#374151', marginBottom: '6px', fontWeight: 600 }}>Collection Efficiency</div>
+              <div style={{ fontSize: '15px', color: '#374151', marginBottom: '6px', fontWeight: 600 }}>Payment Groups</div>
               <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                Best month: {getBestMonth()}
+                Grouped by vendor and payment date · Peak: {getBestMonth()}
               </div>
             </div>
           </Card>
         </Col>
       </Row>
 
-      {/* Annual Performance Summary */}
-      <Alert
-        message="Annual Collection Performance"
-        description={
-          <div style={{ fontSize: '14px' }}>
-            <Text style={{ fontSize: '15px' }}>
-              Total revenue of <strong style={{ color: '#10b981', fontSize: '16px' }}>₱{Number(yearlyData?.yearly_totals?.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> generated from 
-              <strong style={{ color: '#3b82f6', fontSize: '16px' }}> {yearlyData?.yearly_totals?.total_payments || 0}</strong> transactions in <strong>{selectedYear}</strong>. 
-              This includes <strong style={{ color: '#10b981' }}>Market (₱{Number(yearlyData?.yearly_totals?.market_amount || 0).toLocaleString()})</strong>, 
-              <strong style={{ color: '#3b82f6' }}>Open Space (₱{Number(yearlyData?.yearly_totals?.open_space_amount || 0).toLocaleString()})</strong>, and 
-              <strong style={{ color: '#f59e0b' }}>Taboc Gym (₱{Number(yearlyData?.yearly_totals?.taboc_gym_amount || 0).toLocaleString()})</strong> collections.
-            </Text>
-          </div>
-        }
-        type="success"
-        showIcon
-        style={{ marginBottom: 32, borderRadius: '12px' }}
-      />
-
       {/* Monthly Collections Breakdown */}
-      <Card 
+      <Card
+        className="monthly-report-card"
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ 
@@ -1838,9 +1682,12 @@ const MarketOpenSpaceScreen = () => {
       {/* Payment Details Modal */}
       <Modal
         title={
-          <div className="modal-title">
-            <DollarOutlined />
-            {selectedPayment?.payments ? 'Payment Details' : 'Payment Details'}
+          <div className="collection-modal-heading">
+            <span className="collection-modal-icon"><DollarOutlined /></span>
+            <div>
+              <Text className="collection-modal-eyebrow">COLLECTION RECORD</Text>
+              <span>{selectedPayment?.payments ? 'Grouped Payment Details' : 'Payment Details'}</span>
+            </div>
           </div>
         }
         open={paymentModalVisible}
@@ -1850,7 +1697,11 @@ const MarketOpenSpaceScreen = () => {
             Close
           </Button>
         ]}
-        width={selectedPayment?.payments ? 1000 : 800}
+        width={selectedPayment?.payments ? 'min(1080px, calc(100vw - 32px))' : 'min(900px, calc(100vw - 32px))'}
+        centered
+        destroyOnClose
+        className="collections-detail-modal"
+        styles={{ body: { maxHeight: 'calc(100vh - 190px)', overflowY: 'auto' } }}
       >
         {selectedPayment && (
           <div>
@@ -1858,9 +1709,9 @@ const MarketOpenSpaceScreen = () => {
               // Grouped payments view
               <div>
                 {/* Summary */}
-                <Card size="small" style={{ marginBottom: 16 }}>
-                  <Row gutter={16}>
-                    <Col span={8}>
+                <div className="payment-summary-strip">
+                  <Row gutter={[16, 12]}>
+                    <Col xs={24} sm={8}>
                       <Statistic
                         title="Total Amount"
                         value={selectedPayment.total_amount}
@@ -1870,7 +1721,7 @@ const MarketOpenSpaceScreen = () => {
                         formatter={(value) => `₱${Number(value).toLocaleString()}`}
                       />
                     </Col>
-                    <Col span={8}>
+                    <Col xs={24} sm={8}>
                       <Statistic
                         title="Number of Payments"
                         value={selectedPayment.payment_count}
@@ -1878,17 +1729,17 @@ const MarketOpenSpaceScreen = () => {
                         prefix={<DollarOutlined />}
                       />
                     </Col>
-                    <Col span={8}>
-                      <div>
-                        <Text strong>Payment Date:</Text>
-                        <div>{new Date(selectedPayment.payment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                    <Col xs={24} sm={8}>
+                      <div className="payment-summary-date">
+                        <Text type="secondary">Payment date</Text>
+                        <Text strong>{new Date(selectedPayment.payment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</Text>
                       </div>
                     </Col>
                   </Row>
-                </Card>
+                </div>
 
                 {/* Vendor Info */}
-                <Descriptions title="Vendor Information" bordered column={2} size="small" style={{ marginBottom: 16 }}>
+                <Descriptions className="payment-vendor-description" title="Vendor Information" bordered column={{ xs: 1, sm: 2 }} size="small">
                   <Descriptions.Item label="Vendor Name">
                     {selectedPayment.vendor?.name}
                   </Descriptions.Item>
@@ -1901,8 +1752,9 @@ const MarketOpenSpaceScreen = () => {
                 </Descriptions>
 
                 {/* Individual Payments */}
-                <Title level={5}>Individual Payment Details</Title>
+                <Title level={5} className="payment-table-heading">Individual Payments</Title>
                 <Table
+                  className="modal-payment-table"
                   dataSource={selectedPayment.payments}
                   columns={[
                     {
@@ -1961,12 +1813,13 @@ const MarketOpenSpaceScreen = () => {
                   ]}
                   rowKey="id"
                   pagination={false}
-                  size="small"
+                  size="middle"
                 />
               </div>
             ) : (
               // Single payment view
-              <Descriptions bordered column={2} size="small">
+              <div className="payment-detail-sections">
+              <Descriptions title="Payment" bordered column={{ xs: 1, sm: 2 }} size="small">
                 <Descriptions.Item label="Payment Date">
                   {new Date(selectedPayment.payment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                 </Descriptions.Item>
@@ -1987,12 +1840,25 @@ const MarketOpenSpaceScreen = () => {
                      selectedPayment.payment_details?.status?.slice(1)}
                   </Tag>
                 </Descriptions.Item>
+                <Descriptions.Item label="Missed Days">
+                  {selectedPayment.payment_details?.missed_days || 0}
+                </Descriptions.Item>
+                <Descriptions.Item label="Advance Days">
+                  {selectedPayment.payment_details?.advance_days || 0}
+                </Descriptions.Item>
+              </Descriptions>
+              <Descriptions title="Vendor" bordered column={{ xs: 1, sm: 2 }} size="small">
                 <Descriptions.Item label="Vendor Name">
                   {selectedPayment.vendor?.name}
                 </Descriptions.Item>
                 <Descriptions.Item label="Contact Number">
                   {selectedPayment.vendor?.contact_number || 'N/A'}
                 </Descriptions.Item>
+                <Descriptions.Item label="Address">
+                  {selectedPayment.vendor?.address || 'N/A'}
+                </Descriptions.Item>
+              </Descriptions>
+              <Descriptions title="Rental" bordered column={{ xs: 1, sm: 2 }} size="small">
                 <Descriptions.Item label="Stall Number">
                   {selectedPayment.stall_info?.stall_number}
                 </Descriptions.Item>
@@ -2002,27 +1868,19 @@ const MarketOpenSpaceScreen = () => {
                 <Descriptions.Item label="Area">
                   {selectedPayment.stall_info?.area_name}
                 </Descriptions.Item>
-                <Descriptions.Item label="Missed Days">
-                  {selectedPayment.payment_details?.missed_days || 0}
-                </Descriptions.Item>
-                <Descriptions.Item label="Advance Days">
-                  {selectedPayment.payment_details?.advance_days || 0}
-                </Descriptions.Item>
-                <Descriptions.Item label="Monthly Rent" span={2}>
+                <Descriptions.Item label="Monthly Rent">
                   ₱{Number(selectedPayment.rental_info?.monthly_rent || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Descriptions.Item>
-                <Descriptions.Item label="Daily Rent" span={2}>
+                <Descriptions.Item label="Daily Rent">
                   ₱{Number(selectedPayment.rental_info?.daily_rent || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Descriptions.Item>
-                <Descriptions.Item label="Remaining Balance" span={2}>
+                <Descriptions.Item label="Remaining Balance">
                   <Text style={{ color: selectedPayment.rental_info?.remaining_balance > 0 ? '#ff4d4f' : '#52c41a' }}>
                     ₱{Number(selectedPayment.rental_info?.remaining_balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Text>
                 </Descriptions.Item>
-                <Descriptions.Item label="Vendor Address" span={2}>
-                  {selectedPayment.vendor?.address || 'N/A'}
-                </Descriptions.Item>
               </Descriptions>
+              </div>
             )}
           </div>
         )}
@@ -2031,9 +1889,12 @@ const MarketOpenSpaceScreen = () => {
       {/* Monthly Details Modal */}
       <Modal
         title={
-          <div className="modal-title">
-            <CalendarOutlined />
-            Monthly Payment Details - {selectedMonthDetails?.month_name} {selectedMonthDetails?.year}
+          <div className="collection-modal-heading">
+            <span className="collection-modal-icon"><CalendarOutlined /></span>
+            <div>
+              <Text className="collection-modal-eyebrow">MONTHLY COLLECTIONS</Text>
+              <span>{selectedMonthDetails?.month_name} {selectedMonthDetails?.year} Details</span>
+            </div>
           </div>
         }
         open={monthlyDetailsModalVisible}
@@ -2043,15 +1904,19 @@ const MarketOpenSpaceScreen = () => {
             Close
           </Button>
         ]}
-        width={1200}
+        width="min(1240px, calc(100vw - 32px))"
+        centered
+        destroyOnClose
+        className="monthly-collections-modal"
+        styles={{ body: { maxHeight: 'calc(100vh - 190px)', overflowY: 'auto' } }}
       >
         {selectedMonthDetails && (
-          <div>
+          <div className="monthly-details-content">
             {/* Monthly Summary */}
-            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+            <Row className="collection-month-summary" gutter={[12, 12]}>
               {detailsType === 'market' && (
                 <Col span={24}>
-                  <Card size="small">
+                  <Card size="small" className="collection-summary-card">
                     <Statistic
                       title="Market Collections"
                       value={selectedMonthDetails.market_collections?.summary?.total_amount || 0}
@@ -2071,7 +1936,7 @@ const MarketOpenSpaceScreen = () => {
               )}
               {detailsType === 'open-space' && (
                 <Col span={24}>
-                  <Card size="small">
+                  <Card size="small" className="collection-summary-card">
                     <Statistic
                       title="Open Space Collections"
                       value={selectedMonthDetails.open_space_collections?.summary?.total_amount || 0}
@@ -2091,7 +1956,7 @@ const MarketOpenSpaceScreen = () => {
               )}
               {detailsType === 'taboc-gym' && (
                 <Col span={24}>
-                  <Card size="small">
+                  <Card size="small" className="collection-summary-card">
                     <Statistic
                       title="Taboc Gym Collections"
                       value={selectedMonthDetails.taboc_gym_collections?.summary?.total_amount || 0}
@@ -2111,8 +1976,8 @@ const MarketOpenSpaceScreen = () => {
               )}
               {detailsType === 'all' && (
                 <>
-                  <Col span={4}>
-                    <Card size="small">
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card size="small" className="collection-summary-card">
                       <Statistic
                         title="Market Collections"
                         value={selectedMonthDetails.market_collections?.summary?.total_amount || 0}
@@ -2129,8 +1994,8 @@ const MarketOpenSpaceScreen = () => {
                       </div>
                     </Card>
                   </Col>
-                  <Col span={4}>
-                    <Card size="small">
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card size="small" className="collection-summary-card">
                       <Statistic
                         title="Open Space Collections"
                         value={selectedMonthDetails.open_space_collections?.summary?.total_amount || 0}
@@ -2147,8 +2012,8 @@ const MarketOpenSpaceScreen = () => {
                       </div>
                     </Card>
                   </Col>
-                  <Col span={6}>
-                    <Card size="small">
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card size="small" className="collection-summary-card">
                       <Statistic
                         title="Taboc Gym Collections"
                         value={selectedMonthDetails.taboc_gym_collections?.summary?.total_amount || 0}
@@ -2165,8 +2030,8 @@ const MarketOpenSpaceScreen = () => {
                       </div>
                     </Card>
                   </Col>
-                  <Col span={6}>
-                    <Card size="small">
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card size="small" className="collection-summary-card collection-total-summary">
                       <Statistic
                         title="Total Collections"
                         value={(Number(selectedMonthDetails.market_collections?.summary?.total_amount || 0) + Number(selectedMonthDetails.open_space_collections?.summary?.total_amount || 0) + Number(selectedMonthDetails.taboc_gym_collections?.summary?.total_amount || 0))}
@@ -2189,6 +2054,7 @@ const MarketOpenSpaceScreen = () => {
             {/* Payment Details Tabs */}
             {detailsType === 'market' && (
               <Table
+                className="modal-payment-table"
                 dataSource={selectedMonthDetails.market_collections?.payments || []}
                 columns={marketColumns}
                 rowKey="id"
@@ -2204,6 +2070,7 @@ const MarketOpenSpaceScreen = () => {
             )}
             {detailsType === 'open-space' && (
               <Table
+                className="modal-payment-table"
                 dataSource={selectedMonthDetails.open_space_collections?.payments || []}
                 columns={openSpaceColumns}
                 rowKey="id"
@@ -2219,6 +2086,7 @@ const MarketOpenSpaceScreen = () => {
             )}
             {detailsType === 'taboc-gym' && (
               <Table
+                className="modal-payment-table"
                 dataSource={selectedMonthDetails.taboc_gym_collections?.payments || []}
                 columns={tabocGymColumns}
                 rowKey="id"
@@ -2233,7 +2101,7 @@ const MarketOpenSpaceScreen = () => {
               />
             )}
             {detailsType === 'all' && (
-              <Tabs activeKey={monthlyDetailsTab} onChange={setMonthlyDetailsTab}>
+              <Tabs className="monthly-payment-tabs" activeKey={monthlyDetailsTab} onChange={setMonthlyDetailsTab}>
                 <TabPane 
                   tab={
                     <span>
@@ -2244,6 +2112,7 @@ const MarketOpenSpaceScreen = () => {
                   key="market"
                 >
                   <Table
+                    className="modal-payment-table"
                     dataSource={selectedMonthDetails.market_collections?.payments || []}
                     columns={marketColumns}
                     rowKey="id"
@@ -2267,6 +2136,7 @@ const MarketOpenSpaceScreen = () => {
                   key="open-space"
                 >
                   <Table
+                    className="modal-payment-table"
                     dataSource={selectedMonthDetails.open_space_collections?.payments || []}
                     columns={openSpaceColumns}
                     rowKey="id"
@@ -2290,6 +2160,7 @@ const MarketOpenSpaceScreen = () => {
                   key="taboc-gym"
                 >
                   <Table
+                    className="modal-payment-table"
                     dataSource={selectedMonthDetails.taboc_gym_collections?.payments || []}
                     columns={tabocGymColumns}
                     rowKey="id"

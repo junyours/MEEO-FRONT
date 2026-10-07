@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { Menu, Card, Row, Col, Statistic, Spin, Button, Drawer, Badge, Progress } from "antd";
+import { Menu, Card, Row, Col, Statistic, Spin, Button, Badge, Progress } from "antd";
 import { 
   ShopOutlined, 
   BankOutlined, 
@@ -13,10 +13,12 @@ import {
   CoffeeOutlined,
   GiftOutlined,
   HomeOutlined,
-
   FieldTimeOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined
+  CloseCircleOutlined,
+  CloseOutlined,
+  InfoCircleOutlined,
+  LoginOutlined
 } from "@ant-design/icons";
 
 import api from "../Api";
@@ -37,6 +39,8 @@ const Homepage = () => {
   const [active, setActive] = useState("home");
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sectionsError, setSectionsError] = useState(false);
+  const [sectionsReloadCount, setSectionsReloadCount] = useState(0);
   const [drawerVisible, setDrawerVisible] = useState(false); // For mobile menu
   const [displaySectionType, setDisplaySectionType] = useState('main'); // 'main', 'market', 'open_space'
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
@@ -101,19 +105,39 @@ const Homepage = () => {
   const { market, openSpace } = processSectionsData();
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => {
+      const mobileViewport = window.innerWidth <= 768;
+      setIsMobile(mobileViewport);
+      if (!mobileViewport) setDrawerVisible(false);
+    };
     window.addEventListener("resize", handleResize);
 
-    api
-      .get("/sections/available-stalls")
-      .then((res) => {
-        
-        setSections(res.data.data || res.data || []); // Handle nested data structure
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    let isCurrentRequest = true;
+    const loadSections = async () => {
+      setLoading(true);
+      setSectionsError(false);
+
+      try {
+        const response = await api.get("/sections/available-stalls");
+        if (isCurrentRequest) {
+          setSections(Array.isArray(response.data?.data) ? response.data.data : []);
+        }
+      } catch (error) {
+        if (isCurrentRequest) {
+          setSections([]);
+          setSectionsError(true);
+        }
+      } finally {
+        if (isCurrentRequest) setLoading(false);
+      }
+    };
+
+    loadSections();
+    return () => {
+      isCurrentRequest = false;
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [sectionsReloadCount]);
 
   const styles = {
     page: { 
@@ -363,12 +387,11 @@ heroSubtitle: {
     };
 
   const menuItems = [
-     { key: "get-started", label: "Enterprises" },
-    { key: "home", label: "Home" },
-    { key: "products", label: "Available Products" },
-    { key: "about", label: "About" },
-   
-    { key: "login", label: <RouterLink to="/login">Login</RouterLink> },
+    { key: "get-started", label: "Enterprises", icon: <BankOutlined /> },
+    { key: "home", label: "Home", icon: <HomeOutlined /> },
+    { key: "products", label: "Available Products", icon: <ShoppingCartOutlined /> },
+    { key: "about", label: "About", icon: <InfoCircleOutlined /> },
+    { key: "login", label: "Login", icon: <LoginOutlined />, to: "/login" },
   ];
 
   return (
@@ -387,45 +410,89 @@ heroSubtitle: {
           <div className="homepage-desktop-menu" style={styles.menuDesktop}>
             {!isMobile &&
               menuItems.map((item) => (
-                <div
-                  className={`homepage-menu-item ${active === item.key ? "active" : ""}`}
-                  key={item.key}
-                  style={{ ...styles.menuItem, cursor: "pointer" }}
-                  onClick={() => handleMenuSelect(item.key)}
-                >
-                  {item.label}
-                </div>
+                item.to ? (
+                  <RouterLink
+                    className={`homepage-menu-item ${active === item.key ? "active" : ""}`}
+                    key={item.key}
+                    to={item.to}
+                    style={styles.menuItem}
+                    aria-current={active === item.key ? "page" : undefined}
+                    onClick={() => setActive(item.key)}
+                  >
+                    {item.label}
+                  </RouterLink>
+                ) : (
+                  <button
+                    className={`homepage-menu-item ${active === item.key ? "active" : ""}`}
+                    key={item.key}
+                    type="button"
+                    style={styles.menuItem}
+                    aria-current={active === item.key ? "page" : undefined}
+                    onClick={() => handleMenuSelect(item.key)}
+                  >
+                    {item.label}
+                  </button>
+                )
               ))}
           </div>
 
           {/* Mobile Hamburger */}
           {isMobile && (
-            <button className="homepage-menu-toggle" aria-label="Open navigation menu" onClick={() => setDrawerVisible(true)}>
-              <MenuOutlined />
+            <button
+              className="homepage-menu-toggle"
+              type="button"
+              aria-label={drawerVisible ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={drawerVisible}
+              aria-controls="homepage-mobile-menu"
+              onClick={() => setDrawerVisible((visible) => !visible)}
+            >
+              {drawerVisible ? <CloseOutlined /> : <MenuOutlined />}
             </button>
           )}
-        </div>
 
-        {/* Mobile Drawer */}
-        <Drawer
-          title="Menu"
-          placement="right"
-          onClose={() => setDrawerVisible(false)}
-          visible={drawerVisible}
-        >
-          {menuItems.map((item) => (
-            <div
-              key={item.key}
-              style={{ padding: "12px 0", fontSize: 18 }}
-              onClick={() => {
-                handleMenuSelect(item.key);
-                setDrawerVisible(false);
+          {isMobile && drawerVisible && (
+            <nav
+              className="homepage-mobile-menu"
+              id="homepage-mobile-menu"
+              aria-label="Main navigation"
+              onKeyDown={(event) => {
+                if (event.key === "Escape") setDrawerVisible(false);
               }}
             >
-              {item.label}
-            </div>
-          ))}
-        </Drawer>
+              {menuItems.map((item) => (
+                item.to ? (
+                  <RouterLink
+                    className={`homepage-mobile-menu-item ${item.key === "login" ? "homepage-mobile-menu-item-login" : ""} ${active === item.key ? "active" : ""}`}
+                    key={item.key}
+                    to={item.to}
+                    aria-current={active === item.key ? "page" : undefined}
+                    onClick={() => {
+                      setActive(item.key);
+                      setDrawerVisible(false);
+                    }}
+                  >
+                    <span className="homepage-mobile-menu-icon" aria-hidden="true">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </RouterLink>
+                ) : (
+                  <button
+                    className={`homepage-mobile-menu-item ${item.key === "login" ? "homepage-mobile-menu-item-login" : ""} ${active === item.key ? "active" : ""}`}
+                    key={item.key}
+                    type="button"
+                    aria-current={active === item.key ? "page" : undefined}
+                    onClick={() => {
+                      handleMenuSelect(item.key);
+                      setDrawerVisible(false);
+                    }}
+                  >
+                    <span className="homepage-mobile-menu-icon" aria-hidden="true">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </button>
+                )
+              ))}
+            </nav>
+          )}
+        </div>
 
         {/* HERO CONTENT */}
         {active === "home" && (
@@ -440,14 +507,28 @@ heroSubtitle: {
 
       {/* AVAILABLE STALLS - MARKET & OPEN SPACE */}
       {active === "home" && (
-        <div className="homepage-stall-section" style={styles.stallMonitoringWrapper}>
-          <h2 className="homepage-section-title" style={styles.sectionTitle}>Stall Availability </h2>
+        <div className="homepage-stall-section" style={styles.stallMonitoringWrapper} aria-labelledby="homepage-stall-heading">
+          <h2 className="homepage-section-title" style={styles.sectionTitle} id="homepage-stall-heading">Stall Availability</h2>
           <p className="homepage-section-description" style={styles.sectionDesc}>
-            Simple and clear view of market and open space stall availability to help manage our community market better.
+            Current occupancy across the wet market, dry market, and open-space sections.
           </p>
 
           {loading ? (
-            <Spin size="large" style={{ display: "block", margin: "80px auto" }} />
+            <div className="homepage-dashboard-state" role="status" aria-live="polite">
+              <Spin size="large" />
+              <span>Loading stall availability...</span>
+            </div>
+          ) : sectionsError ? (
+            <div className="homepage-dashboard-state homepage-dashboard-state-error" role="alert">
+              <strong>Stall availability is unavailable.</strong>
+              <span>Please try loading the current market totals again.</span>
+              <Button onClick={() => setSectionsReloadCount((count) => count + 1)}>Try again</Button>
+            </div>
+          ) : sections.length === 0 ? (
+            <div className="homepage-dashboard-state" role="status">
+              <strong>No stall availability data yet.</strong>
+              <span>Current section totals will appear here when they are available.</span>
+            </div>
           ) : (
             <Row gutter={[16, 16]} justify="center" style={{ maxWidth: "1200px", margin: "0 auto" }}>
               {/* Market Card */}
@@ -543,25 +624,13 @@ heroSubtitle: {
                             style={{
                               padding: "12px",
                               borderRadius: "8px",
-                              background: "linear-gradient(145deg, #ffffff, #f8f9fa)",
+                              background: "#ffffff",
                               border: "1px solid #e9ecef",
                               display: "flex",
                               justifyContent: "space-between",
                               alignItems: "flex-start",
-                              transition: "all 0.3s ease",
-                              cursor: "pointer",
                               flexWrap: "wrap",
                               gap: "8px"
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = "translateX(4px)";
-                              e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-                              e.currentTarget.style.background = "linear-gradient(145deg, #fff5f5, #ffe0e0)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = "translateX(0)";
-                              e.currentTarget.style.boxShadow = "none";
-                              e.currentTarget.style.background = "linear-gradient(145deg, #ffffff, #f8f9fa)";
                             }}
                           >
                             <div>
@@ -732,25 +801,13 @@ heroSubtitle: {
                             style={{
                               padding: "12px",
                               borderRadius: "8px",
-                              background: "linear-gradient(145deg, #ffffff, #f8f9fa)",
+                              background: "#ffffff",
                               border: "1px solid #e9ecef",
                               display: "flex",
                               justifyContent: "space-between",
                               alignItems: "flex-start",
-                              transition: "all 0.3s ease",
-                              cursor: "pointer",
                               flexWrap: "wrap",
                               gap: "8px"
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = "translateX(4px)";
-                              e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-                              e.currentTarget.style.background = "linear-gradient(145deg, #f0f8ff, #e6f3ff)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = "translateX(0)";
-                              e.currentTarget.style.boxShadow = "none";
-                              e.currentTarget.style.background = "linear-gradient(145deg, #ffffff, #f8f9fa)";
                             }}
                           >
                             <div>

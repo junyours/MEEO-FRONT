@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
     Table,
     Card,
@@ -30,12 +30,13 @@ import {
     UploadOutlined,
     PictureOutlined,
     CalendarOutlined,
-    FileTextOutlined,
     ReloadOutlined,
+    AppstoreOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
 import api from "../Api"; // Adjust the path as necessary
+import "./css/OfficeActivity.css";
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -58,6 +59,7 @@ const OfficeActivity = () => {
 
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [searchText, setSearchText] = useState("");
 
     const [modalType, setModalType] = useState(null);
     // null | "add" | "edit" | "view"
@@ -495,6 +497,16 @@ const OfficeActivity = () => {
         ]);
     };
 
+    const filteredActivities = useMemo(() => {
+        const query = searchText.trim().toLowerCase();
+        if (!query) return activities;
+
+        return activities.filter((activity) =>
+            [activity.title, activity.description, activity.activity_type]
+                .some((value) => String(value || "").toLowerCase().includes(query))
+        );
+    }, [activities, searchText]);
+
     // =========================================================
     // TABLE COLUMNS
     // =========================================================
@@ -507,8 +519,10 @@ const OfficeActivity = () => {
                 <Space>
                     {record.image ? (
                         <img
+                            className="office-activity-cover"
                             src={record.image}
                             alt={record.title}
+                            loading="lazy"
                             style={{
                                 width: 70,
                                 height: 55,
@@ -518,6 +532,7 @@ const OfficeActivity = () => {
                         />
                     ) : (
                         <div
+                            className="office-activity-cover office-activity-cover-empty"
                             style={{
                                 width: 70,
                                 height: 55,
@@ -593,7 +608,7 @@ const OfficeActivity = () => {
             align: "center",
             render: (_, record) => (
                 <Tag>
-                    {(record.images?.length || 0) +
+                    {(record.images_count || 0) +
                         (record.image ? 1 : 0)}{" "}
                     photos
                 </Tag>
@@ -669,46 +684,29 @@ const OfficeActivity = () => {
     // =========================================================
 
     return (
-        <div
-            style={{
-                padding: 24,
-                background: "#f5f7fa",
-                minHeight: "100vh",
-            }}
-        >
+        <div className="office-activity-page">
             {/* =================================================
                 HEADER
             ================================================= */}
 
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent:
-                        "space-between",
-                    alignItems: "center",
-                    marginBottom: 24,
-                    gap: 16,
-                }}
-            >
-                <div>
-                    <Title
-                        level={2}
-                        style={{
-                            marginBottom: 4,
-                        }}
-                    >
-                        Office Activities
-                    </Title>
-
-                    <Text type="secondary">
-                        Manage office events,
-                        meetings, programs,
-                        seminars, and other
-                        activities.
-                    </Text>
+            <div className="office-activity-header">
+                <div className="office-activity-heading">
+                    <span className="office-activity-mark"><AppstoreOutlined /></span>
+                    <div>
+                        <Text className="office-activity-eyebrow">OFFICE PROGRAMS</Text>
+                        <Title level={2}>Office Activities</Title>
+                        <Text type="secondary">Browse events, programs, meetings, and seminars.</Text>
+                    </div>
                 </div>
 
-                <Space>
+                <Space className="office-activity-actions" wrap>
+                    <Input.Search
+                        allowClear
+                        value={searchText}
+                        onChange={(event) => setSearchText(event.target.value)}
+                        placeholder="Search activities"
+                        aria-label="Search office activities"
+                    />
                     <Button
                         icon={
                             <ReloadOutlined />
@@ -716,6 +714,7 @@ const OfficeActivity = () => {
                         onClick={
                             fetchActivities
                         }
+                        loading={loading}
                     >
                         Refresh
                     </Button>
@@ -740,17 +739,13 @@ const OfficeActivity = () => {
             ================================================= */}
 
             <Card
+                className="office-activity-table-card"
                 bordered={false}
-                style={{
-                    borderRadius: 12,
-                    boxShadow:
-                        "0 2px 8px rgba(0,0,0,0.05)",
-                }}
             >
                 <Table
                     rowKey="id"
                     columns={columns}
-                    dataSource={activities}
+                    dataSource={filteredActivities}
                     loading={loading}
                     pagination={{
                         pageSize: 10,
@@ -758,7 +753,7 @@ const OfficeActivity = () => {
                         showTotal: (
                             total
                         ) =>
-                            `Total ${total} activities`,
+                            `${total} ${searchText ? "matching " : ""}activities`,
                     }}
                     scroll={{
                         x: 900,
@@ -771,13 +766,14 @@ const OfficeActivity = () => {
             ================================================= */}
 
             <Modal
+                className="office-activity-modal office-activity-editor-modal"
                 open={
                     modalType === "add" ||
                     modalType === "edit"
                 }
                 onCancel={closeModal}
                 footer={null}
-                width={950}
+                width="min(1000px, calc(100vw - 32px))"
                 destroyOnClose
                 title={
                     <Space>
@@ -1277,12 +1273,13 @@ const OfficeActivity = () => {
             ================================================= */}
 
             <Modal
+                className="office-activity-modal office-activity-view-modal"
                 open={
                     modalType === "view"
                 }
                 onCancel={closeModal}
                 footer={null}
-                width={900}
+                width="min(900px, calc(100vw - 32px))"
                 title="Activity Details"
             >
                 {selectedActivity && (

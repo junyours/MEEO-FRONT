@@ -1,0 +1,386 @@
+.slaughter-report-page {
+  max-width: 1600px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 28px 36px 48px;
+  background: #f5f7f8;
+  color: #183042;
+}
+
+.slaughter-report-header,
+.slaughter-report-period {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.slaughter-report-header {
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 22px 26px;
+  border: 1px solid #dce4e9;
+  border-top: 4px solid #173b50;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(24, 43, 58, 0.055);
+}
+
+.slaughter-report-header h2,
+.slaughter-report-period h3 {
+  margin: 4px 0;
+  color: #172033;
+}
+
+.slaughter-report-header h2 {
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: left !important;
+}
+
+.slaughter-report-heading {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 15px;
+  min-width: 0;
+  text-align: left;
+}
+
+.slaughter-report-mark {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid #c9dbe0;
+  border-radius: 7px;
+  background: #eef5f6;
+  color: #1b6572;
+  font-size: 19px;
+}
+
+.slaughter-report-heading-copy {
+  min-width: 0;
+  text-align: left;
+}
+
+.slaughter-report-heading-copy > .ant-typography {
+  display: block;
+}
+
+.slaughter-report-header .slaughter-report-subtitle {
+  color: #637382;
+  font-size: 13px;
+}
+
+.slaughter-report-month-control {
+  flex: 0 0 auto;
+  min-width: 205px;
+}
+
+.slaughter-report-kicker {
+  color: #245b85;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.slaughter-month-picker {
+  width: 205px;
+  height: 40px;
+  border-radius: 6px;
+}
+
+.slaughter-month-picker:hover,
+.slaughter-month-picker:focus {
+  border-color: #245b85;
+}
+
+.slaughter-report-period {
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 19px 22px;
+  border: 1px solid #d6e1e7;
+  border-left: 4px solid #1b6572;
+  border-radius: 7px;
+  background: #edf4f5;
+  color: #183042;
+  box-shadow: 0 4px 14px rgba(24, 43, 58, 0.045);
+}
+
+.slaughter-report-period h3 {
+  color: #183042;
+}
+
+.slaughter-report-period .ant-typography-secondary {
+  color: #5e7180;
+}
+
+.slaughter-report-stat-row .ant-card,
+.slaughter-report-card {
+  height: 100%;
+  border: 1px solid #e3e8f0;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(21, 32, 53, 0.05);
+}
+
+.slaughter-report-stat-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 140px;
+}
+
+.slaughter-report-stat-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: #536b7d;
+  content: "";
+}
+
+.slaughter-report-stat-card-total {
+  background: #f3f8f8 !important;
+  border-color: #d5e5e5 !important;
+}
+
+.slaughter-report-stat-card-total::before {
+  background: #1b6572;
+}
+
+.slaughter-report-stat-card-animals::before {
+  background: #2868a6;
+}
+
+.slaughter-report-stat-card-weight::before {
+  background: #267a60;
+}
+
+.slaughter-report-stat-card-average::before {
+  background: #bd7c24;
+}
+
+.slaughter-report-stat-card .ant-card-body {
+  padding: 20px 22px;
+}
+
+.slaughter-report-stat-row .ant-statistic-title {
+  color: #6b7485;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.slaughter-report-stat-row .ant-statistic-content {
+  color: #172033;
+  font-size: 25px;
+  font-weight: 700;
+}
+
+.slaughter-report-stat-card .ant-typography {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.slaughter-report-stat-row .ant-statistic-content-prefix {
+  color: #1b6572;
+}
+
+.slaughter-report-main-grid {
+  margin-top: 16px;
+}
+
+.slaughter-report-card .ant-card-head-title {
+  color: #172033;
+}
+
+.slaughter-report-card > .ant-card-head {
+  min-height: 64px;
+  border-bottom-color: #e8edf2;
+}
+
+.slaughter-report-card > .ant-card-head .ant-card-head-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.slaughter-report-card .ant-card-body {
+  padding: 20px 22px;
+}
+
+.slaughter-report-card-description {
+  display: block;
+  margin-bottom: 14px;
+  font-size: 12px;
+}
+
+.slaughter-charge-report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.slaughter-charge-report-row > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 5px;
+  color: #4f5b6d;
+  font-size: 13px;
+}
+
+.slaughter-charge-report-row strong {
+  color: #172033;
+  font-weight: 700;
+}
+
+.slaughter-charge-share {
+  height: 7px;
+  overflow: hidden;
+  background: #edf0f4;
+}
+
+.slaughter-charge-share span {
+  display: block;
+  height: 100%;
+  background: #1b6572;
+}
+
+.slaughter-charge-report-row > .ant-typography {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.slaughter-animal-report-card,
+.slaughter-daily-report-card,
+.slaughter-report-note {
+  margin-top: 16px;
+}
+
+.slaughter-daily-report-card > .ant-card-body > .ant-typography {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.slaughter-daily-table .ant-table-expanded-row > td {
+  overflow: visible;
+  padding: 18px 20px !important;
+  background: #f8fafc;
+}
+
+.slaughter-daily-table .ant-table-expanded-row .ant-table {
+  margin: 0 !important;
+}
+
+.slaughter-expanded-collections-table .ant-table-thead > tr > th,
+.slaughter-animal-items-table .ant-table-thead > tr > th {
+  padding: 12px 14px !important;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.slaughter-daily-table .ant-table-thead > tr > th,
+.slaughter-animal-report-card .ant-table-thead > tr > th {
+  color: #4b5869;
+  background: #f7f9fb;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.slaughter-daily-table .ant-table-tbody > tr:hover > td,
+.slaughter-animal-report-card .ant-table-tbody > tr:hover > td {
+  background: #f3f8f9;
+}
+
+.slaughter-daily-table .ant-table-tbody > tr > td,
+.slaughter-animal-report-card .ant-table-tbody > tr > td {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.slaughter-report-loading {
+  display: flex;
+  min-height: 420px;
+  align-items: center;
+  justify-content: center;
+}
+
+.slaughter-day-detail-loading {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: center;
+  color: #637382;
+}
+
+.slaughter-expanded-collections-table,
+.slaughter-animal-items-table {
+  overflow: hidden;
+  border: 1px solid #e0e7ec;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.slaughter-expanded-collections-table .ant-table-thead > tr > th,
+.slaughter-animal-items-table .ant-table-thead > tr > th {
+  background: #f3f6f8;
+  color: #405466;
+}
+
+@media (max-width: 767px) {
+  .slaughter-report-page {
+    padding: 16px 14px 32px;
+  }
+
+  .slaughter-report-header h2 {
+    font-size: 22px;
+  }
+
+  .slaughter-report-header,
+  .slaughter-report-period {
+    flex-direction: column;
+  }
+
+  .slaughter-report-header .ant-space {
+    align-items: stretch !important;
+    width: 100%;
+  }
+
+  .slaughter-report-header {
+    padding: 18px;
+  }
+
+  .slaughter-report-heading {
+    align-items: flex-start;
+    gap: 11px;
+  }
+
+  .slaughter-report-mark {
+    flex-basis: 38px;
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+  }
+
+  .slaughter-report-header .ant-space-item {
+    width: 100%;
+  }
+
+  .slaughter-report-month-control {
+    min-width: 0;
+  }
+
+  .slaughter-month-picker {
+    width: 100%;
+  }
+
+  .slaughter-report-card .ant-card-body {
+    padding: 15px;
+  }
+}

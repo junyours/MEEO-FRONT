@@ -1,0 +1,239 @@
+.vendor-qr-page {
+  padding: 28px;
+  color: #102a43;
+}
+
+.vendor-qr-heading,
+.vendor-qr-list-heading,
+.vendor-qr-preview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.vendor-qr-heading {
+  margin-bottom: 22px;
+  padding: 22px 24px;
+  border: 1px solid #e5eaf0;
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse at top right, rgb(219 234 254 / 68%), transparent 48%),
+    #fff;
+  box-shadow: 0 8px 28px rgb(16 42 67 / 5%);
+}
+
+.vendor-qr-heading-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.vendor-qr-heading .ant-typography {
+  margin-bottom: 6px;
+  text-align: left;
+}
+
+.vendor-qr-heading h2.ant-typography {
+  margin: 4px 0 3px;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.vendor-qr-eyebrow {
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.vendor-qr-note {
+  margin-bottom: 20px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+}
+
+.vendor-qr-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.8fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.vendor-qr-list-card,
+.vendor-qr-preview-card {
+  border: 1px solid #e5eaf0;
+  border-radius: 16px;
+  box-shadow: 0 8px 28px rgb(16 42 67 / 5%);
+}
+
+.vendor-qr-list-heading {
+  margin-bottom: 18px;
+}
+
+.vendor-qr-list-heading h4.ant-typography,
+.vendor-qr-preview-heading h4.ant-typography {
+  margin: 0 0 3px;
+}
+
+.vendor-qr-search {
+  width: min(310px, 48%);
+}
+
+.vendor-qr-vendor {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.vendor-qr-vendor > span:last-child {
+  display: grid;
+}
+
+.vendor-qr-avatar,
+.vendor-qr-preview-icon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.vendor-qr-contact {
+  font-size: 12px;
+}
+
+.vendor-qr-selected-row > td {
+  background: #f5f9ff !important;
+}
+
+.vendor-qr-preview-heading {
+  justify-content: flex-start;
+  margin-bottom: 20px;
+}
+
+.vendor-qr-image-frame {
+  display: grid;
+  min-height: 290px;
+  place-items: center;
+  padding: 18px;
+  border: 1px solid #e5eaf0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.vendor-qr-image-frame img {
+  display: block;
+  width: min(100%, 280px);
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.vendor-qr-stalls {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.vendor-qr-stall-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.vendor-qr-stall-item {
+  padding: 10px 12px;
+  border: 1px solid #e5eaf0;
+  border-radius: 10px;
+  color: #2563eb;
+}
+
+.vendor-qr-stall-item > span {
+  display: grid;
+}
+
+.vendor-qr-stall-item .ant-typography-secondary {
+  font-size: 12px;
+}
+
+.vendor-qr-downloads {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.vendor-qr-downloads .ant-btn {
+  height: 40px;
+  padding-inline: 8px;
+}
+
+.vendor-qr-empty {
+  display: flex;
+  min-height: 280px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.vendor-qr-empty .ant-empty-image {
+  color: #94a3b8;
+  font-size: 48px;
+}
+
+.vendor-qr-page > .ant-empty .ant-empty-image {
+  color: #94a3b8;
+  font-size: 48px;
+}
+
+@media (max-width: 1050px) {
+  .vendor-qr-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .vendor-qr-preview-card {
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .vendor-qr-page {
+    padding: 18px 12px;
+  }
+
+  .vendor-qr-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 18px;
+  }
+
+  .vendor-qr-heading h2.ant-typography {
+    font-size: 23px;
+  }
+
+  .vendor-qr-heading > .ant-btn {
+    flex: 0 0 auto;
+  }
+
+  .vendor-qr-list-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .vendor-qr-search {
+    width: 100%;
+  }
+
+  .vendor-qr-list-card .ant-card-body,
+  .vendor-qr-preview-card .ant-card-body {
+    padding: 16px;
+  }
+}

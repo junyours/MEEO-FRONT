@@ -1,0 +1,287 @@
+.rental-report-page {
+  --report-ink: #182b3a;
+  --report-muted: #657786;
+  --report-line: #e2e9ed;
+  --report-teal: #0b776e;
+  --report-bg: #f3f6f7;
+  min-height: 100vh;
+  padding: 24px;
+  color: var(--report-ink);
+  background: var(--report-bg);
+}
+
+.rental-report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 4px 0 18px;
+  border-bottom: 1px solid var(--report-line);
+}
+
+.rental-report-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.rental-report-heading-icon {
+  display: grid;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  color: #fff;
+  background: #176b66;
+  border-radius: 8px;
+  font-size: 19px;
+}
+
+.rental-report-heading h2.ant-typography {
+  margin: 0;
+  color: var(--report-ink);
+  font-size: 23px;
+  font-weight: 650;
+}
+
+.rental-report-subtitle {
+  display: block;
+  margin-top: 3px;
+  color: var(--report-muted);
+  font-size: 13px;
+}
+
+.rental-report-actions {
+  flex: 0 0 auto;
+}
+
+.rental-report-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.rental-metric {
+  position: relative;
+  min-width: 0;
+  padding: 17px 19px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--report-line);
+  border-radius: 8px;
+}
+
+.rental-metric::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  content: "";
+  background: var(--metric-accent, #176b66);
+}
+
+.rental-metric--daily { --metric-accent: #13806e; }
+.rental-metric--monthly { --metric-accent: #c0523f; }
+.rental-metric--vendors { --metric-accent: #47769a; }
+
+.rental-metric-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--report-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rental-metric-value {
+  color: var(--report-ink);
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.rental-metric--daily .rental-metric-label .anticon,
+.rental-metric--daily .rental-metric-value { color: #087666; }
+.rental-metric--monthly .rental-metric-label .anticon,
+.rental-metric--monthly .rental-metric-value { color: #a74738; }
+.rental-metric--vendors .rental-metric-label .anticon,
+.rental-metric--vendors .rental-metric-value { color: #3d6e91; }
+
+.rental-report-table-shell {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--report-line);
+  border-radius: 8px;
+}
+
+.rental-report-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--report-line);
+}
+
+.rental-report-table-heading h3.ant-typography {
+  margin: 0;
+  color: var(--report-ink);
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.rental-report-table-heading .ant-typography-secondary {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+}
+
+.rental-report-table-count {
+  margin-left: 8px;
+  color: var(--report-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.rental-report-search {
+  width: min(100%, 320px);
+}
+
+.rental-report-table .ant-table-thead > tr > th {
+  padding: 12px 14px;
+  color: #526572;
+  background: #f7f9fa;
+  border-bottom: 1px solid var(--report-line);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.rental-report-table .ant-table-tbody > tr > td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #edf1f3;
+  vertical-align: middle;
+}
+
+.rental-report-table .ant-table-tbody > tr:last-child > td { border-bottom: 0; }
+.rental-report-table .ant-table-tbody > tr:hover > td { background: #f7fbfa !important; }
+
+.rental-report-vendor-name {
+  color: var(--report-ink);
+  font-weight: 600;
+}
+
+.rental-report-section-tags,
+.rental-report-stall-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.rental-report-section-tag,
+.rental-stall-tag {
+  margin: 0;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 20px;
+}
+
+.rental-status-tag {
+  margin: 0;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.rental-amount-daily { color: #087666; font-weight: 650; white-space: nowrap; }
+.rental-amount-monthly { color: #a74738; font-weight: 650; white-space: nowrap; }
+
+.rental-report-modal .ant-modal-content {
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.rental-report-modal .ant-modal-header {
+  margin-bottom: 0;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--report-line);
+}
+
+.rental-report-modal .ant-modal-body { padding: 18px 22px 22px; }
+
+.rental-detail-summary {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: #f6f9fa;
+  border: 1px solid var(--report-line);
+  border-radius: 8px;
+}
+
+.rental-detail-summary .ant-descriptions-item-label {
+  color: var(--report-muted);
+  font-size: 12px;
+}
+
+.rental-detail-summary .ant-descriptions-item-content {
+  color: var(--report-ink);
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.rental-section-block { margin-bottom: 20px; }
+.rental-section-block:last-child { margin-bottom: 0; }
+
+.rental-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.rental-section-heading h4.ant-typography {
+  margin: 0;
+  color: var(--report-ink);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.rental-section-count {
+  color: var(--report-muted);
+  font-size: 11px;
+}
+
+.rental-history-table .ant-table-thead > tr > th {
+  padding: 10px 9px;
+  color: #526572;
+  background: #f7f9fa;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.rental-history-table .ant-table-tbody > tr > td {
+  padding: 10px 9px;
+  font-size: 12px;
+}
+
+.rental-row-actions { white-space: nowrap; }
+.rental-edit-modal .ant-form-item { margin-bottom: 16px; }
+
+@media (max-width: 760px) {
+  .rental-report-page { padding: 16px 12px; }
+  .rental-report-header { align-items: flex-start; flex-direction: column; }
+  .rental-report-actions { width: 100%; }
+  .rental-report-actions .ant-space { width: 100%; }
+  .rental-report-actions .ant-btn { flex: 1; }
+  .rental-report-metrics { grid-template-columns: 1fr; gap: 9px; }
+  .rental-metric { padding: 13px 16px; }
+  .rental-metric-value { font-size: 19px; }
+  .rental-report-table-toolbar { align-items: stretch; flex-direction: column; padding: 14px; }
+  .rental-report-search { width: 100%; }
+  .rental-report-modal .ant-modal-body { padding: 14px; }
+  .rental-detail-summary .ant-descriptions-view table { table-layout: fixed; }
+}

@@ -363,14 +363,21 @@
 
 .homepage-menu-item {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 10px 14px !important;
   border: 0 !important;
   border-radius: 8px !important;
   color: #43536a !important;
+  background: transparent !important;
   font-size: .88rem !important;
   font-weight: 700 !important;
+  font-family: inherit;
   text-shadow: none !important;
+  text-decoration: none;
   transition: color .25s ease, background .25s ease, transform .25s ease !important;
+  cursor: pointer;
 }
 
 .homepage-menu-item::after {
@@ -411,6 +418,91 @@
   background: #fff;
   font-size: 20px;
   cursor: pointer;
+  transition: color .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.homepage-menu-toggle:hover,
+.homepage-menu-toggle[aria-expanded="true"] {
+  border-color: #a9c8f7;
+  color: var(--homepage-blue);
+  background: #eef5ff;
+  box-shadow: 0 4px 12px rgba(23, 105, 224, .12);
+}
+
+.homepage-menu-item:focus-visible,
+.homepage-menu-toggle:focus-visible,
+.homepage-mobile-menu-item:focus-visible {
+  outline: 3px solid rgba(23, 105, 224, .32);
+  outline-offset: 3px;
+}
+
+.homepage-mobile-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: min(288px, calc(100vw - 32px));
+  display: grid;
+  gap: 2px;
+  padding: 7px;
+  border: 1px solid #dfe8f3;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 18px 42px rgba(12, 32, 62, .2);
+  animation: homepageMenuDropIn .18s ease-out both;
+}
+
+.homepage-mobile-menu-item {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 7px;
+  color: #43536a;
+  background: transparent;
+  font: inherit;
+  font-size: .92rem;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color .18s ease, background .18s ease;
+}
+
+.homepage-mobile-menu-item:hover,
+.homepage-mobile-menu-item.active {
+  color: #1769e0;
+  background: #eef5ff;
+}
+
+.homepage-mobile-menu-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  display: grid;
+  place-items: center;
+  color: #7b8aa0;
+  font-size: 15px;
+}
+
+.homepage-mobile-menu-item:hover .homepage-mobile-menu-icon,
+.homepage-mobile-menu-item.active .homepage-mobile-menu-icon {
+  color: #1769e0;
+}
+
+.homepage-mobile-menu-item-login {
+  margin-top: 5px !important;
+  padding-top: 6px !important;
+  border-top: 1px solid #e7edf5 !important;
+  border-radius: 0 !important;
+}
+
+@keyframes homepageMenuDropIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .homepage-hero-content {
@@ -511,6 +603,7 @@
 @media (max-width: 768px) {
   .homepage-navbar { margin: 10px !important; padding: 10px 14px !important; }
   .homepage-brand { font-size: 1rem !important; }
+  .homepage-desktop-menu { display: none !important; }
   .homepage-hero-content { min-height: calc(100svh - 80px) !important; padding: 46px 18px !important; }
   .homepage-hero-title { font-size: clamp(2.15rem, 11vw, 3.5rem) !important; }
   .homepage-hero-subtitle { font-size: .98rem !important; }
@@ -518,7 +611,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .homepage-navbar, .homepage-hero-title, .homepage-hero-subtitle { animation: none !important; }
+  .homepage-navbar, .homepage-hero-title, .homepage-hero-subtitle, .homepage-mobile-menu { animation: none !important; }
 }
 
 /* Final professional layout polish */
@@ -649,6 +742,128 @@
 @media (prefers-reduced-motion: reduce) {
   .homepage-stall-section .ant-card:hover {
     transform: none !important;
+  }
+}
+
+.homepage-navbar .homepage-menu-toggle {
+  box-sizing: border-box;
+  flex: 0 0 42px;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.homepage-navbar .homepage-menu-toggle .anticon {
+  display: block;
+  line-height: 1;
+}
+
+.homepage-navbar .homepage-mobile-menu-item {
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0 !important;
+  padding: 0 13px !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.homepage-navbar .homepage-mobile-menu-item:hover,
+.homepage-navbar .homepage-mobile-menu-item.active {
+  color: #1769e0 !important;
+  background: #eef5ff !important;
+  box-shadow: none !important;
+}
+
+.homepage-navbar .homepage-mobile-menu-item-login {
+  margin-top: 5px !important;
+  padding-top: 6px !important;
+  border-top: 1px solid #e7edf5 !important;
+  border-radius: 0 !important;
+}
+
+.homepage-dashboard-state {
+  min-height: 220px;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--homepage-muted, #5f6f86);
+  text-align: center;
+}
+
+.homepage-dashboard-state strong {
+  color: var(--homepage-ink, #14213d);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem;
+}
+
+.homepage-dashboard-state-error {
+  padding: 28px 20px;
+  border: 1px solid #efd0cc;
+  border-radius: 10px;
+  background: #fff8f6;
+}
+
+.homepage-dashboard-state-error strong {
+  color: #9f3d32;
+}
+
+.homepage-dashboard-state-error .ant-btn {
+  min-height: 40px;
+  border-color: #1769e0;
+  border-radius: 7px;
+  color: #ffffff;
+  background: #1769e0;
+  font-weight: 700;
+}
+
+.homepage-dashboard-state-error .ant-btn:hover {
+  border-color: #125bc5 !important;
+  color: #ffffff !important;
+  background: #125bc5 !important;
+}
+
+.homepage-stall-section .homepage-stall-card-header {
+  text-align: left !important;
+}
+
+.homepage-stall-section .homepage-stall-card-header .anticon {
+  align-self: flex-start;
+}
+
+.homepage-stall-section .homepage-stall-card-header h3,
+.homepage-stall-section .homepage-stall-card-header p {
+  width: 100%;
+}
+
+.homepage-stall-section .homepage-stall-card-content {
+  min-width: 0;
+}
+
+.homepage-stall-section .homepage-stall-card-content h4 {
+  text-align: left !important;
+}
+
+.homepage-stall-section .homepage-stall-card-content [style*="justify-content: space-between"] {
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .homepage-dashboard-state {
+    min-height: 180px;
+  }
+
+  .homepage-stall-section .homepage-stall-card-content {
+    padding: 18px !important;
   }
 }
 

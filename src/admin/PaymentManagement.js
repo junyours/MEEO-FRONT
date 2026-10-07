@@ -18,29 +18,24 @@ import {
   Row,
   Col,
   Statistic,
-  Spin,
-  notification,
-  Divider,
 } from "antd";
 import {
   FiEdit,
   FiSave,
   FiX,
-  FiDollarSign,
   FiUser,
-  FiCalendar,
   FiFileText,
   FiRefreshCw,
   FiSearch,
-  FiFilter,
   FiEye,
   FiTrash2,
   FiAlertTriangle,
 } from "react-icons/fi";
-import { DollarOutlined, ShopOutlined } from "@ant-design/icons";
+import { DollarOutlined, ShopOutlined, CloseOutlined } from "@ant-design/icons";
 import api from "../Api";
 import dayjs from 'dayjs';
 import LoadingOverlay from "./Loading";
+import "./PaymentManagement.css";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -49,10 +44,9 @@ const { Search } = Input;
 
 const PaymentManagement = () => {
   const [vendors, setVendors] = useState([]);
-  const [allVendorPayments, setAllVendorPayments] = useState([]);
   const [vendorPayments, setVendorPayments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -72,82 +66,25 @@ const PaymentManagement = () => {
   const successColor = "#16a34a";
   const warningColor = "#ea580c";
   const dangerColor = "#dc2626";
-  const cardBackground = "#ffffff";
   const textPrimary = "#0f172a";
   const textSecondary = "#64748b";
 
   useEffect(() => {
-    fetchAllPayments();
+    fetchVendors();
   }, []);
 
-  useEffect(() => {
-    if (allVendorPayments.length > 0) {
-      fetchVendors();
-      fetchStats();
-    }
-  }, [allVendorPayments]);
-
-  const fetchAllPayments = async () => {
-    // Only show loading if we don't have any data yet
-    if (allVendorPayments.length === 0) {
-      setInitialLoading(true);
-    }
-    
-    try {
-      const { data } = await api.get("/payments");
-      setAllVendorPayments(data);
-    } catch (error) {
-      console.error("Error fetching all payments:", error);
-      message.error("Failed to fetch payments");
-    } finally {
-      setInitialLoading(false);
-    }
-  };
-
   const fetchVendors = async () => {
-    // Only show loading if we don't have any vendors yet
-    if (vendors.length === 0) {
-      setLoading(true);
-    }
+    setLoading(true);
     
     try {
       const { data } = await api.get("/vendors");
-      
-      // Calculate vendor statistics from all payments (no date filtering)
-      const vendorStats = {};
-      allVendorPayments.forEach(payment => {
-        if (!vendorStats[payment.vendor_id]) {
-          vendorStats[payment.vendor_id] = {
-            total_payments: 0,
-            total_amount: 0,
-            last_payment: null,
-          };
-        }
-        
-        vendorStats[payment.vendor_id].total_payments += 1;
-        vendorStats[payment.vendor_id].total_amount += parseFloat(payment.amount || 0);
-        
-        // Update last payment date
-        if (!vendorStats[payment.vendor_id].last_payment || 
-            new Date(payment.payment_date) > new Date(vendorStats[payment.vendor_id].last_payment)) {
-          vendorStats[payment.vendor_id].last_payment = payment.payment_date;
-        }
-      });
-
-      // Combine vendor data with payment statistics
-      const vendorsWithStats = data.map(vendor => ({
-        ...vendor,
-        total_payments: vendorStats[vendor.id]?.total_payments || 0,
-        total_amount: vendorStats[vendor.id]?.total_amount || 0,
-        last_payment: vendorStats[vendor.id]?.last_payment || null,
-      }));
-
-      setVendors(vendorsWithStats);
+      setVendors(data);
     } catch (error) {
       console.error("Error fetching vendors:", error);
       message.error("Failed to fetch vendors");
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
@@ -168,7 +105,8 @@ const PaymentManagement = () => {
       if (month) params.append('month', month);
       if (year) params.append('year', year);
       
-      const { data } = await api.get(`/vendors/${vendorId}/payments?${params}`);
+      const response = await api.get(`/vendors/${vendorId}/payments?${params}`);
+      const data = Array.isArray(response.data) ? response.data : [];
       
       // Group payments by date and aggregate stall numbers
       const groupedPayments = {};
@@ -212,25 +150,20 @@ const PaymentManagement = () => {
       }));
       
       setVendorPayments(groupedArray);
-      
-      // Also update the cached allVendorPayments with fresh data
-      const allPaymentsResponse = await api.get("/payments");
-      setAllVendorPayments(allPaymentsResponse.data);
+
+      if (response.status === 204 || groupedArray.length === 0) {
+        message.info(
+          month && year
+            ? 'No payment records found for the selected month.'
+            : 'No payment records found for this vendor.'
+        );
+      }
       
     } catch (error) {
       console.error("Error fetching vendor payments:", error);
       message.error("Failed to fetch vendor payments");
     } finally {
       setPaymentsLoading(false);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const { data } = await api.get("/payment-management/stats");
-      // Update statistics if needed
-    } catch (error) {
-      console.error("Error fetching stats:", error);
     }
   };
 
@@ -382,7 +315,6 @@ const PaymentManagement = () => {
       
       try {
         // First refresh the main vendor table
-        await fetchAllPayments();
         await fetchVendors();
         
         // Then refresh the modal data
@@ -688,72 +620,25 @@ const PaymentManagement = () => {
   const totalCollected = vendors.reduce((sum, vendor) => sum + vendor.total_amount, 0);
   const totalVendors = vendors.length;
   const activeVendors = vendors.filter(v => v.total_payments > 0).length;
+  const pageLoading = initialLoading;
 
   return (
-    <Content style={{ padding: "24px", background: "#f8fafc", minHeight: "100vh" }}>
+    <Content className="payment-management-page">
       {/* Header */}
-      <Card
-        style={{
-          borderRadius: "12px",
-          border: "1px solid #e2e8f0",
-          background: "#ffffff",
-          marginBottom: "24px",
-          padding: "28px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-            <div style={{
-              width: "64px",
-              height: "64px",
-              borderRadius: "16px",
-              background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 8px 24px rgba(37, 99, 235, 0.3)",
-              flexShrink: 0,
-            }}>
-              <DollarOutlined style={{ 
-                fontSize: "32px", 
-                color: "#ffffff",
-                fontWeight: "bold" 
-              }} />
-            </div>
-            <div>
-              <Title level={1} style={{ 
-                color: "#1a1a1a", 
-                margin: 0, 
-                marginBottom: "8px", 
-                fontSize: "32px", 
-                fontWeight: "700",
-                lineHeight: "1.2"
-              }}>
-                Payment Management
-              </Title>
-              <Text style={{ 
-                color: "#6b7280", 
-                fontSize: "16px", 
-                lineHeight: "1.6",
-                fontWeight: "400"
-              }}>
-                Comprehensive payment tracking system for managing vendor payments and viewing complete payment history
-              </Text>
-            </div>
+      <Card className="payment-management-header">
+        <div className="payment-header-content">
+          <div className="payment-header-icon"><DollarOutlined /></div>
+          <div className="payment-header-copy">
+            <Title level={1}>Payment Management</Title>
+            <Text>Search vendor collections and review or update individual payment records.</Text>
           </div>
         </div>
       </Card>
 
       {/* Statistics Cards */}
-      <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
+      <Row gutter={[12, 12]} className="payment-statistics-grid">
         <Col xs={24} sm={12} lg={6}>
-          <Card
-            style={{
-              borderRadius: "12px",
-              border: "1px solid #e2e8f0",
-              background: cardBackground,
-            }}
-          >
+          <Card className="payment-stat-card">
             <Statistic
               title="Total Collected"
               value={totalCollected}
@@ -765,13 +650,7 @@ const PaymentManagement = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card
-            style={{
-              borderRadius: "12px",
-              border: "1px solid #e2e8f0",
-              background: cardBackground,
-            }}
-          >
+          <Card className="payment-stat-card">
             <Statistic
               title="Total Vendors"
               value={totalVendors}
@@ -781,13 +660,7 @@ const PaymentManagement = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card
-            style={{
-              borderRadius: "12px",
-              border: "1px solid #e2e8f0",
-              background: cardBackground,
-            }}
-          >
+          <Card className="payment-stat-card">
             <Statistic
               title="Active Vendors"
               value={activeVendors}
@@ -797,13 +670,7 @@ const PaymentManagement = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card
-            style={{
-              borderRadius: "12px",
-              border: "1px solid #e2e8f0",
-              background: cardBackground,
-            }}
-          >
+          <Card className="payment-stat-card">
             <Statistic
               title="Total Payments"
               value={vendors.reduce((sum, v) => sum + v.total_payments, 0)}
@@ -815,69 +682,41 @@ const PaymentManagement = () => {
       </Row>
 
       {/* Loading Overlay */}
-      {initialLoading && <LoadingOverlay message="Loading payment data..." />}
+      {pageLoading && <LoadingOverlay message="Loading payment data..." />}
 
       {/* Search and Filters */}
-      <Card
-        style={{
-          borderRadius: "12px",
-          border: "1px solid #e2e8f0",
-          background: cardBackground,
-          marginBottom: "24px",
-        }}
-      >
-        <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} sm={12} md={8}>
+      <Card className="payment-management-toolbar">
+        <div className="payment-toolbar-heading">
+          <div>
+            <Title level={4}>Vendor payment register</Title>
+            <Text type="secondary">{filteredVendors.length} vendors match your current search</Text>
+          </div>
+          <div className="payment-toolbar-controls">
             <Search
+              className="payment-vendor-search"
               placeholder="Search by vendor name or contact"
-              prefix={<FiSearch />}
+              aria-label="Search vendors by name or contact"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: "100%" }}
             />
-          </Col>
-          <Col xs={24} sm={12} md={8}>
             <Button
               icon={<FiRefreshCw />}
-              onClick={() => {
-                fetchAllPayments();
-              }}
-              style={{
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "8px",
-                color: "#000000",
-                height: "40px",
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = primaryColor;
-                e.currentTarget.style.color = "#ffffff";
-                e.currentTarget.style.borderColor = primaryColor;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#ffffff";
-                e.currentTarget.style.color = "#000000";
-                e.currentTarget.style.borderColor = "#e2e8f0";
-              }}
+              onClick={fetchVendors}
+              loading={loading}
+              className="payment-refresh-button"
             >
-              Refresh
+              Refresh vendors
             </Button>
-          </Col>
-        </Row>
+          </div>
+        </div>
       </Card>
 
       {/* Vendors Table */}
-      <Card
-        style={{
-          borderRadius: "12px",
-          border: "1px solid #e2e8f0",
-          background: cardBackground,
-        }}
-      >
+      <Card className="payment-vendor-table-card">
         <Table
           columns={vendorColumns}
           dataSource={filteredVendors}
+          loading={loading}
           rowKey="id"
           pagination={{
             pageSize: 10,
@@ -893,32 +732,40 @@ const PaymentManagement = () => {
       {/* View Payments Modal */}
       <Modal
         title={
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <FiUser style={{ fontSize: "18px", color: primaryColor }} />
+          <div className="payment-modal-title">
+            <FiUser />
             <div>
-              <div>Payments for {selectedVendor?.first_name} {selectedVendor?.last_name}</div>
-              <Text style={{ fontSize: "12px", color: textSecondary }}>
-                Complete payment history
+              <div>Payment history · {selectedVendor?.first_name} {selectedVendor?.last_name}</div>
+              <Text type="secondary" className="payment-modal-subtitle">
+                {new Date(selectedYear, selectedMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </Text>
             </div>
           </div>
         }
         open={viewPaymentsModalVisible}
         onCancel={() => setViewPaymentsModalVisible(false)}
-        footer={null}
+        footer={[
+          <Button key="close" onClick={() => setViewPaymentsModalVisible(false)}>Close</Button>,
+        ]}
         width={1000}
-        style={{ borderRadius: "12px" }}
+        centered
+        closeIcon={<CloseOutlined />}
+        styles={{ mask: { backgroundColor: 'rgba(20, 33, 61, 0.58)', backdropFilter: 'blur(6px)' } }}
+        className="payment-management-modal payment-history-modal"
       >
-        <div style={{ marginBottom: "16px" }}>
-          <Row gutter={[16, 16]} align="middle">
-            <Col>
-              <Text strong>Filter by Month:</Text>
-            </Col>
-            <Col>
+        <div className="payment-history-toolbar">
+          <div>
+            <Text strong>Payment period</Text>
+            <Text type="secondary">Choose a month and year to review recorded collections.</Text>
+          </div>
+          <div className="payment-period-controls">
+            <label>
+              <span>Month</span>
               <Select
+                aria-label="Payment month"
                 value={selectedMonth}
                 onChange={handleMonthChange}
-                style={{ width: 150 }}
+                className="payment-period-month"
               >
               <Option key={1} value={1}>January</Option>
               <Option key={2} value={2}>February</Option>
@@ -932,25 +779,34 @@ const PaymentManagement = () => {
               <Option key={10} value={10}>October</Option>
               <Option key={11} value={11}>November</Option>
               <Option key={12} value={12}>December</Option>
-            </Select>
-          </Col>
-          <Col>
-            <Select
-              value={selectedYear}
-              onChange={handleYearChange}
-              style={{ width: 120 }}
-            >
-              <Option key={selectedYear} value={selectedYear}>{selectedYear}</Option>
-              <Option key={selectedYear - 1} value={selectedYear - 1}>{selectedYear - 1}</Option>
-              <Option key={selectedYear - 2} value={selectedYear - 2}>{selectedYear - 2}</Option>
-            </Select>
-            </Col>
-          </Row>
+              </Select>
+            </label>
+            <label>
+              <span>Year</span>
+              <Select
+                aria-label="Payment year"
+                value={selectedYear}
+                onChange={handleYearChange}
+                className="payment-period-year"
+              >
+                <Option key={selectedYear} value={selectedYear}>{selectedYear}</Option>
+                <Option key={selectedYear - 1} value={selectedYear - 1}>{selectedYear - 1}</Option>
+                <Option key={selectedYear - 2} value={selectedYear - 2}>{selectedYear - 2}</Option>
+              </Select>
+            </label>
+          </div>
         </div>
 
         <Table
+          className="payment-history-table"
           columns={paymentColumns}
           dataSource={vendorPayments}
+          loading={paymentsLoading}
+          locale={{
+            emptyText: paymentsLoading
+              ? 'Loading payment records...'
+              : `No payment records found for ${selectedMonth}/${selectedYear}.`,
+          }}
           rowKey="id"
           pagination={{
             pageSize: 10,
@@ -966,12 +822,13 @@ const PaymentManagement = () => {
       {/* Detailed Payments Modal */}
       <Modal
         title={
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <FiFileText style={{ fontSize: "18px", color: primaryColor }} />
+          <div className="payment-modal-title">
+            <FiFileText />
             <div>
-              <div>All Payments for {selectedPaymentGroup?.payment_date ? new Date(selectedPaymentGroup.payment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}</div>
-              <Text style={{ fontSize: "12px", color: textSecondary }}>
-                {selectedPaymentGroup?.payment_count} payment(s) • Total: ₱{(() => {
+              <div>Payment details</div>
+              <Text type="secondary" className="payment-modal-subtitle">
+                {selectedPaymentGroup?.payment_date ? new Date(selectedPaymentGroup.payment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Date unavailable'}
+                {' · '}{selectedPaymentGroup?.payment_count || 0} payment(s) · ₱{(() => {
                   const payments = selectedPaymentGroup?.original_payments || [];
                   const totalAmount = payments.reduce((sum, payment) => sum + parseFloat(payment.amount || 0), 0);
                   return totalAmount.toLocaleString();
@@ -984,7 +841,10 @@ const PaymentManagement = () => {
         onCancel={() => setDetailedPaymentsModalVisible(false)}
         footer={null}
         width={1000}
-        style={{ borderRadius: "12px" }}
+        centered
+        closeIcon={<CloseOutlined />}
+        styles={{ mask: { backgroundColor: 'rgba(20, 33, 61, 0.58)', backdropFilter: 'blur(6px)' } }}
+        className="payment-management-modal payment-detail-modal"
       >
         {/* Loading overlay for detailed payments modal */}
         {modalLoading && (
@@ -1018,6 +878,7 @@ const PaymentManagement = () => {
           
           return (
               <Table
+              className="payment-detail-table"
               columns={[
                 {
                   title: "OR Number",
@@ -1035,7 +896,7 @@ const PaymentManagement = () => {
                   key: "payment_type",
                   render: (type) => (
                     <Tag color={getPaymentTypeColor(type)}>
-                      {type?.toUpperCase() || "N/A"}
+                        {type?.toUpperCase() || "N/A"}
                     </Tag>
                   ),
                 },
@@ -1133,6 +994,7 @@ const PaymentManagement = () => {
               ]}
               dataSource={selectedPaymentGroup?.original_payments || []}
               rowKey="id"
+              locale={{ emptyText: 'No payment details in this group.' }}
               pagination={{
                 pageSize: 10,
                 showSizeChanger: true,
@@ -1174,7 +1036,12 @@ const PaymentManagement = () => {
 
       {/* Edit Payment Modal */}
       <Modal
-        title="Edit Payment"
+        title={
+          <div className="payment-modal-title">
+            <FiEdit />
+            <span>Update payment record</span>
+          </div>
+        }
         open={editModalVisible}
         onCancel={handleCancel}
         footer={[
@@ -1192,15 +1059,25 @@ const PaymentManagement = () => {
           </Button>,
         ]}
         width={600}
-        style={{ borderRadius: "12px" }}
+        centered
+        closeIcon={<CloseOutlined />}
+        styles={{ mask: { backgroundColor: 'rgba(20, 33, 61, 0.58)', backdropFilter: 'blur(6px)' } }}
+        className="payment-management-modal payment-edit-modal"
       >
+        <div className="payment-modal-intro">
+          <FiEdit />
+          <div>
+            <strong>Update payment information</strong>
+            <span>Change only the details that need correction, then save the record.</span>
+          </div>
+        </div>
         <Form
           form={form}
           layout="vertical"
           style={{ marginTop: "16px" }}
         >
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="or_number"
                 label="OR Number"
@@ -1209,7 +1086,7 @@ const PaymentManagement = () => {
                 <Input placeholder="Enter OR number" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="payment_type"
                 label="Payment Type"
@@ -1225,7 +1102,7 @@ const PaymentManagement = () => {
             </Col>
           </Row>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="amount"
                 label="Amount"
@@ -1241,7 +1118,7 @@ const PaymentManagement = () => {
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="payment_date"
                 label="Payment Date"
@@ -1255,7 +1132,7 @@ const PaymentManagement = () => {
             </Col>
           </Row>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="missed_days"
                 label="Missed Days"
@@ -1267,7 +1144,7 @@ const PaymentManagement = () => {
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="advance_days"
                 label="Advance Days"
@@ -1298,10 +1175,10 @@ const PaymentManagement = () => {
       {/* Delete Confirmation Modal */}
       <Modal
         title={
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <FiTrash2 style={{ fontSize: "18px", color: dangerColor }} />
+          <div className="payment-modal-title payment-modal-title-danger">
+            <FiTrash2 />
             <div>
-              <div>Delete Payment Confirmation</div>
+              <div>Delete Payment Record</div>
               <Text style={{ fontSize: "12px", color: textSecondary }}>
                 This action cannot be undone
               </Text>
@@ -1341,14 +1218,17 @@ const PaymentManagement = () => {
           </Button>,
         ]}
         width={500}
-        style={{ borderRadius: "12px" }}
+        centered
+        closeIcon={<CloseOutlined />}
+        styles={{ mask: { backgroundColor: 'rgba(20, 33, 61, 0.58)', backdropFilter: 'blur(6px)' } }}
+        className="payment-management-modal payment-delete-modal"
       >
-        <div style={{ padding: "16px 0" }}>
-          <Text style={{ fontSize: "16px", color: textPrimary }}>
+        <div className="payment-delete-content">
+          <Text className="payment-delete-prompt">
             Are you sure you want to delete this payment?
           </Text>
           {paymentToDelete && (
-            <div style={{ marginTop: "16px", padding: "16px", background: "#f8fafc", borderRadius: "8px" }}>
+            <div className="payment-delete-summary">
               <Row gutter={[16, 8]}>
                 <Col span={12}>
                   <Text style={{ fontSize: "12px", color: textSecondary }}>OR Number:</Text>
@@ -1381,8 +1261,8 @@ const PaymentManagement = () => {
               </Row>
             </div>
           )}
-          <div style={{ marginTop: "16px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div className="payment-delete-warning">
+            <div>
               <FiAlertTriangle style={{ color: dangerColor, fontSize: "16px" }} />
               <Text style={{ color: dangerColor, fontSize: "14px" }}>
                 Warning: This will permanently remove this payment record from the system.

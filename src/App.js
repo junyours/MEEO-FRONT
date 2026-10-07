@@ -52,6 +52,22 @@ function App() {
             }
           />
           <Route
+            path="/admin/vendor-qr-codes"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/collector-accounts"
+            element={
+              <PrivateRoute allowedRoles={['admin']}>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/admin/office-activities"
             element={
               <PrivateRoute>
@@ -149,6 +165,22 @@ function App() {
           />
           <Route
             path="/admin/market-open-space-collections"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/slaughter-collections"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/slaughter-reports"
             element={
               <PrivateRoute>
                 <AdminDashboard />

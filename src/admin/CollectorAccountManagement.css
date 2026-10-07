@@ -1,0 +1,134 @@
+.collector-account-page {
+  padding: 28px;
+  color: #102a43;
+}
+
+.collector-account-header,
+.collector-account-header-copy,
+.collector-account-list-header {
+  display: flex;
+}
+
+.collector-account-header,
+.collector-account-list-header {
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.collector-account-header {
+  margin-bottom: 22px;
+  padding: 22px 24px;
+  border: 1px solid #e5eaf0;
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse at top right, rgb(219 234 254 / 68%), transparent 48%),
+    #fff;
+  box-shadow: 0 8px 28px rgb(16 42 67 / 5%);
+}
+
+.collector-account-header-copy {
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.collector-account-header .ant-typography {
+  margin-bottom: 5px;
+  text-align: left;
+}
+
+.collector-account-header h2.ant-typography {
+  margin: 4px 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.collector-account-eyebrow {
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.collector-account-note {
+  margin-bottom: 20px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+}
+
+.collector-account-card {
+  border: 1px solid #e5eaf0;
+  border-radius: 16px;
+  box-shadow: 0 8px 28px rgb(16 42 67 / 5%);
+}
+
+.collector-account-list-header {
+  margin-bottom: 18px;
+}
+
+.collector-account-list-header h4.ant-typography {
+  margin: 0 0 4px;
+}
+
+.collector-account-search {
+  width: min(310px, 48%);
+}
+
+.collector-account-avatar {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 11px;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.collector-account-password-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #2563eb;
+}
+
+.collector-account-password-note .ant-typography {
+  color: #64748b;
+  font-size: 13px;
+}
+
+@media (max-width: 720px) {
+  .collector-account-page {
+    padding: 18px 12px;
+  }
+
+  .collector-account-header,
+  .collector-account-list-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .collector-account-header {
+    padding: 18px;
+  }
+
+  .collector-account-header h2.ant-typography {
+    font-size: 23px;
+  }
+
+  .collector-account-header > .ant-space {
+    justify-content: flex-start;
+  }
+
+  .collector-account-search {
+    width: 100%;
+  }
+
+  .collector-account-card .ant-card-body {
+    padding: 16px;
+  }
+}

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import dayjs from "dayjs";
 import {
   Card,
   Tooltip,
@@ -31,7 +32,7 @@ import "./StallGrid.css";
 const { Text } = Typography;
 const { TextArea } = Input;
 
-const StallGrid = ({ section, editMode, onAddStall,onRefresh }) => {
+const StallGrid = ({ section, editMode, onAddStall, onRefresh }) => {
   const [stalls, setStalls] = useState(section?.stalls || []);
   const [modalVendor, setModalVendor] = useState(null);
   const [rentedHistory, setRentedHistory] = useState([]);
@@ -50,7 +51,15 @@ const [loadingPaymentHistory, setLoadingPaymentHistory] = useState(false);
   const [activeVendors, setActiveVendors] = useState([]);
   const [unoccupiedDateModalVisible, setUnoccupiedDateModalVisible] = useState(false);
   const [selectedUnoccupiedDate, setSelectedUnoccupiedDate] = useState(null);
+  const [exitPaymentAmount, setExitPaymentAmount] = useState(0);
+  const [exitOutstandingBalance, setExitOutstandingBalance] = useState(null);
+  const [exitBalanceLoading, setExitBalanceLoading] = useState(false);
+  const [archivedBalanceModalVisible, setArchivedBalanceModalVisible] = useState(false);
+  const [archivedRental, setArchivedRental] = useState(null);
+  const [archivedPaymentAmount, setArchivedPaymentAmount] = useState(0);
+  const [processingArchivedPayment, setProcessingArchivedPayment] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
+  const [assignmentDate, setAssignmentDate] = useState(dayjs());
   const [loadingVendors, setLoadingVendors] = useState(false);
   // New payment form states
   const [missedPaymentModalVisible, setMissedPaymentModalVisible] = useState(false);
@@ -131,6 +140,7 @@ const neutralButtonStyle = {
         section_name: data.section?.name || "—",
         daily_rent: data.daily_rent || 0,
         monthly_rent: data.monthly_rent || 0,
+        remaining_balance: Number(data.remaining_balance) || 0,
         payment_type: data.payment_type || "—",
         missedDays: data.missed_days || 0,
         missed_days: data.missed_days || 0, // Fix: read from root level, not from rented object
@@ -204,6 +214,36 @@ const fetchPaymentDetails = async (rentedId) => {
     }
   };
 
+  const openArchivedBalancePayment = (rental) => {
+    setArchivedRental(rental);
+    setArchivedPaymentAmount(Number(rental.remaining_balance) || 0);
+    setArchivedBalanceModalVisible(true);
+  };
+
+  const handleArchivedBalancePayment = async () => {
+    if (!archivedRental || Number(archivedPaymentAmount) <= 0) {
+      message.warning('Enter a payment amount greater than zero.');
+      return;
+    }
+
+    try {
+      setProcessingArchivedPayment(true);
+      const response = await api.post(
+        `/rented/${archivedRental.id}/settle-unoccupied-balance`,
+        { amount: Number(archivedPaymentAmount) }
+      );
+      message.success(response.data.message || 'Payment recorded.');
+      setArchivedBalanceModalVisible(false);
+      setArchivedRental(null);
+      setArchivedPaymentAmount(0);
+      await fetchRentedHistory(modalVendor.stall_id);
+    } catch (err) {
+      message.error(err.response?.data?.message || 'Failed to record payment.');
+    } finally {
+      setProcessingArchivedPayment(false);
+    }
+  };
+
   const fetchActiveVendors = async () => {
     try {
       setLoadingVendors(true);
@@ -227,12 +267,14 @@ const fetchPaymentDetails = async (rentedId) => {
 
     try {
       const res = await api.post(`/market-layout/stalls/${selectedStall}/assign-vendor`, {
-        vendor_id: selectedVendor
+        vendor_id: selectedVendor,
+        assignment_date: assignmentDate.format('YYYY-MM-DD'),
       });
       
       message.success('Vendor assigned successfully');
       setShowModal(false);
       setSelectedVendor(null);
+      setAssignmentDate(dayjs());
       onRefresh(); // Refresh the stall grid
     } catch (err) {
       console.error('Error assigning vendor:', err);
@@ -483,15 +525,6 @@ const fetchPaymentDetails = async (rentedId) => {
     }
   };
 
-  const fetchStatusLogs = async (stallId) => {
-    try {
-      const res = await api.get(`/stall/${stallId}/status-logs`);
-      setStatusLogs(res.data || []);
-    } catch (err) {
-      console.error(err);
-      setStatusLogs([]);
-    }
-  };
 
   const handleStallClick = async (stall) => {
     if (!stall) return;
@@ -508,6 +541,10 @@ const fetchPaymentDetails = async (rentedId) => {
     }
 
     const normalizedStatus = (stall.status || "").toLowerCase();
+    if (normalizedStatus === "vacant") {
+      setAssignmentDate(dayjs());
+      setSelectedVendor(null);
+    }
     if (
       ![
         "occupied",
@@ -526,7 +563,7 @@ const fetchPaymentDetails = async (rentedId) => {
 
     const data = await fetchVendor(stall.id);
     await fetchRentedHistory(stall.id);
-    await fetchStatusLogs(stall.id);
+
 
     setModalVendor(
       normalizedStatus === "vacant" ? { ...data, vendor: null } : data
@@ -542,31 +579,58 @@ const fetchPaymentDetails = async (rentedId) => {
     setShowModal(true);
   };
 
+  const fetchExitBalance = async (rentedId, date) => {
+    if (!rentedId || !date) return;
+
+    setExitBalanceLoading(true);
+    setExitOutstandingBalance(null);
+    try {
+      const response = await api.get(`/rented/${rentedId}/balance-at-date`, {
+        params: { date: date.format('YYYY-MM-DD') },
+      });
+      setExitOutstandingBalance(Number(response.data.remaining_balance) || 0);
+    } catch (error) {
+      setExitOutstandingBalance(0);
+      message.error(error.response?.data?.message || 'Failed to calculate the balance for this date.');
+    } finally {
+      setExitBalanceLoading(false);
+    }
+  };
+
   const handleRemoveVendor = () => {
     if (!modalVendor?.stall_id) return;
     
     // Show the unoccupied date selection modal
+    const defaultExitDate = dayjs();
     setUnoccupiedDateModalVisible(true);
-    setSelectedUnoccupiedDate(null); // Reset to today
+    setSelectedUnoccupiedDate(defaultExitDate);
+    setExitPaymentAmount(0);
+    fetchExitBalance(modalVendor.rented_id, defaultExitDate);
   };
 
   const confirmRemoveVendor = async () => {
     if (!modalVendor?.stall_id) return;
 
+    setProcessingPayment(true);
     try {
       const requestData = {};
       if (selectedUnoccupiedDate) {
         requestData.unoccupied_date = selectedUnoccupiedDate.format('YYYY-MM-DD HH:mm:ss');
       }
+      if (exitPaymentAmount > 0) {
+        requestData.settlement_amount = exitPaymentAmount;
+      }
 
-      await api.post(`/stall/${modalVendor.stall_id}/remove-vendor`, requestData);
-      message.success(
-        `Vendor removed from Stall #${modalVendor.stall_number}`
+      const response = await api.post(`/stall/${modalVendor.stall_id}/remove-vendor`, requestData);
+      const settledAmount = Number(response.data.settlement_amount) || 0;
+      message.success(settledAmount > 0
+        ? `Vendor removed from Stall #${modalVendor.stall_number}; ${fmtMoney(settledAmount)} collected.`
+        : `Vendor removed from Stall #${modalVendor.stall_number}`
       );
 
       const updated = await fetchVendor(modalVendor.stall_id);
       await fetchRentedHistory(modalVendor.stall_id);
-      await fetchStatusLogs(modalVendor.stall_id);
+   
 
       if (updated) {
         setModalVendor({ ...updated, vendor: null });
@@ -581,9 +645,12 @@ const fetchPaymentDetails = async (rentedId) => {
       // Close the modal
       setUnoccupiedDateModalVisible(false);
       setSelectedUnoccupiedDate(null);
+      setExitPaymentAmount(0);
     } catch (err) {
       console.error(err);
-      message.error("Failed to remove vendor from stall.");
+      message.error(err.response?.data?.message || "Failed to remove vendor from stall.");
+    } finally {
+      setProcessingPayment(false);
     }
   };
 
@@ -600,7 +667,6 @@ const fetchPaymentDetails = async (rentedId) => {
         }`
       );
 
-      await fetchStatusLogs(modalVendor.stall_id);
 
       setVendorCache((prev) => ({
         ...prev,
@@ -1089,124 +1155,36 @@ const fetchPaymentDetails = async (rentedId) => {
                   </Text>
                 ),
               },
+              {
+                title: "Remaining Balance",
+                dataIndex: "remaining_balance",
+                render: (amount) => (
+                  <Text strong style={{ color: amount > 0 ? "#cf1322" : "#389e0d" }}>
+                    {fmtMoney(amount)}
+                  </Text>
+                ),
+              },
+              {
+                title: "Action",
+                key: "action",
+                render: (_, record) => record.status === "unoccupied" && Number(record.remaining_balance) > 0 ? (
+                  <Button
+                    size="small"
+                    type="primary"
+                    icon={<DollarOutlined />}
+                    onClick={() => openArchivedBalancePayment(record)}
+                  >
+                    Pay Balance
+                  </Button>
+                ) : <Text type="secondary">-</Text>,
+              },
             ]}
           />
         </Card>
       ),
     });
-
-    // Status Logs Tab
-    tabs.push({
-      key: "3",
-      label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500 }}>
-          <FileTextOutlined style={{ color: '#fa8c16' }} />
-          Status Logs
-        </span>
-      ),
-      children: (
-        <>
-          <Card
-            size="small"
-            style={{
-              borderRadius: 12,
-              border: "none",
-              boxShadow: "0 4px 16px rgba(15,23,42,0.06)",
-            }}
-            bodyStyle={{ padding: 12 }}
-          >
-            {statusLogs.length === 0 ? (
-              <Empty
-                description="No status messages found"
-                style={{ padding: 40 }}
-              />
-            ) : (
-              <Table
-                dataSource={statusLogs.map((log, idx) => ({
-                  key: idx,
-                  status: log.is_active ? "Active" : "Inactive",
-                  message: log.message || "",
-                  created_at: fmtDate(log.created_at),
-                }))}
-                pagination={false}
-                size="small"
-                bordered={false}
-                columns={[
-                  {
-                    title: "Status",
-                    dataIndex: "status",
-                    render: (text) => (
-                      <Text
-                        style={{
-                          color: text === "Active" ? "#52c41a" : "#ff4d4f",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {text}
-                      </Text>
-                    ),
-                  },
-                  {
-                    title: "Message",
-                    render: (_, record) => (
-                      <Button
-                        type="link"
-                        style={{
-                          padding: "2px 10px",
-                          borderRadius: 999,
-                          border: "1px solid #0ed7fb",
-                          background: "linear-gradient(135deg,#e6faff 0,#f5feff 100%)",
-                          fontSize: 12,
-                          fontWeight: 600,
-                        }}
-                        onClick={() => {
-                          setSelectedLogMessage(
-                            record.message && record.message.trim() !== ""
-                              ? record.message
-                              : "No message provided."
-                          );
-                          setMessageModalVisible(true);
-                        }}
-                      >
-                        View Message
-                      </Button>
-                    ),
-                  },
-                  { title: "Changed At", dataIndex: "created_at" },
-                ]}
-              />
-            )}
-          </Card>
-
-          <Modal
-            title="Stall Status Message"
-            open={messageModalVisible}
-            onCancel={() => setMessageModalVisible(false)}
-            footer={[
-              <Button
-                key="close"
-                type="primary"
-                onClick={() => setMessageModalVisible(false)}
-              >
-                Close
-              </Button>,
-            ]}
-            centered
-          >
-            <Text
-              style={{
-                display: "block",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-              }}
-            >
-              {selectedLogMessage || "No message provided."}
-            </Text>
-          </Modal>
-        </>
-      ),
-    });
-
+   
+      
     // Vendor Assignment Tab - only for vacant stalls without vendor
     if (!modalVendor.vendor && modalVendor.status === 'vacant') {
       tabs.push({
@@ -1283,6 +1261,17 @@ const fetchPaymentDetails = async (rentedId) => {
                 ))}
               </Select>
             </div>
+
+            <Form.Item label="Assignment Date" required>
+              <DatePicker
+                style={{ width: '100%' }}
+                value={assignmentDate}
+                onChange={setAssignmentDate}
+                allowClear={false}
+                disabledDate={(current) => current && current.isAfter(dayjs(), 'day')}
+                format="YYYY-MM-DD"
+              />
+            </Form.Item>
 
             {selectedVendor && (
               <Card
@@ -2473,12 +2462,14 @@ const fetchPaymentDetails = async (rentedId) => {
         onCancel={() => {
           setUnoccupiedDateModalVisible(false);
           setSelectedUnoccupiedDate(null);
+          setExitPaymentAmount(0);
         }}
         footer={[
           <Button
             onClick={() => {
               setUnoccupiedDateModalVisible(false);
               setSelectedUnoccupiedDate(null);
+              setExitPaymentAmount(0);
             }}
             style={{ borderRadius: 6, height: 40 }}
           >
@@ -2488,6 +2479,8 @@ const fetchPaymentDetails = async (rentedId) => {
             type="primary"
             danger
             onClick={confirmRemoveVendor}
+            loading={processingPayment}
+            disabled={exitBalanceLoading || exitOutstandingBalance === null}
             style={{ borderRadius: 6, height: 40, minWidth: 120 }}
           >
             Confirm Removal
@@ -2526,10 +2519,38 @@ const fetchPaymentDetails = async (rentedId) => {
                 size="large"
                 placeholder="Select unoccupied date and time"
                 value={selectedUnoccupiedDate}
-                onChange={(date) => setSelectedUnoccupiedDate(date)}
+                onChange={(date) => {
+                  setSelectedUnoccupiedDate(date);
+                  setExitPaymentAmount(0);
+                  fetchExitBalance(modalVendor?.rented_id, date);
+                }}
                 format="YYYY-MM-DD HH:mm:ss"
                 disabledDate={(current) => current && current > new Date()}
               />
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <Text strong style={{ display: 'block', marginBottom: 8 }}>
+                Outstanding balance: {exitBalanceLoading ? 'Calculating...' : fmtMoney(exitOutstandingBalance ?? 0)}
+              </Text>
+              {!exitBalanceLoading && exitOutstandingBalance > 0 && (
+                <>
+                  <InputNumber
+                    aria-label="Payment amount to collect before removal"
+                    min={0}
+                    max={exitOutstandingBalance}
+                    precision={2}
+                    value={exitPaymentAmount}
+                    onChange={(value) => setExitPaymentAmount(value ?? 0)}
+                    formatter={(value) => `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={(value) => value.replace(/₱\s?|(,*)/g, '')}
+                    style={{ width: '100%' }}
+                  />
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    Enter the amount collected now. Any unpaid balance will remain recorded on this rental.
+                  </Text>
+                </>
+              )}
             </div>
 
             <div style={{
@@ -2548,6 +2569,43 @@ const fetchPaymentDetails = async (rentedId) => {
             </div>
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        title={`Pay Remaining Balance${archivedRental ? `: ${archivedRental.vendor_name}` : ''}`}
+        open={archivedBalanceModalVisible}
+        onCancel={() => {
+          setArchivedBalanceModalVisible(false);
+          setArchivedRental(null);
+          setArchivedPaymentAmount(0);
+        }}
+        onOk={handleArchivedBalancePayment}
+        confirmLoading={processingArchivedPayment}
+        okText="Record Payment"
+        okButtonProps={{ disabled: !archivedRental || Number(archivedPaymentAmount) <= 0 }}
+        destroyOnClose
+      >
+        {archivedRental && (
+          <div>
+            <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+              Outstanding balance: {fmtMoney(archivedRental.remaining_balance)}
+            </Text>
+            <InputNumber
+              aria-label="Archived rental payment amount"
+              min={0.01}
+              max={Number(archivedRental.remaining_balance)}
+              precision={2}
+              value={archivedPaymentAmount}
+              onChange={(value) => setArchivedPaymentAmount(value ?? 0)}
+              formatter={(value) => `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={(value) => value.replace(/₱\s?|(,*)/g, '')}
+              style={{ width: '100%' }}
+            />
+            <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+              Partial payments are allowed. The rental stays closed and the unpaid amount remains in its history.
+            </Text>
+          </div>
+        )}
       </Modal>
 
 

@@ -66,7 +66,6 @@ const Login = () => {
   const [captchaHash, setCaptchaHash] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
-  const [tempUser, setTempUser] = useState(null);
   const [countdown, setCountdown] = useState(0);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpValues, setOtpValues] = useState(['', '', '', '', '', '']);
@@ -99,16 +98,17 @@ const Login = () => {
         // Backend returned JSON with image and hash
         displayCaptchaImage(response.data.image);
         setCaptchaHash(response.data.hash);
-      } else if (response.data.startsWith('data:image')) {
+      } else if (typeof response.data === 'string' && response.data.startsWith('data:image')) {
         // Backend returned image data directly (backward compatibility)
         displayCaptchaImage(response.data);
         setCaptchaHash('');
-      } else {
+      } else if (typeof response.data === 'string') {
         // Backend returned text code (fallback)
         setCaptchaCode(response.data);
         drawCaptcha(response.data);
         setCaptchaHash('');
-        console.log(response.data);
+      } else {
+        throw new Error('Captcha response was not recognized.');
       }
     } catch (err) {
       console.error('Failed to generate captcha:', err);
@@ -389,7 +389,6 @@ const Login = () => {
         });
 
         if (response.data.success) {
-          setTempUser(response.data.user);
           setShowOtpModal(true);
           message.success('Credentials verified! Sending OTP...');
           
@@ -445,7 +444,7 @@ const Login = () => {
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send OTP');
-      throw err;
+      setShowOtpModal(false);
     }
   };
 
@@ -568,17 +567,6 @@ const Login = () => {
     
     setIsSendingEmail(true);
     try {
-      // First check if username/email exists
-      const checkResponse = await api.post('/auth/check-username', {
-        username: resetEmail
-      });
-
-      if (!checkResponse.data.exists) {
-        setResetFieldErrors({ email: 'Username or email does not exist' });
-        return;
-      }
-
-      // If username/email exists, proceed with sending reset email
       const response = await api.post('/auth/forgot-password', {
         email: resetEmail
       });
@@ -601,17 +589,6 @@ const Login = () => {
     
     setIsSendingOtp(true);
     try {
-      // First check if username/email exists
-      const checkResponse = await api.post('/auth/check-username', {
-        username: resetEmail
-      });
-
-      if (!checkResponse.data.exists) {
-        setResetFieldErrors({ email: 'Username or email does not exist' });
-        return;
-      }
-
-      // If username/email exists, proceed with sending OTP
       const response = await api.post('/auth/send-reset-otp', {
         email: resetEmail
       });
@@ -1137,17 +1114,28 @@ const Login = () => {
         <div className="login-card" style={cardWrapperStyle}>
           <div className="login-form-panel" style={formContainerStyle}>
             <div style={formContainerPattern}></div>
+            <div className="login-back-home-wrapper">
+              <button
+                className="login-back-home-button"
+                type="button"
+                onClick={() => navigate('/homepage')}
+                aria-label="Back to homepage"
+              >
+                <FaArrowLeft aria-hidden="true" />
+                <span>Back to Homepage</span>
+              </button>
+            </div>
             <div className="login-intro" style={{ textAlign: 'center', marginBottom: window.innerWidth <= 768 ? '30px' : '50px', paddingTop: '10px' }}>
               <div style={{ marginBottom: window.innerWidth <= 768 ? '20px' : '30px' }}>
-                <img 
-                  src={logo} 
-                  alt="MEEO Logo" 
-                  style={{ 
-                    width: window.innerWidth <= 768 ? '60px' : '100px', 
+                <img
+                  src={logo}
+                  alt="MEEO Logo"
+                  style={{
+                    width: window.innerWidth <= 768 ? '60px' : '100px',
                     height: window.innerWidth <= 768 ? '60px' : '100px',
                     marginBottom: '8px',
                     filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.15))'
-                  }} 
+                  }}
                 />
               </div>
               <h2 className="login-intro-title" style={{
@@ -1181,7 +1169,7 @@ const Login = () => {
             </div>
 
             {/* Security Status Indicator */}
-            <div style={securityIndicatorStyle} className="security-indicator">
+            <div style={securityIndicatorStyle} className="security-indicator" role="status" aria-live="polite">
               <FaShieldAlt style={{ 
                 color: failedAttempts > 0 ? '#e74c3c' : '#667eea',
                 fontSize: '16px'
@@ -1198,7 +1186,7 @@ const Login = () => {
             </div>
 
             {/* Progress Steps */}
-            <div style={{ marginBottom: '40px' }}>
+            <div className="login-progress-steps" style={{ marginBottom: '40px' }}>
               <Steps current={currentStep} size="small">
                 <Step title="Credentials" icon={<FaUser />} />
                 <Step title="Verification" icon={<FaShieldAlt />} />
@@ -1235,17 +1223,24 @@ const Login = () => {
 
             {/* Step 1: Credentials & Captcha */}
             <div>
-              <form onSubmit={handleSubmit}>
+              <form className="login-credentials-form" onSubmit={handleSubmit}>
                 <div 
+                  className="login-input-container"
                   style={{ ...inputContainerStyle, ...(fieldErrors.username ? inputContainerFocus : {}) }}
                 >
                   <FaEnvelope style={iconStyle} />
+                  <label className="login-sr-only" htmlFor="login-username">Username</label>
                   <input
                     type="text"
+                    id="login-username"
                     name="username"
                     value={form.username}
                     onChange={handleChange}
                     placeholder="Enter your username"
+                    autoComplete="username"
+                    required
+                    aria-invalid={Boolean(fieldErrors.username)}
+                    aria-describedby={fieldErrors.username ? 'login-username-error' : undefined}
                     style={inputStyle}
                     onFocus={(e) => {
                       e.target.parentElement.style.borderColor = '#667eea';
@@ -1257,18 +1252,25 @@ const Login = () => {
                     }}
                   />
                 </div>
-                {fieldErrors.username && <div style={fieldErrorStyle}>{fieldErrors.username}</div>}
+                {fieldErrors.username && <div className="login-field-error" id="login-username-error" role="alert" style={fieldErrorStyle}>{fieldErrors.username}</div>}
 
                 <div 
+                  className="login-input-container"
                   style={{ ...inputContainerStyle, ...(fieldErrors.password ? inputContainerFocus : {}) }}
                 >
                   <FaLock style={iconStyle} />
+                  <label className="login-sr-only" htmlFor="login-password">Password</label>
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    id="login-password"
                     name="password"
                     value={form.password}
                     onChange={handleChange}
                     placeholder="Enter your password"
+                    autoComplete="current-password"
+                    required
+                    aria-invalid={Boolean(fieldErrors.password)}
+                    aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
                     style={inputStyle}
                     onFocus={(e) => {
                       e.target.parentElement.style.borderColor = '#667eea';
@@ -1279,25 +1281,29 @@ const Login = () => {
                       e.target.parentElement.style.boxShadow = 'none';
                     }}
                   />
-                  <span 
+                  <button
+                    className="login-password-toggle"
+                    type="button"
                     onClick={() => setShowPassword(!showPassword)} 
-                    style={togglePasswordStyle}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
-                  </span>
+                  </button>
                 </div>
-                {fieldErrors.password && <div style={fieldErrorStyle}>{fieldErrors.password}</div>}
+                {fieldErrors.password && <div className="login-field-error" id="login-password-error" role="alert" style={fieldErrorStyle}>{fieldErrors.password}</div>}
 
                 {/* Captcha Section */}
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', color: '#5a6c7d', fontWeight: '500' }}>
+                <div className="login-captcha-section" style={{ marginBottom: '24px' }}>
+                  <label htmlFor="login-captcha" style={{ display: 'block', marginBottom: '8px', color: '#5a6c7d', fontWeight: '500' }}>
                     Security Verification
                   </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                  <div className="login-captcha-row" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                     <canvas
                       ref={canvasRef}
                       width={180}
                       height={60}
+                      role="img"
+                      aria-label="Captcha security verification code"
                       style={{
                         border: '2px solid #e9ecef',
                         borderRadius: '8px',
@@ -1305,8 +1311,10 @@ const Login = () => {
                       }}
                     />
                     <Button
+                      className="login-captcha-refresh"
                       type="link"
                       onClick={generateCaptcha}
+                      aria-label="Refresh security verification code"
                       style={{ padding: '4px 8px', height: 'auto' }}
                       icon={<FaArrowsRotate />}
                     >
@@ -1314,23 +1322,30 @@ const Login = () => {
                     </Button>
                   </div>
                   <div 
+                    className="login-input-container"
                     style={{ ...inputContainerStyle, ...(fieldErrors.captcha ? inputContainerFocus : {}) }}
                   >
                     <AiOutlineSafety style={iconStyle} />
                     <input
                       type="text"
+                      id="login-captcha"
                       name="captcha"
                       value={form.captcha}
                       onChange={handleChange}
                       placeholder="Enter captcha code"
+                      autoComplete="off"
+                      required
+                      aria-invalid={Boolean(fieldErrors.captcha)}
+                      aria-describedby={fieldErrors.captcha ? 'login-captcha-error' : undefined}
                       style={inputStyle}
                       maxLength={6}
                     />
                   </div>
-                  {fieldErrors.captcha && <div style={fieldErrorStyle}>{fieldErrors.captcha}</div>}
+                  {fieldErrors.captcha && <div className="login-field-error" id="login-captcha-error" role="alert" style={fieldErrorStyle}>{fieldErrors.captcha}</div>}
                 </div>
 
                 <button
+                  className="login-submit-button"
                   type="submit"
                   style={{
                     ...buttonStyle,
@@ -1389,42 +1404,6 @@ const Login = () => {
                   </button>
                 </div>
 
-                {/* Back to Homepage Button */}
-                <div style={{ textAlign: 'center', marginTop: '16px' }}>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/homepage')}
-                    style={{
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                      border: 'none',
-                      color: '#fff',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      padding: '12px 24px',
-                      borderRadius: '12px',
-                      transition: 'all 0.3s ease',
-                      fontFamily: 'Inter, sans-serif',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      margin: '0 auto',
-                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
-                    }}
-                    onMouseOver={(e) => {
-                      e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.4)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
-                    }}
-                  >
-                    <FaArrowLeft style={{ fontSize: '12px' }} />
-                    Back to Homepage
-                  </button>
-                </div>
               </form>
             </div>
 

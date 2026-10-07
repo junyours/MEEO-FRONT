@@ -1,0 +1,215 @@
+.department-balance-module {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+.department-balance-module-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.department-balance-eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.department-balance-module-heading h3.ant-typography {
+  margin: 0 0 4px;
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 650;
+}
+
+.department-balance-module-heading > div > .ant-typography-secondary {
+  font-size: 13px;
+}
+
+.department-balance-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.department-balance-summary {
+  margin-bottom: 16px;
+}
+
+.department-balance-stat.ant-card {
+  height: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.department-balance-stat .ant-card-body {
+  padding: 18px 20px;
+}
+
+.department-balance-stat .ant-statistic-title {
+  margin-bottom: 8px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.department-balance-stat .ant-statistic-content {
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.collected-stat {
+  border-top: 3px solid #2563eb !important;
+}
+
+.progress-stat {
+  border-top: 3px solid #16845d !important;
+}
+
+.remaining-stat {
+  border-top: 3px solid #d97706 !important;
+}
+
+.department-enterprise-card.ant-card {
+  height: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.department-enterprise-card.ant-card:hover {
+  border-color: #bfcee2;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+.department-enterprise-card .ant-card-body {
+  display: flex;
+  min-height: 218px;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.department-enterprise-card-heading {
+  min-height: 52px;
+  margin-bottom: 2px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid #e8edf3;
+}
+
+.department-enterprise-card-heading h4 {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 3px solid #2563eb;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.department-enterprise-collection {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 16px 0 18px;
+}
+
+.department-enterprise-collection span,
+.department-enterprise-progress-label span,
+.department-enterprise-remaining span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.department-enterprise-collection strong {
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.department-enterprise-progress {
+  margin-top: auto;
+}
+
+.department-enterprise-progress-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
+}
+
+.department-enterprise-progress-label strong {
+  color: #334155;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.department-enterprise-progress .ant-progress {
+  margin: 0;
+}
+
+.department-enterprise-remaining {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 15px;
+  padding-top: 13px;
+  border-top: 1px solid #e8edf3;
+}
+
+.department-enterprise-remaining strong {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.department-enterprise-remaining .is-outstanding {
+  color: #b45309;
+}
+
+.department-enterprise-remaining .is-settled {
+  color: #16845d;
+}
+
+.department-balance-empty.ant-card {
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #64748b;
+  text-align: center;
+}
+
+@media (max-width: 767px) {
+  .department-balance-module-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .department-balance-module-heading h3.ant-typography {
+    font-size: 19px;
+  }
+
+  .department-balance-stat .ant-card-body {
+    padding: 15px 16px;
+  }
+
+  .department-balance-stat .ant-statistic-content {
+    font-size: 20px;
+  }
+}

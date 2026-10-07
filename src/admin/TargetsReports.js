@@ -46,6 +46,7 @@ import {
 import LoadingOverlay from "./Loading";
 import dayjs from "dayjs";
 import { generateTargetReportPDF } from "./TargetPdf";
+import "./css/TargetsReports.css";
 
 const { Text, Title } = Typography;
 const { RangePicker } = DatePicker;
@@ -147,6 +148,7 @@ const TargetsReports = () => {
   const [yearRange, setYearRange] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingDepartment, setEditingDepartment] = useState(null);
   const [form] = Form.useForm();
   const reportRefs = useRef({});
   const chartRefs = useRef({});
@@ -189,6 +191,7 @@ const TargetsReports = () => {
         `/department-collection?start_year=${startYear}&end_year=${endYear}`
       );
       const data = res.data;
+      const departmentMetadata = new Map();
       
       // Transform the data to match expected format for each year
       const transformedReports = {};
@@ -199,6 +202,16 @@ const TargetsReports = () => {
         const departmentsByYear = {};
         
         data.departments.forEach(dept => {
+          if (!departmentMetadata.has(dept.id)) {
+            departmentMetadata.set(dept.id, {
+              id: dept.id,
+              name: dept.name,
+              code: dept.code,
+              description: dept.description || '',
+              is_active: dept.is_active ?? true,
+            });
+          }
+
           const year = dept.year;
           if (!departmentsByYear[year]) {
             departmentsByYear[year] = [];
@@ -207,6 +220,8 @@ const TargetsReports = () => {
           departmentsByYear[year].push({
             id: dept.id,
             module: dept.name,
+            code: dept.code,
+            description: dept.description || '',
             annual_target: dept.target?.annual_target || 0,
             total_collection: dept.collection?.total_collection || 0,
             progress: dept.performance?.progress_percentage || 0,
@@ -233,6 +248,7 @@ const TargetsReports = () => {
       }
       
       setReports(transformedReports);
+      setDepartments(Array.from(departmentMetadata.values()));
     } catch (error) {
       console.error(error);
       message.error("Failed to fetch reports");
@@ -240,20 +256,9 @@ const TargetsReports = () => {
     setLoading(false);
   };
 
-  const fetchDepartments = async () => {
-    try {
-      const res = await api.get('/department-collection/departments');
-      setDepartments(res.data.departments || []);
-    } catch (error) {
-      console.error(error);
-      message.error("Failed to fetch departments");
-    }
-  };
-
   useEffect(() => {
     setYearRange([currentYear, currentYear]);
     fetchReports(currentYear, currentYear);
-    fetchDepartments();
   }, []);
 
   const handleYearChange = (dates) => {
@@ -309,21 +314,38 @@ const TargetsReports = () => {
 
   const handleCreateDepartment = async (values) => {
     try {
-      await api.post('/department-collection/departments', {
+      const payload = {
         name: values.name,
         code: values.code,
         description: values.description,
         is_active: values.is_active !== undefined ? values.is_active : true,
-      });
+      };
 
-      message.success('Department created successfully!');
+      if (editingDepartment) {
+        await api.put(`/department-collection/departments/${editingDepartment.id}`, payload);
+      } else {
+        await api.post('/department-collection/departments', payload);
+      }
+
+      message.success(editingDepartment ? 'Department updated successfully!' : 'Department created successfully!');
       setIsModalVisible(false);
+      setEditingDepartment(null);
       form.resetFields();
-      fetchDepartments();
       fetchReports(yearRange[0], yearRange[1]);
     } catch (err) {
       console.error(err);
-      message.error('Error creating department');
+      message.error(editingDepartment ? 'Error updating department' : 'Error creating department');
+    }
+  };
+
+  const handleDeleteDepartment = async (department) => {
+    try {
+      await api.delete(`/department-collection/departments/${department.id}`);
+      message.success('Department deleted successfully!');
+      fetchReports(yearRange[0], yearRange[1]);
+    } catch (err) {
+      console.error(err);
+      message.error('Error deleting department');
     }
   };
 
@@ -424,7 +446,6 @@ const TargetsReports = () => {
                   icon={<ReloadOutlined />}
                   onClick={() => {
                     fetchReports(yearRange[0], yearRange[1]);
-                    fetchDepartments();
                   }}
                   disabled={loading}
                   style={{
@@ -443,7 +464,7 @@ const TargetsReports = () => {
                   style={buttonStyles.primary}
                   onClick={() => setIsModalVisible(true)}
                 >
-                  Add Department
+                  Add Enterprise
                 </Button>
               </Space>
             </Col>
@@ -540,6 +561,50 @@ const TargetsReports = () => {
                     {text}
                   </Tag>
                 ),
+              },
+              {
+                title: "Actions",
+                key: "actions",
+                width: 96,
+                render: (_, row) => {
+                  const department = departments.find((item) => item.id === row.id);
+
+                  return (
+                    <Space size="small">
+                      <Tooltip title="Edit department">
+                        <Button
+                          icon={<EditOutlined />}
+                          aria-label={`Edit ${row.module}`}
+                          onClick={() => {
+                            setEditingDepartment({ id: row.id });
+                            form.setFieldsValue({
+                              name: row.module,
+                              code: department?.code || '',
+                              description: department?.description || '',
+                              is_active: department?.is_active ?? true,
+                            });
+                            setIsModalVisible(true);
+                          }}
+                        />
+                      </Tooltip>
+                      <Popconfirm
+                        title="Delete this department?"
+                        description="Its reports will no longer appear."
+                        okText="Delete"
+                        okButtonProps={{ danger: true }}
+                        onConfirm={() => handleDeleteDepartment(row)}
+                      >
+                        <Tooltip title="Delete department">
+                          <Button
+                            danger
+                            icon={<DeleteOutlined />}
+                            aria-label={`Delete ${row.module}`}
+                          />
+                        </Tooltip>
+                      </Popconfirm>
+                    </Space>
+                  );
+                },
               },
               {
                 title: `Annual Target (${year})`,
@@ -662,7 +727,13 @@ const TargetsReports = () => {
                 width: 100,
                 render: (_, row) => {
                   const cellKey = `${row.module}-${i + 1}`;
-                  const isEditable = year >= currentYear;
+                  const normalizedDepartmentCode = String(row.code || '')
+                    .toUpperCase()
+                    .replace(/[^A-Z]/g, '');
+                  const isAutomaticCollection = ['MARKET', 'WHARF', 'SLAUGHTER', 'SLAUGHTERHOUSE'].includes(
+                    normalizedDepartmentCode
+                  );
+                  const isEditable = year >= currentYear && !isAutomaticCollection;
                   const monthlyCollection = row.monthly?.[i + 1] || 0;
 
                   if (editingCell === cellKey) {
@@ -1304,7 +1375,7 @@ const TargetsReports = () => {
           })}
       </div>
 
-      {/* Department Creation Modal */}
+      {/* Department Creation/Edit Modal */}
       <Modal
         className={CSS_CLASSES.modal}
         title={
@@ -1314,12 +1385,13 @@ const TargetsReports = () => {
             fontWeight: 600,
             color: COLORS.neutral[800]
           }}>
-            Create New Department
+            {editingDepartment ? 'Edit Department' : 'Create New Department'}
           </div>
         }
         open={isModalVisible}
         onCancel={() => {
           setIsModalVisible(false);
+          setEditingDepartment(null);
           form.resetFields();
         }}
         footer={null}
@@ -1443,6 +1515,7 @@ const TargetsReports = () => {
               <Button
                 onClick={() => {
                   setIsModalVisible(false);
+                  setEditingDepartment(null);
                   form.resetFields();
                 }}
                 style={{ 
@@ -1465,7 +1538,7 @@ const TargetsReports = () => {
                   height: '36px',
                 }}
               >
-                Create Department
+                {editingDepartment ? 'Save Changes' : 'Create Department'}
               </Button>
             </div>
           </Form.Item>

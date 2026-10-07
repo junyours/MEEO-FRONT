@@ -74,15 +74,15 @@ HistoryOutlined,
 
   ShopOutlined,
 
+  MedicineBoxOutlined,
+
   LineChartOutlined,
 
   ShoppingOutlined,
-
   CalendarOutlined,
-
   DollarCircleOutlined,
-
   TeamOutlined,
+  QrcodeOutlined,
 
   
 
@@ -117,8 +117,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
   const textSecondary = "#64748b";
   const borderLight = "#e2e8f0";
   const hoverBackground = "#f1f5f9";
-  const selectedBackground = "#dbeafe";
-  const selectedColor = "#2563eb";
+  const selectedBackground = "#6e98f3";
+  const selectedColor = "#ffffff";
 
 
 
@@ -164,17 +164,20 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
   const menuItems = [
 
     {
-
-      key: "dashboard",
-
-      icon: <HomeOutlined />,
-
-      label: "Dashboard",
-
-    }, 
- { key: "product-management", label: "Product Management", icon: <ShoppingOutlined /> },
- { key: "office-activities", label: "Office Activities", icon: <HistoryOutlined /> },
-
+      type: "group",
+      key: "overview",
+      label: "Overview",
+      children: [
+        {
+          key: "dashboard",
+          icon: <HomeOutlined />,
+          label: "Dashboard",
+        },
+        { key: "product-management", label: "Product Management", icon: <ShoppingOutlined /> },
+        { key: "collector-accounts", label: "Collector & Staff Accounts", icon: <UserAddOutlined /> },
+        { key: "office-activities", label: "Office Activities", icon: <HistoryOutlined /> },
+      ],
+    },
 
     {
 
@@ -187,26 +190,54 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
       children: [
 
         { key: "vendor-management", label: "Vendor Management", icon: <UserOutlined /> },
-
-       
-        { key: "cash-ticket", label: "Cash Ticket Payments", icon: <CreditCardOutlined /> },
-
-        { key: "vendor-payment-calendar", label: "Payment Schedule", icon: <CalendarOutlined /> },
+        { key: "vendor-qr-codes", label: "Vendor QR Codes", icon: <QrcodeOutlined /> },
 
         { key: "market-section-stalls", label: "Market Layout Management", icon: <AppstoreOutlined /> },
 
         { key: "stall-rate-dashboard", label: "Stall Rates", icon: <RiseOutlined /> },
-
-        { key: "vendor-payment", label: "Payment Settlement", icon: <FileTextOutlined /> },
-
-        { key: "payment-management", label: "Payment Management", icon: <DollarOutlined /> },
-
 
       ],
 
     },
 
     {
+
+      key: "payments",
+
+      icon: <DollarCircleOutlined />,
+
+      label: "Payments",
+
+      children: [
+
+        { key: "cash-ticket", label: "Cash Ticket Payments", icon: <CreditCardOutlined /> },
+
+        { key: "vendor-payment-calendar", label: "Payment Schedule", icon: <CalendarOutlined /> },
+
+        { key: "vendor-payment", label: "Payment Settlement", icon: <FileTextOutlined /> },
+
+        { key: "payment-management", label: "Payment Management", icon: <DollarOutlined /> },
+         { key: "slaughter-collections", label: "Slaughter Collections", icon: <MedicineBoxOutlined /> },
+
+      ],
+
+    },
+
+  
+
+    {
+      key: "events",
+      icon: <CalendarOutlined />,
+      label: "Event Management",
+      children: [
+        { key: "event-activities", label: "Activities", icon: <CalendarOutlined /> },
+        { key: "event-stalls", label: "Event Stalls", icon: <ShopOutlined /> },
+        { key: "event-vendors", label: "Event Vendors", icon: <TeamOutlined /> },
+        { key: "event-payments", label: "Event Payments", icon: <DollarCircleOutlined /> },
+        { key: "event-sales-reports", label: "Sales Reports", icon: <BarChartOutlined /> },
+      ],
+    },
+  {
 
       key: "reports",
 
@@ -226,35 +257,39 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
 
         { key: "market-open-space-collections", label: "Collections", icon: <ApartmentOutlined /> },
 
+       
+        { key: "slaughter-reports", label: "Slaughter Reports", icon: <BarChartOutlined /> },
+
       
 
       ],
 
     },
-
-    {
-      key: "events",
-      icon: <CalendarOutlined />,
-      label: "Event Management",
-      children: [
-        { key: "event-activities", label: "Activities", icon: <CalendarOutlined /> },
-        { key: "event-stalls", label: "Event Stalls", icon: <ShopOutlined /> },
-        { key: "event-vendors", label: "Event Vendors", icon: <TeamOutlined /> },
-        { key: "event-payments", label: "Event Payments", icon: <DollarCircleOutlined /> },
-        { key: "event-sales-reports", label: "Sales Reports", icon: <BarChartOutlined /> },
-      ],
-    },
-
   ];
+
+  const menuIcon = (item) =>
+    item.icon
+      ? React.cloneElement(item.icon, {
+          className: `sidebar-item-icon sidebar-item-icon-${item.key}`,
+        })
+      : null;
 
 
 
   const renderMenuItems = (items) =>
     items.map((item) => {
+      if (item.type === "group") {
+        return {
+          type: "group",
+          key: item.key,
+          label: <span className="sidebar-section-label">{item.label}</span>,
+          children: renderMenuItems(item.children),
+        };
+      }
       if (item.children) {
         return {
           key: item.key,
-          icon: item.icon,
+          icon: menuIcon(item),
           label: (
             <span className="sidebar-label-multiline">
               {item.label}
@@ -265,7 +300,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
       }
       return {
         key: item.key,
-        icon: item.icon,
+        icon: menuIcon(item),
         label: (
           <span className="sidebar-label-multiline">
             {item.label}
@@ -283,6 +318,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
   return (
     <>
       <Sider
+        className="sidebar-container"
         width={280}
         collapsedWidth={80}
         collapsed={isCollapsed}
@@ -302,6 +338,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
       >
         {/* --- Header with Burger --- */}
         <div
+          className="sidebar-header"
           style={{
             padding: "8px 16px", /* Reduced padding for the top section */
             display: "flex",
@@ -310,64 +347,31 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
             height: "64px",
           }}
         >
-          {!isCollapsed && (
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
-              <img
-                src="/logo_Opol.png"
-                alt="logo"
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  objectFit: "cover",
-                }}
-              />
-              <Title 
-                level={5} 
-                style={{
-                  color: textPrimary,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  margin: 0,
-                  letterSpacing: "0.5px",
-                }}
-              >
-                ADMIN PANEL
-              </Title>
-            </div>
-          )}
-          <Tooltip title={isCollapsed ? "Expand Menu" : "Collapse Menu"} placement="right">
-            <Button
-              type="text"
-              icon={isCollapsed ? <MenuOutlined /> : <CloseOutlined />}
-              onClick={() => setIsCollapsed((prev) => !prev)}
+          <div className="sidebar-logo-section" style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
+            <img
+              className="sidebar-logo"
+              src="/logo_meeo.png"
+              alt="logo"
               style={{
-                color: textSecondary,
-                fontSize: 14,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "transparent",
-                border: "none",
-                borderRadius: 6,
                 width: 32,
                 height: 32,
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = hoverBackground;
-                e.currentTarget.style.color = textPrimary;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-                e.currentTarget.style.color = textSecondary;
+                borderRadius: 8,
+                objectFit: "cover",
               }}
             />
-          </Tooltip>
+            {!isCollapsed && (
+              <div className="sidebar-identity">
+                <Title className="sidebar-title" level={5}>Municipal Economic Enterprise Office</Title>
+                <span className="sidebar-subtitle">Opol LGU · CY 2026</span>
+              </div>
+            )}
+          </div>
+        
         </div>
 
         {/* --- Menu --- */}
         <div 
+          className="sidebar-menu-container"
           style={{
             padding: "8px 16px", /* Reduce padding from 16px to 8px */
             flex: 1,
@@ -395,6 +399,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
 
         {/* --- Logout --- */}
         <div 
+          className="sidebar-logout-section"
           style={{
             position: "absolute",
             bottom: 0,
@@ -406,6 +411,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
         >
           <Tooltip title={isCollapsed ? "Logout" : ""} placement="right">
             <Button
+              className="sidebar-logout-btn"
               type="primary"
               danger
               icon={<LogoutOutlined />}
@@ -709,4 +715,3 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
 
 
 export default Sidebar;
-

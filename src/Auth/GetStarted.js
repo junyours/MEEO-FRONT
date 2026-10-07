@@ -8,6 +8,7 @@ import Footer from "./Footer";
 import EnterpriseNavbar from "./EnterpriseNavbar";
 import MeeoServices from "./MeeoServices";
 import AvailableProducts from "./AvailableProducts";
+import MarketPriceHistory from "./MarketPriceHistory";
 import Market1 from "../assets/Market1.jpg";
 import Market2 from "../assets/Market2.jpg";
 import Market3 from "../assets/Market3.jpg";
@@ -1156,12 +1157,17 @@ const getActivityImages = (activity) => [
           </div>
 
           <section className="market-products-section" aria-labelledby="market-products-heading">
-            <div className="market-products-section-heading">
-              <span className="section-label"><ShopOutlined /> AVAILABLE PRODUCTS</span>
-              <h2 id="market-products-heading">Fresh products available at the market</h2>
-              <p>Browse current product categories and available items from the public market.</p>
+            <div className="market-products-layout">
+              <div className="market-products-catalog">
+                <header className="market-products-column-heading">
+                  <span className="market-products-column-kicker">PRODUCT CATALOG</span>
+                  <h2 id="market-products-heading"><ShopOutlined /> Available Products</h2>
+                  <p>Browse current product categories and available items.</p>
+                </header>
+                <AvailableProducts />
+              </div>
+              <MarketPriceHistory />
             </div>
-            <AvailableProducts />
           </section>
 
 

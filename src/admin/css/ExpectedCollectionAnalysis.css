@@ -1,0 +1,358 @@
+.expected-collection-screen {
+  --eca-ink: #182b3a;
+  --eca-muted: #637382;
+  --eca-line: #dce4e9;
+  --eca-blue: #245b85;
+  --eca-teal: #1b6572;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 28px 36px 48px !important;
+  color: var(--eca-ink);
+  background:
+    linear-gradient(140deg, rgba(220, 234, 237, 0.42), transparent 38%),
+    #f5f7f8 !important;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif !important;
+}
+
+.expected-collection-screen .collection-report-header,
+.expected-collection-screen .occupancy-analysis-card,
+.expected-collection-screen .collection-rate-card,
+.expected-collection-screen .collection-trend-card {
+  border: 1px solid var(--eca-line) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 5px 18px rgba(24, 43, 58, 0.055) !important;
+}
+
+.expected-collection-screen .collection-report-header {
+  margin-bottom: 24px;
+  overflow: hidden;
+  border-top: 4px solid #173b50 !important;
+}
+
+.expected-collection-screen .collection-report-header .ant-card-body {
+  padding: 22px 26px;
+}
+
+.expected-collection-screen .collection-report-layout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.expected-collection-screen .collection-report-identity {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 0;
+}
+
+.expected-collection-screen .collection-report-mark {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid #c9dbe0;
+  border-radius: 7px;
+  background: #eef5f6;
+  color: var(--eca-teal);
+  font-size: 20px;
+}
+
+.expected-collection-screen .collection-report-copy {
+  min-width: 0;
+}
+
+.expected-collection-screen .collection-report-eyebrow,
+.expected-collection-screen .collection-section-eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--eca-blue);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.expected-collection-screen .collection-report-title.ant-typography {
+  display: block;
+  width: 100%;
+  margin: 0 0 5px;
+  color: var(--eca-ink);
+  font-size: 24px;
+  line-height: 1.25;
+  text-align: left !important;
+}
+
+.expected-collection-screen .collection-report-subtitle {
+  color: var(--eca-muted);
+  font-size: 13px;
+}
+
+.expected-collection-screen .collection-report-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+}
+
+.expected-collection-screen .collection-report-actions .ant-btn {
+  min-width: 132px;
+}
+
+.expected-collection-screen .collection-overview-metrics {
+  align-items: stretch;
+  margin-bottom: 28px !important;
+}
+
+.expected-collection-screen .collection-overview-metrics > .ant-col {
+  display: flex;
+}
+
+.expected-collection-screen .collection-overview-metrics .ant-card {
+  width: 100%;
+  min-height: 150px;
+  border: 1px solid var(--eca-line);
+  border-radius: 7px;
+  box-shadow: 0 4px 14px rgba(24, 43, 58, 0.045);
+}
+
+.expected-collection-screen .collection-overview-metrics .ant-card-body {
+  display: flex;
+  min-height: 150px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px 22px;
+}
+
+.expected-collection-screen .collection-overview-metrics .ant-col:nth-child(1) .ant-card {
+  border-top: 3px solid #1b6572;
+}
+
+.expected-collection-screen .collection-overview-metrics .ant-col:nth-child(2) .ant-card {
+  border-top: 3px solid #267a60;
+}
+
+.expected-collection-screen .collection-overview-metrics .ant-col:nth-child(3) .ant-card {
+  border-top: 3px solid #2868a6;
+}
+
+.expected-collection-screen .collection-overview-metrics .ant-col:nth-child(4) .ant-card {
+  border-top: 3px solid #bd7c24;
+}
+
+.expected-collection-screen .collection-overview-metrics .ant-card > div {
+  text-align: left !important;
+}
+
+.expected-collection-screen .collection-overview-metrics .ant-card > div > span {
+  display: block;
+  font-weight: 600;
+}
+
+.expected-collection-screen .collection-overview-metrics .ant-card > div > div {
+  margin-top: 8px;
+  font-size: 25px !important;
+}
+
+.expected-collection-screen .collection-overview-metrics .ant-card > div > span:last-child {
+  margin-top: 7px;
+  line-height: 1.45;
+}
+
+.expected-collection-screen .collection-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 2px 14px;
+}
+
+.expected-collection-screen .collection-section-heading .ant-typography {
+  margin: 0;
+}
+
+.expected-collection-screen .collection-section-heading h3.ant-typography {
+  color: var(--eca-ink);
+  font-size: 18px;
+}
+
+.expected-collection-screen .collection-section-heading > .ant-typography {
+  color: var(--eca-muted);
+  font-size: 12px;
+}
+
+.expected-collection-screen .occupancy-analysis-card,
+.expected-collection-screen .collection-trend-card {
+  background: #ffffff !important;
+}
+
+.expected-collection-screen .occupancy-analysis-card .ant-card-body,
+.expected-collection-screen .collection-trend-card .ant-card-body {
+  padding: 22px;
+}
+
+.expected-collection-screen .occupancy-analysis-card .ant-card-body > .ant-typography {
+  color: var(--eca-ink) !important;
+  text-align: left !important;
+}
+
+.expected-collection-screen .collection-rate-grid {
+  align-items: stretch;
+}
+
+.expected-collection-screen .collection-rate-grid > .ant-col {
+  display: flex;
+}
+
+.expected-collection-screen .collection-rate-card {
+  width: 100%;
+  min-height: 112px;
+  border-radius: 7px !important;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.expected-collection-screen .collection-rate-card:hover,
+.expected-collection-screen .collection-overview-metrics .ant-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 22px rgba(24, 43, 58, 0.1) !important;
+}
+
+.expected-collection-screen .collection-rate-card .ant-card-body {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 18px;
+}
+
+.expected-collection-screen .collection-rate-card .ant-card-body > div:first-child {
+  flex: 0 0 42px;
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 6px !important;
+  font-size: 17px !important;
+}
+
+.expected-collection-screen .collection-rate-card .ant-card-body > div:last-child {
+  min-width: 0;
+}
+
+.expected-collection-screen .collection-rate-card .ant-card-body > div:last-child .ant-typography {
+  color: var(--eca-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.expected-collection-screen .collection-rate-card .ant-card-body > div:last-child > div {
+  margin-top: 3px;
+  color: var(--eca-ink);
+  font-size: 20px !important;
+}
+
+.expected-collection-screen .occupancy-analysis-card .ant-card-body > .ant-row > .ant-col > div[style*="height: 520px"] {
+  height: auto !important;
+  min-height: 350px;
+  max-height: 480px;
+  overflow: auto;
+  border: 1px solid var(--eca-line);
+  border-radius: 6px !important;
+  background: #f8fafb !important;
+}
+
+.expected-collection-screen .ant-tabs-nav {
+  margin-bottom: 18px;
+}
+
+.expected-collection-screen .ant-tabs-tab {
+  color: var(--eca-muted);
+  font-size: 13px;
+}
+
+.expected-collection-screen .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--eca-blue);
+  font-weight: 700;
+}
+
+.expected-collection-screen .ant-btn {
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.expected-collection-screen .ant-btn-primary {
+  background: #245b85;
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .expected-collection-screen {
+    padding: 22px 18px 36px !important;
+  }
+
+  .expected-collection-screen .collection-report-actions {
+    justify-content: flex-start;
+  }
+
+  .expected-collection-screen .collection-report-layout {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 576px) {
+  .expected-collection-screen {
+    padding: 14px 10px 28px !important;
+  }
+
+  .expected-collection-screen .collection-report-header .ant-card-body,
+  .expected-collection-screen .occupancy-analysis-card .ant-card-body,
+  .expected-collection-screen .collection-trend-card .ant-card-body {
+    padding: 16px;
+  }
+
+  .expected-collection-screen .collection-report-title.ant-typography {
+    font-size: 21px;
+  }
+
+  .expected-collection-screen .collection-report-header .ant-card-body {
+    padding: 18px 16px;
+  }
+
+  .expected-collection-screen .collection-report-identity {
+    align-items: flex-start;
+    gap: 11px;
+  }
+
+  .expected-collection-screen .collection-report-mark {
+    flex-basis: 38px;
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+  }
+
+  .expected-collection-screen .collection-report-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .expected-collection-screen .collection-report-actions .ant-btn {
+    width: 100%;
+  }
+
+  .expected-collection-screen .collection-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .expected-collection-screen .collection-section-heading h3.ant-typography {
+    font-size: 16px;
+  }
+
+  .expected-collection-screen .collection-overview-metrics .ant-card-body {
+    min-height: 130px;
+  }
+
+  .expected-collection-screen .collection-rate-card .ant-card-body {
+    padding: 14px;
+  }
+}

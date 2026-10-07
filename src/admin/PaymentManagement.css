@@ -1,0 +1,777 @@
+/* Payment Management - shared operations and modal styling */
+
+.payment-management-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%) !important;
+  color: #14213d;
+}
+
+.payment-management-page > .ant-card {
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 12px 30px rgba(20, 33, 61, 0.05) !important;
+}
+
+.payment-management-page > .ant-card:first-of-type {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%) !important;
+}
+
+.payment-management-page .ant-card-head,
+.payment-management-page .ant-card-body {
+  border-color: #e4eaf2;
+}
+
+.payment-management-page .ant-statistic-title {
+  color: #5f6f86;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.payment-management-page .ant-statistic-content {
+  color: #14213d;
+  font-weight: 800;
+}
+
+.payment-management-page .ant-table {
+  border: 1px solid #e3edf7;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.payment-management-page .ant-table-thead > tr > th {
+  color: #14213d;
+  background: #f8fbff;
+  border-bottom: 1px solid #dbe6f2;
+  font-weight: 800;
+}
+
+.payment-management-page .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #edf2f7;
+  color: #43566f;
+}
+
+.payment-management-page .ant-table-tbody > tr:hover > td {
+  background: #f8fbff;
+}
+
+.payment-management-page .ant-input,
+.payment-management-page .ant-input-affix-wrapper,
+.payment-management-page .ant-select-selector,
+.payment-management-page .ant-picker {
+  border-radius: 9px !important;
+  border-color: #d5e1ef !important;
+}
+
+.payment-management-page .ant-input:focus,
+.payment-management-page .ant-input-affix-wrapper-focused,
+.payment-management-page .ant-select-focused .ant-select-selector,
+.payment-management-page .ant-picker-focused {
+  border-color: #1769e0 !important;
+  box-shadow: 0 0 0 3px rgba(23, 105, 224, 0.1) !important;
+}
+
+.payment-management-page .ant-btn {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* Shared shell used by Cash Ticket, Vendor Payment, and Payment Management modals. */
+.payment-management-modal .ant-modal-content {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #dbe6f2;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 30px 90px rgba(20, 33, 61, 0.28);
+}
+
+.payment-management-modal .ant-modal-header {
+  margin-bottom: 0;
+  padding: 40px 40px 0;
+  border-bottom: 0;
+  background: #ffffff;
+}
+
+.payment-management-modal .ant-modal-title {
+  color: #14213d;
+  font-family: "Plus Jakarta Sans", "DM Sans", sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.payment-management-modal .ant-modal-body {
+  padding: 22px 40px 32px;
+}
+
+.payment-management-modal .ant-modal-close {
+  top: 18px;
+  right: 20px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #dbe6f2;
+  border-radius: 50%;
+  color: #5f6f86;
+  background: #f8fbff;
+  font-size: 14px;
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.payment-management-modal .ant-modal-close:hover {
+  color: #1769e0;
+  border-color: #9fc3f5;
+  background: #eaf2ff;
+  transform: rotate(90deg);
+}
+
+.payment-management-modal .ant-modal-close:focus-visible {
+  outline: 3px solid rgba(23, 105, 224, 0.22);
+  outline-offset: 3px;
+}
+
+.payment-management-modal .ant-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 18px 40px 32px;
+  border-top: 1px solid #e4eaf2;
+  background: #ffffff;
+}
+
+.payment-management-modal .ant-modal-footer .ant-btn {
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 9px;
+  font-weight: 700;
+}
+
+.payment-management-modal .ant-modal-footer .ant-btn-primary {
+  border-color: #1769e0;
+  background: #1769e0;
+  box-shadow: 0 8px 18px rgba(23, 105, 224, 0.18);
+}
+
+.payment-management-modal .ant-modal-footer .ant-btn-dangerous {
+  border-color: #b54b4b;
+  background: #b54b4b;
+}
+
+.payment-management-modal .ant-modal-body .ant-table {
+  border: 1px solid #e3edf7;
+  border-radius: 11px;
+  overflow: hidden;
+}
+
+.payment-management-modal .ant-table-thead > tr > th {
+  padding: 12px 14px;
+  color: #14213d;
+  background: #f8fbff;
+  border-bottom-color: #dbe6f2;
+  font-weight: 800;
+}
+
+.payment-management-modal .ant-table-tbody > tr > td {
+  padding: 12px 14px;
+  border-bottom-color: #edf2f7;
+}
+
+.payment-management-modal .ant-form-item-label > label {
+  color: #43566f;
+  font-weight: 700;
+}
+
+.payment-modal-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  border: 1px solid #e3edf7;
+  border-radius: 12px;
+  color: #43566f;
+  background: #f8fbff;
+}
+
+.payment-modal-intro > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #1769e0;
+  font-size: 18px;
+}
+
+.payment-modal-intro div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.payment-modal-intro strong {
+  color: #14213d;
+  font-size: 0.92rem;
+}
+
+.payment-modal-intro span {
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.payment-management-modal .ant-input,
+.payment-management-modal .ant-input-number,
+.payment-management-modal .ant-select-selector,
+.payment-management-modal .ant-picker {
+  min-height: 42px;
+  border-radius: 10px !important;
+  border-color: #d5e1ef !important;
+}
+
+.payment-management-modal .ant-input:focus,
+.payment-management-modal .ant-input-number:focus,
+.payment-management-modal .ant-select-focused .ant-select-selector,
+.payment-management-modal .ant-picker-focused {
+  border-color: #1769e0 !important;
+  box-shadow: 0 0 0 3px rgba(23, 105, 224, 0.1) !important;
+}
+
+.payment-delete-modal .ant-modal-body {
+  color: #43566f;
+}
+
+.payment-delete-modal .ant-modal-body > div {
+  line-height: 1.65;
+}
+
+@media (max-width: 768px) {
+  .payment-management-page {
+    padding: 16px 12px !important;
+  }
+
+  .payment-management-page > .ant-card:first-of-type .ant-card-body {
+    padding: 20px !important;
+  }
+
+  .payment-management-page > .ant-card:first-of-type .ant-typography {
+    font-size: 1rem !important;
+  }
+
+  .payment-management-modal .ant-modal-header {
+    padding: 30px 20px 0;
+  }
+
+  .payment-management-modal .ant-modal-body {
+    padding: 20px 20px 22px;
+  }
+
+  .payment-management-modal .ant-modal-footer {
+    flex-wrap: wrap;
+    padding: 16px 20px 22px;
+  }
+
+  .payment-management-modal .ant-modal-footer .ant-btn {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .payment-management-modal .ant-modal-close {
+    top: 14px;
+    right: 14px;
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* Payment management workspace */
+.payment-management-page {
+  min-height: 100vh;
+  padding: 22px 24px 32px !important;
+  background: #f3f6f5 !important;
+  color: #18313b;
+}
+
+.payment-management-page > .ant-card {
+  border: 1px solid #dfe8e6 !important;
+  border-radius: 7px !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(24, 49, 59, 0.05) !important;
+}
+
+.payment-management-page > .payment-management-header {
+  margin-bottom: 16px;
+  border-left: 4px solid #167d77 !important;
+}
+
+.payment-management-header .ant-card-body {
+  padding: 18px 20px !important;
+}
+
+.payment-header-content {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+}
+
+.payment-header-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border: 1px solid #d9e9e6;
+  border-radius: 6px;
+  background: #edf6f4;
+  color: #167d77;
+  font-size: 18px;
+}
+
+.payment-header-copy {
+  min-width: 0;
+}
+
+.payment-header-copy h1.ant-typography {
+  margin: 0 0 3px !important;
+  color: #18313b;
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.payment-header-copy .ant-typography {
+  color: #687b81;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.payment-statistics-grid {
+  margin-bottom: 16px;
+}
+
+.payment-management-page .payment-stat-card {
+  height: 100%;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+.payment-management-page .payment-stat-card .ant-card-body {
+  padding: 15px 16px;
+}
+
+.payment-management-page .payment-stat-card .ant-statistic-title {
+  margin-bottom: 7px;
+  color: #687b81;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.3px;
+}
+
+.payment-management-page .payment-stat-card .ant-statistic-content {
+  color: #18313b;
+  font-size: 21px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.payment-management-page .payment-management-toolbar,
+.payment-management-page .payment-vendor-table-card {
+  margin-bottom: 14px;
+  border-radius: 7px !important;
+  box-shadow: none !important;
+}
+
+.payment-management-page .payment-management-toolbar .ant-card-body {
+  padding: 14px 16px;
+}
+
+.payment-toolbar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.payment-toolbar-heading h4.ant-typography {
+  margin: 0 0 3px;
+  color: #18313b;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.payment-toolbar-heading .ant-typography-secondary {
+  color: #718087;
+  font-size: 11px;
+}
+
+.payment-toolbar-controls {
+  display: flex;
+  flex: 0 1 470px;
+  align-items: center;
+  gap: 9px;
+}
+
+.payment-vendor-search {
+  min-width: 180px;
+  flex: 1;
+}
+
+.payment-vendor-search .ant-input-affix-wrapper {
+  min-height: 36px;
+}
+
+.payment-management-page .payment-refresh-button {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #167d77;
+  border-radius: 5px;
+  background: #167d77;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.payment-management-page .payment-refresh-button:hover:not(:disabled) {
+  border-color: #126a65;
+  background: #126a65;
+  color: #ffffff;
+}
+
+.payment-management-page .payment-vendor-table-card .ant-card-body {
+  padding: 12px;
+}
+
+.payment-management-page .payment-vendor-table-card .ant-table {
+  border: 1px solid #e2e9e8;
+  border-radius: 5px;
+}
+
+.payment-management-page .payment-vendor-table-card .ant-table-thead > tr > th {
+  padding: 11px 13px;
+  background: #f3f7f6;
+  color: #52666c;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.25px;
+  text-transform: uppercase;
+}
+
+.payment-management-page .payment-vendor-table-card .ant-table-tbody > tr > td {
+  padding: 12px 13px;
+  color: #344b55;
+  font-size: 12px;
+}
+
+.payment-management-page .payment-vendor-table-card .ant-table-tbody > tr:hover > td {
+  background: #f3f8f6;
+}
+
+@media (max-width: 768px) {
+  .payment-management-page {
+    padding: 14px 12px 24px !important;
+  }
+
+  .payment-header-copy h1.ant-typography {
+    font-size: 20px;
+  }
+
+  .payment-toolbar-heading {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .payment-toolbar-controls {
+    width: 100%;
+    flex-basis: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-header-content {
+    align-items: flex-start;
+  }
+
+  .payment-header-icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+    font-size: 16px;
+  }
+
+  .payment-toolbar-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .payment-vendor-search,
+  .payment-refresh-button {
+    width: 100%;
+  }
+}
+
+/* Payment dialog refinements */
+.payment-management-modal.payment-history-modal .ant-modal-content,
+.payment-management-modal.payment-detail-modal .ant-modal-content,
+.payment-management-modal.payment-edit-modal .ant-modal-content,
+.payment-management-modal.payment-delete-modal .ant-modal-content {
+  border-color: #dfe8e6;
+  border-radius: 8px;
+  box-shadow: 0 18px 48px rgba(24, 49, 59, 0.18);
+}
+
+.payment-management-modal.payment-history-modal .ant-modal-header,
+.payment-management-modal.payment-detail-modal .ant-modal-header,
+.payment-management-modal.payment-edit-modal .ant-modal-header,
+.payment-management-modal.payment-delete-modal .ant-modal-header {
+  padding: 22px 26px 16px;
+  border-bottom: 1px solid #e7eeec;
+}
+
+.payment-management-modal.payment-history-modal .ant-modal-title,
+.payment-management-modal.payment-detail-modal .ant-modal-title,
+.payment-management-modal.payment-edit-modal .ant-modal-title,
+.payment-management-modal.payment-delete-modal .ant-modal-title {
+  color: #18313b;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.payment-management-modal.payment-history-modal .ant-modal-body,
+.payment-management-modal.payment-detail-modal .ant-modal-body,
+.payment-management-modal.payment-edit-modal .ant-modal-body,
+.payment-management-modal.payment-delete-modal .ant-modal-body {
+  max-height: calc(100vh - 190px);
+  overflow: auto;
+  padding: 20px 26px 24px;
+}
+
+.payment-management-modal.payment-history-modal .ant-modal-footer,
+.payment-management-modal.payment-detail-modal .ant-modal-footer,
+.payment-management-modal.payment-edit-modal .ant-modal-footer,
+.payment-management-modal.payment-delete-modal .ant-modal-footer {
+  padding: 14px 26px 18px;
+  border-top-color: #e7eeec;
+}
+
+.payment-management-modal.payment-history-modal .ant-modal-footer .ant-btn,
+.payment-management-modal.payment-detail-modal .ant-modal-footer .ant-btn,
+.payment-management-modal.payment-edit-modal .ant-modal-footer .ant-btn,
+.payment-management-modal.payment-delete-modal .ant-modal-footer .ant-btn {
+  min-height: 38px;
+  border-radius: 5px;
+}
+
+.payment-modal-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.payment-modal-title > svg {
+  flex: 0 0 auto;
+  color: #167d77;
+  font-size: 17px;
+}
+
+.payment-modal-title > div {
+  min-width: 0;
+}
+
+.payment-modal-title-danger > svg {
+  color: #b4493f;
+}
+
+.payment-modal-subtitle {
+  display: block;
+  margin-top: 3px;
+  color: #687b81;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.payment-history-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+  padding: 13px 15px;
+  border: 1px solid #e0e9e7;
+  border-radius: 6px;
+  background: #f7faf9;
+}
+
+.payment-history-toolbar > div:first-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.payment-history-toolbar > div:first-child .ant-typography:first-child {
+  color: #344b55;
+  font-size: 12px;
+}
+
+.payment-history-toolbar > div:first-child .ant-typography-secondary {
+  color: #718087;
+  font-size: 11px;
+}
+
+.payment-period-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.payment-period-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #687b81;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.payment-period-month { width: 150px; }
+.payment-period-year { width: 100px; }
+
+.payment-history-modal .payment-history-table,
+.payment-detail-modal .payment-detail-table {
+  border: 1px solid #e1e9e7;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.payment-history-modal .payment-history-table .ant-table-thead > tr > th,
+.payment-detail-modal .payment-detail-table .ant-table-thead > tr > th {
+  padding: 11px 12px;
+  background: #f3f7f6;
+  color: #52666c;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.payment-history-modal .payment-history-table .ant-table-tbody > tr > td,
+.payment-detail-modal .payment-detail-table .ant-table-tbody > tr > td {
+  padding: 11px 12px;
+  color: #344b55;
+  font-size: 12px;
+}
+
+.payment-detail-modal .ant-modal-title .payment-modal-title {
+  align-items: flex-start;
+}
+
+.payment-detail-modal .ant-modal-body > div {
+  border-radius: 6px;
+}
+
+.payment-edit-modal .payment-modal-intro {
+  margin-bottom: 16px;
+  border-color: #dce8e5;
+  border-radius: 6px;
+  background: #f5f9f8;
+}
+
+.payment-edit-modal .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.payment-edit-modal .ant-form-item-label > label {
+  font-size: 12px;
+}
+
+.payment-delete-content {
+  display: grid;
+  gap: 14px;
+}
+
+.payment-delete-prompt {
+  color: #344b55;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.payment-delete-summary {
+  padding: 14px;
+  border: 1px solid #e1e8e7;
+  border-radius: 6px;
+  background: #f7f9f8;
+}
+
+.payment-delete-summary .ant-typography {
+  overflow-wrap: anywhere;
+}
+
+.payment-delete-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 11px 12px;
+  border: 1px solid #eed5d1;
+  border-radius: 5px;
+  background: #fff8f7;
+  color: #9d3d35;
+  line-height: 1.5;
+}
+
+.payment-delete-warning > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .payment-management-modal.payment-history-modal .ant-modal-header,
+  .payment-management-modal.payment-detail-modal .ant-modal-header,
+  .payment-management-modal.payment-edit-modal .ant-modal-header,
+  .payment-management-modal.payment-delete-modal .ant-modal-header {
+    padding: 20px 20px 14px;
+  }
+
+  .payment-management-modal.payment-history-modal .ant-modal-body,
+  .payment-management-modal.payment-detail-modal .ant-modal-body,
+  .payment-management-modal.payment-edit-modal .ant-modal-body,
+  .payment-management-modal.payment-delete-modal .ant-modal-body {
+    padding: 16px 20px 20px;
+  }
+
+  .payment-history-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .payment-period-controls {
+    width: 100%;
+  }
+
+  .payment-period-controls label {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .payment-period-month,
+  .payment-period-year {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-management-modal.payment-history-modal .ant-modal-header,
+  .payment-management-modal.payment-detail-modal .ant-modal-header,
+  .payment-management-modal.payment-edit-modal .ant-modal-header,
+  .payment-management-modal.payment-delete-modal .ant-modal-header {
+    padding-right: 54px;
+  }
+
+  .payment-delete-summary {
+    padding: 10px;
+  }
+}

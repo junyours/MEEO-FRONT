@@ -46,6 +46,7 @@ import {
   SearchOutlined,
   MoneyCollectOutlined,
   TrophyOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import api from '../Api';
 import LoadingOverlay from './Loading';
@@ -90,6 +91,14 @@ const VendorPaymentManagement = () => {
   const [depositConsumptionModal, setDepositConsumptionModal] = useState(false);
   const [customDepositAmount, setCustomDepositAmount] = useState('');
   const [selectedMonthForDeposit, setSelectedMonthForDeposit] = useState(null);
+  const [unoccupiedPaymentModal, setUnoccupiedPaymentModal] = useState(false);
+  const [selectedUnoccupiedRental, setSelectedUnoccupiedRental] = useState(null);
+  const [unoccupiedPaymentAmount, setUnoccupiedPaymentAmount] = useState(0);
+  const [unoccupiedOrNumber, setUnoccupiedOrNumber] = useState('');
+  const [unoccupiedPaymentDate, setUnoccupiedPaymentDate] = useState(dayjs());
+  const [processingUnoccupiedPayment, setProcessingUnoccupiedPayment] = useState(false);
+  const [unoccupiedBalanceLoading, setUnoccupiedBalanceLoading] = useState(false);
+  const [analysisStallBalances, setAnalysisStallBalances] = useState({});
 
   useEffect(() => {
     fetchVendors();
@@ -254,8 +263,114 @@ const VendorPaymentManagement = () => {
     paymentForm.resetFields();
   };
 
+  const getUnoccupiedRentalGroups = (vendor, balanceOverrides = analysisStallBalances) => {
+    const groups = new Map();
+
+    (vendor?.rentals || []).forEach((rental) => {
+      const balanceCents = Math.round(Number(rental.remaining_balance || 0) * 100);
+      if (!rental.is_unoccupied || balanceCents <= 0) return;
+
+      const sectionName = String(rental.section_name ?? '').trim();
+      const stallNumber = String(rental.stall_number ?? '').trim();
+      const key = JSON.stringify([sectionName.toLowerCase(), stallNumber.toLowerCase()]);
+      const group = groups.get(key) || {
+        key,
+        section_name: sectionName,
+        stall_number: stallNumber,
+        rentals: [],
+        balanceCents: 0,
+      };
+
+      group.rentals.push(rental);
+      group.balanceCents += balanceCents;
+      groups.set(key, group);
+    });
+
+    return Array.from(groups.values())
+      .map(({ balanceCents, ...group }) => ({
+        ...group,
+        remaining_balance: Object.prototype.hasOwnProperty.call(balanceOverrides, group.key)
+          ? Number(balanceOverrides[group.key]) || 0
+          : balanceCents / 100,
+      }))
+      .filter(group => group.remaining_balance > 0);
+  };
+
+  const openUnoccupiedPayment = async (vendor) => {
+    setSelectedVendor(vendor);
+    setAnalysisStallBalances({});
+    setSelectedUnoccupiedRental(null);
+    setUnoccupiedPaymentAmount(0);
+    setUnoccupiedOrNumber('');
+    setUnoccupiedPaymentDate(dayjs());
+    setUnoccupiedPaymentModal(true);
+    setUnoccupiedBalanceLoading(true);
+
+    try {
+      const response = await api.get(`/vendor-analysis/vendor/${vendor.id}`, {
+        params: { year: dayjs().year(), include_payment_details: false },
+      });
+      const balanceOverrides = {};
+      response.data.section_breakdown?.forEach(section => {
+        (section.stall_balances || []).forEach(stall => {
+          const key = JSON.stringify([
+            String(section.section_name ?? '').trim().toLowerCase(),
+            String(stall.stall_number ?? '').trim().toLowerCase(),
+          ]);
+          balanceOverrides[key] = Number(stall.remaining_balance) || 0;
+        });
+      });
+      setAnalysisStallBalances(balanceOverrides);
+      const rentalGroups = getUnoccupiedRentalGroups(vendor, balanceOverrides);
+      const initialRentalGroup = rentalGroups.length === 1 ? rentalGroups[0] : null;
+      setSelectedUnoccupiedRental(initialRentalGroup);
+      setUnoccupiedPaymentAmount(Number(initialRentalGroup?.remaining_balance) || 0);
+    } catch (error) {
+      const rentalGroups = getUnoccupiedRentalGroups(vendor, {});
+      const initialRentalGroup = rentalGroups.length === 1 ? rentalGroups[0] : null;
+      setSelectedUnoccupiedRental(initialRentalGroup);
+      setUnoccupiedPaymentAmount(Number(initialRentalGroup?.remaining_balance) || 0);
+      message.warning('Unable to load Vendor Analysis balances. Using saved rental balances instead.');
+    } finally {
+      setUnoccupiedBalanceLoading(false);
+    }
+  };
+
+  const handleUnoccupiedPayment = async () => {
+    if (!selectedUnoccupiedRental?.rentals?.length || Number(unoccupiedPaymentAmount) <= 0) {
+      message.warning('Enter a payment amount greater than zero.');
+      return;
+    }
+
+    setProcessingUnoccupiedPayment(true);
+    try {
+      const response = await api.post(
+        '/rented/settle-unoccupied-balances',
+        {
+          rental_ids: selectedUnoccupiedRental.rentals.map(rental => rental.rental_id),
+          amount: Number(unoccupiedPaymentAmount),
+          or_number: unoccupiedOrNumber.trim() || null,
+          payment_date: unoccupiedPaymentDate?.format('YYYY-MM-DD'),
+        }
+      );
+      message.success(response.data.message || 'Payment recorded.');
+      setUnoccupiedPaymentModal(false);
+      setSelectedUnoccupiedRental(null);
+      fetchVendors();
+    } catch (error) {
+      message.error(error.response?.data?.message || 'Failed to record payment.');
+    } finally {
+      setProcessingUnoccupiedPayment(false);
+    }
+  };
+
   const handleRentalSelection = (rentalId, checked) => {
     const rental = selectedVendor?.rentals?.find(r => r.rental_id === rentalId);
+
+    if (rental?.is_unoccupied) {
+      message.warning('Removed rentals can only be paid through Pay Balance.');
+      return;
+    }
 
     if (checked && rental && isStallAlreadyPaidWithAdvance(rental)) {
       const today = new Date();
@@ -280,7 +395,7 @@ const VendorPaymentManagement = () => {
   const handleSelectAllRentals = (vendorRentals, checked) => {
     if (checked) {
       // Only select rentals that don't have active advance payments
-      const eligibleRentals = vendorRentals.filter(rental => !isStallAlreadyPaidWithAdvance(rental));
+      const eligibleRentals = vendorRentals.filter(rental => !rental.is_unoccupied && !isStallAlreadyPaidWithAdvance(rental));
       setSelectedRentals(eligibleRentals.map(r => r.rental_id));
     } else {
       setSelectedRentals([]);
@@ -962,56 +1077,19 @@ const VendorPaymentManagement = () => {
   };
 
   const getAvailablePaymentsForDeposit = (vendor) => {
-    // Collect all payments and calculate month deposits
-    const allPayments = [];
-    const monthDeposits = {};
-    
+    const paymentsByMonth = new Map();
     vendor.rentals?.forEach(rental => {
-      const monthlyBalances = rental.monthly_balances || [];
-      
-      // Calculate deposits for each month by summing all individual payments
-      monthlyBalances.forEach((monthBalance, monthIndex) => {
-        let totalMonthPayment = 0;
-        
-        // Sum all individual payments for this month
-        if (monthBalance.individual_payments && monthBalance.individual_payments.length > 0) {
-          monthBalance.individual_payments.forEach(payment => {
-            totalMonthPayment += parseFloat(payment.amount) || 0;
+      (rental.monthly_balances || []).forEach((monthBalance, monthIndex) => {
+        if (monthBalance.payment_id && !paymentsByMonth.has(monthIndex)) {
+          paymentsByMonth.set(monthIndex, {
+            payment_id: monthBalance.payment_id,
+            monthIndex,
           });
-        }
-        
-        // Calculate deposit: total payments - monthly rate
-        const totalDeposit = Math.max(0, totalMonthPayment - parseFloat(monthBalance.monthly_rate) || 0);
-        monthDeposits[monthIndex] = totalDeposit; // Store the actual deposit amount for the month
-        
-           });
-      
-      // Get all payments from all months
-      monthlyBalances.forEach((monthBalance, monthIndex) => {
-        if (monthBalance.individual_payments && monthBalance.individual_payments.length > 0) {
-          monthBalance.individual_payments.forEach(individualPayment => {
-            // Use the total month deposit instead of individual payment deposit
-            // This matches the backend calculation logic
-            const deposit = monthDeposits[monthIndex] || 0;
-            
-            allPayments.push({
-              ...individualPayment,
-              rental_id: rental.rental_id,
-              section_name: rental.section_name,
-              stall_number: rental.stall_number,
-              month: monthBalance.month,
-              monthIndex: monthIndex,
-              deposit: deposit, // Use total month deposit amount
-              has_deposit: deposit > 0, // Check if month has deposit
-            });
-            
-                });
         }
       });
     });
-    
-  
-    return allPayments;
+
+    return Array.from(paymentsByMonth.values());
   };
 
   // Memoized calculations for better performance
@@ -1021,34 +1099,32 @@ const VendorPaymentManagement = () => {
     return vendors.filter(vendor => {
       const name = (vendor.name || '').toLowerCase();
       const contactNumber = (vendor.contact_number || '').toLowerCase();
-      const email = (vendor.email || '').toLowerCase();
       const searchLower = searchText.toLowerCase();
 
       return name.includes(searchLower) ||
-        contactNumber.includes(searchLower) ||
-        email.includes(searchLower);
+        contactNumber.includes(searchLower);
     });
   }, [vendors, searchText]);
 
   const stats = useMemo(() => {
-    const totalVendors = filteredVendors.length;
+    const totalVendors = vendors.length;
     const currentMonth = new Date().getMonth();
     
     // Calculate current month total balance
-    const currentMonthBalance = filteredVendors.reduce((sum, vendor) => {
+    const currentMonthBalance = vendors.reduce((sum, vendor) => {
       const monthlyBalances = vendor.monthly_balances || [];
       return sum + (monthlyBalances[currentMonth]?.balance || 0);
     }, 0);
     
     // Calculate year-to-date total balance
-    const ytdBalance = filteredVendors.reduce((sum, vendor) => {
+    const ytdBalance = vendors.reduce((sum, vendor) => {
       const monthlyBalances = vendor.monthly_balances || [];
       return sum + monthlyBalances
         .slice(0, currentMonth + 1)
         .reduce((monthSum, month) => monthSum + (month.balance || 0), 0);
     }, 0);
     
-    const vendorsWithCurrentMonthBalance = filteredVendors.filter(vendor => {
+    const vendorsWithCurrentMonthBalance = vendors.filter(vendor => {
       const monthlyBalances = vendor.monthly_balances || [];
       return (monthlyBalances[currentMonth]?.balance || 0) > 0;
     }).length;
@@ -1059,7 +1135,7 @@ const VendorPaymentManagement = () => {
       ytdBalance, 
       vendorsWithCurrentMonthBalance 
     };
-  }, [filteredVendors]);
+  }, [vendors]);
 
   const getPaymentTypeColor = (type) => {
     const colors = {
@@ -1120,13 +1196,27 @@ const VendorPaymentManagement = () => {
       render: (_, record) => {
         // Ensure rentals is an array
         const rentals = Array.isArray(record.rentals) ? record.rentals : [];
+        const seenRentalKeys = new Set();
+        const uniqueRentals = rentals.filter((rental) => {
+          const rentalKey = JSON.stringify([
+            String(rental.section_name ?? '').trim().toLowerCase(),
+            String(rental.stall_number ?? '').trim().toLowerCase(),
+          ]);
+
+          if (seenRentalKeys.has(rentalKey)) return false;
+          seenRentalKeys.add(rentalKey);
+          return true;
+        });
 
         return (
           <div>
-            {rentals.map((rental, index) => (
-              <Tag key={index} className="stall-tag">
-                {rental.section_name} - {rental.stall_number}
-              </Tag>
+            {uniqueRentals.map((rental, index) => (
+              <Space key={index} size={4} wrap>
+                <Tag className="stall-tag">
+                  {rental.section_name} - {rental.stall_number}
+                  {rental.is_unoccupied ? ' (Removed)' : ''}
+                </Tag>
+              </Space>
             ))}
           </div>
         );
@@ -1136,7 +1226,7 @@ const VendorPaymentManagement = () => {
       title: (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <CalendarOutlined style={{ color: '#52c41a' }} />
-          <span>Total Stalls</span>
+          <span>Active Stalls</span>
         </div>
       ),
       dataIndex: 'total_stalls',
@@ -1145,6 +1235,7 @@ const VendorPaymentManagement = () => {
         <div style={{ textAlign: 'center' }}>
           <Badge
             count={count}
+            showZero
             style={{
               backgroundColor: '#52c41a',
               fontSize: '12px',
@@ -1158,8 +1249,8 @@ const VendorPaymentManagement = () => {
     {
       title: (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <CalendarOutlined style={{ color: '#52c41a' }} />
-          <span>Monthly Balance</span>
+          <ExclamationCircleOutlined style={{ color: '#c58a2a' }} />
+          <span>Balance Due</span>
         </div>
       ),
       dataIndex: 'total_monthly_balance',
@@ -1177,12 +1268,12 @@ const VendorPaymentManagement = () => {
 
         return (
           <div>
-            <Text strong style={{ color: currentMonthBalance > 0 ? '#ff4d4f' : '#52c41a' }}>
-              Current Month: {fmtMoney(currentMonthBalance)}
+            <Text strong className={currentMonthBalance > 0 ? 'balance-value-due' : 'balance-value-clear'}>
+              Due this month: {fmtMoney(currentMonthBalance)}
             </Text>
             <br />
-            <Text type="secondary" style={{ fontSize: '11px' }}>
-              Total Balance: {fmtMoney(totalBalanceUpToCurrentMonth)}
+            <Text type="secondary" className="balance-period-note">
+              Year-to-date due: {fmtMoney(totalBalanceUpToCurrentMonth)}
             </Text>
           </div>
         );
@@ -1198,7 +1289,7 @@ const VendorPaymentManagement = () => {
       title: (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <MoneyCollectOutlined style={{ color: '#52c41a' }} />
-          <span>Deposit</span>
+          <span>Available Deposit</span>
         </div>
       ),
       dataIndex: 'total_deposit',
@@ -1237,12 +1328,10 @@ const VendorPaymentManagement = () => {
       dataIndex: 'paid_today_count',
       key: 'paid_today_count',
       render: (count, record) => {
-        const rentals = Array.isArray(record.rentals) ? record.rentals : [];
-
         return (
           <div>
-            <Tag color={count > 0 ? 'green' : 'default'}>
-              {count} / {rentals.length}
+            <Tag color={count > 0 ? 'green' : 'default'} className="paid-today-tag">
+              {count} of {record.total_stalls} paid
             </Tag>
             {count > 0 && <CheckCircleOutlined style={{ color: '#52c41a', marginLeft: '4px' }} />}
           </div>
@@ -1253,11 +1342,50 @@ const VendorPaymentManagement = () => {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => {
+        const removedRentals = (record.rentals || []).filter(rental => rental.is_unoccupied);
+        const hasActiveRentals = (record.rentals || []).some(rental => !rental.is_unoccupied);
+        const isRemovedVendor = record.status && record.status !== 'active';
+        const showRemovedBalanceAction = removedRentals.length > 0 || isRemovedVendor;
+        const rentalsWithBalance = removedRentals.filter(rental => Number(rental.remaining_balance) > 0);
+
+        if (showRemovedBalanceAction && !hasActiveRentals) {
+          return (
+            <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+              <Tooltip title={rentalsWithBalance.length > 0 ? 'Choose a removed section and stall to pay' : 'No removed rental balance is available to pay'}>
+                <Button
+                  className="removed-balance-button"
+                  size="small"
+                  type="primary"
+                  icon={<DollarOutlined />}
+                  disabled={rentalsWithBalance.length === 0}
+                  aria-label={`Pay removed rental balance for ${record.name || 'vendor'}`}
+                  onClick={() => openUnoccupiedPayment(record)}
+                >
+                  Pay Balance
+                </Button>
+              </Tooltip>
+            </div>
+          );
+        }
+
         // Check if vendor has any balances (current or past)
         const hasAnyBalance = record.monthly_balances?.some(month => month.balance > 0) || false;
         
         return (
           <Space>
+            {showRemovedBalanceAction && (
+              <Tooltip title={rentalsWithBalance.length > 0 ? 'Choose a removed section and stall to pay' : 'No removed rental balance is available to pay'}>
+                <Button
+                  className="removed-balance-button compact"
+                  size="small"
+                  type="primary"
+                  icon={<DollarOutlined />}
+                  disabled={rentalsWithBalance.length === 0}
+                  aria-label={`Pay removed rental balance for ${record.name || 'vendor'}`}
+                  onClick={() => openUnoccupiedPayment(record)}
+                />
+              </Tooltip>
+            )}
             <Tooltip title="Pay Selected Months">
               <Button
                 className="action-button black"
@@ -1282,7 +1410,7 @@ const VendorPaymentManagement = () => {
                 icon={<BankOutlined />}
                 size="small"
                 onClick={() => handleBulkPayment(record)}
-                disabled={record.paid_today_count === (Array.isArray(record.rentals) ? record.rentals.length : 0)}
+                disabled={record.paid_today_count === record.total_stalls}
               />
             </Tooltip>
             <Tooltip title="Consume Deposit">
@@ -1320,7 +1448,7 @@ const VendorPaymentManagement = () => {
               Vendor Payment Management
             </Title>
             <Text className="vendor-header-subtitle">
-              Comprehensive vendor payment tracking and management system
+              Review balances, payments, and available deposits for {new Date().getFullYear()}
             </Text>
           </div>
         </div>
@@ -1328,10 +1456,11 @@ const VendorPaymentManagement = () => {
           <Button
             icon={<ReloadOutlined />}
             onClick={fetchVendors}
-            size="large"
-            className="action-button black"
+            loading={loading}
+            className="header-refresh-button"
+            aria-label="Refresh vendor payment data"
           >
-            Refresh
+            Refresh 
           </Button>
         </div>
       </div>
@@ -1374,17 +1503,23 @@ const VendorPaymentManagement = () => {
       {/* Main Table Card */}
       <div className="vendor-table-card">
         <div className="vendor-table-header">
-          <div className="vendor-table-title">
+          <div className="vendor-table-heading">
             <div className="vendor-table-title-icon">
               <BankOutlined />
             </div>
-            Vendor Payment Management
+            <div className="vendor-table-heading-copy">
+              <div className="vendor-table-title">Vendor Payment Register</div>
+              <Text className="vendor-table-description">
+                Stall assignments, balances, and available deposits
+              </Text>
+            </div>
           </div>
           <div className="vendor-search-container">
             <Input
               className="vendor-search-input"
-              placeholder="Search vendor name, contact, or email..."
+              placeholder="Search vendor name or contact number..."
               prefix={<SearchOutlined style={{ color: '#1890ff' }} />}
+              aria-label="Search vendor name or contact number"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               allowClear={true}
@@ -1397,6 +1532,9 @@ const VendorPaymentManagement = () => {
           dataSource={filteredVendors}
           loading={loading}
           rowKey="id"
+          locale={{
+            emptyText: searchText ? 'No vendors match your search.' : 'No vendor payment accounts found.'
+          }}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
@@ -1414,17 +1552,31 @@ const VendorPaymentManagement = () => {
 
       {/* Bulk Payment Modal */}
       <Modal
-        title={`Payment - ${selectedVendor?.name}`}
+        title={
+          <div className="vendor-modal-title">
+            <BankOutlined />
+            <span>Record Payment{selectedVendor?.name ? ` · ${selectedVendor.name}` : ''}</span>
+          </div>
+        }
         open={bulkPaymentModal}
         onCancel={() => setBulkPaymentModal(false)}
         footer={null}
         width={900}
-        style={{ borderRadius: '8px' }}
+        centered
+        closeIcon={<CloseOutlined />}
+        styles={{
+          mask: {
+            backgroundColor: 'rgba(20, 33, 61, 0.58)',
+            backdropFilter: 'blur(6px)',
+          },
+        }}
+        className="vendor-modal bulk-payment-modal"
       >
         <Form
           form={paymentForm}
           onFinish={handleBulkPaymentSubmit}
           layout="vertical"
+          className="bulk-payment-form"
         >
           <Alert
             message="Select stalls and enter payment details"
@@ -1433,29 +1585,27 @@ const VendorPaymentManagement = () => {
             style={{ marginBottom: '16px' }}
           />
 
-          {/* OR Number Input */}
-          <div style={{ marginBottom: '16px' }}>
-            <Text strong style={{ marginBottom: '8px', display: 'block' }}>OR Number *</Text>
-            <Input
-              placeholder="Enter Official Receipt Number"
-              value={orNumber}
-              onChange={(e) => setOrNumber(e.target.value)}
-              style={{ width: '100%' }}
-              maxLength={50}
-            />
-          </div>
-
-          {/* Payment Date Picker */}
-          <div style={{ marginBottom: '16px' }}>
-            <Text strong style={{ marginBottom: '8px', display: 'block' }}>Payment Date *</Text>
-            <DatePicker
-              value={paymentDate}
-              onChange={(date) => setPaymentDate(date)}
-              style={{ width: '100%' }}
-              format="MMMM D, YYYY"
-              placeholder="Select payment date"
-              disabledDate={(current) => current && current > dayjs().endOf('day')}
-            />
+          <div className="payment-meta-grid">
+            <div>
+              <Text strong className="vendor-modal-field-label">OR Number *</Text>
+              <Input
+                placeholder="Enter Official Receipt Number"
+                value={orNumber}
+                onChange={(e) => setOrNumber(e.target.value)}
+                maxLength={50}
+              />
+            </div>
+            <div>
+              <Text strong className="vendor-modal-field-label">Payment Date *</Text>
+              <DatePicker
+                value={paymentDate}
+                onChange={(date) => setPaymentDate(date)}
+                style={{ width: '100%' }}
+                format="MMMM D, YYYY"
+                placeholder="Select payment date"
+                disabledDate={(current) => current && current > dayjs().endOf('day')}
+              />
+            </div>
           </div>
 
           {/* Enhanced Payment Summary */}
@@ -1666,14 +1816,8 @@ const VendorPaymentManagement = () => {
           )}
 
           {/* Bulk Payment Controls */}
-          <div style={{
-            background: '#fafafa',
-            padding: '16px',
-            borderRadius: '6px',
-            marginBottom: '16px',
-            border: '1px solid #e8e8e8'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div className="bulk-payment-controls">
+            <div className="bulk-payment-controls-header">
               <Text strong>Bulk Payment</Text>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Checkbox
@@ -1692,7 +1836,7 @@ const VendorPaymentManagement = () => {
             </div>
 
               {bulkPaymentMode && (
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                <div className="bulk-payment-control-fields">
                   <div style={{ flex: 1 }}>
                     <Text strong style={{ marginBottom: '8px', display: 'block' }}>Payment Type</Text>
                     <Radio.Group
@@ -1757,9 +1901,9 @@ const VendorPaymentManagement = () => {
 
           <div style={{ marginBottom: '16px' }}>
             <Checkbox
-              checked={selectedRentals.length === selectedVendor?.rentals?.filter(r => !isStallAlreadyPaidWithAdvance(r))?.length}
+                  checked={selectedRentals.length > 0 && selectedRentals.length === selectedVendor?.rentals?.filter(r => !r.is_unoccupied && !isStallAlreadyPaidWithAdvance(r))?.length}
               indeterminate={
-                selectedRentals.length > 0 && selectedRentals.length < selectedVendor?.rentals?.filter(r => !isStallAlreadyPaidWithAdvance(r))?.length
+                selectedRentals.length > 0 && selectedRentals.length < selectedVendor?.rentals?.filter(r => !r.is_unoccupied && !isStallAlreadyPaidWithAdvance(r))?.length
               }
               onChange={(e) => handleSelectAllRentals(selectedVendor?.rentals || [], e.target.checked)}
             >
@@ -1771,25 +1915,19 @@ const VendorPaymentManagement = () => {
             {selectedVendor?.rentals?.map((rental) => (
               <div
                 key={rental.rental_id}
-                style={{
-                  padding: '12px',
-                  marginBottom: '8px',
-                  border: selectedRentals.includes(rental.rental_id) ? '1px solid #1890ff' : '1px solid #e8e8e8',
-                  borderRadius: '6px',
-                  backgroundColor: selectedRentals.includes(rental.rental_id) ? '#f6ffed' : '#ffffff'
-                }}
+                className={`payment-rental-option${selectedRentals.includes(rental.rental_id) ? ' is-selected' : ''}`}
               >
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                   <Checkbox
                     checked={selectedRentals.includes(rental.rental_id)}
                     onChange={(e) => handleRentalSelection(rental.rental_id, e.target.checked)}
-                    disabled={isStallAlreadyPaidWithAdvance(rental)}
+                    disabled={rental.is_unoccupied || isStallAlreadyPaidWithAdvance(rental)}
                   />
                   <div style={{ marginLeft: '12px', flex: 1 }}>
                     <Text strong>{rental.section_name} - {rental.stall_number}</Text>
                     <div style={{ marginTop: '4px' }}>
                       <Tag color={getStatusColor(rental.status)} style={{ borderRadius: '4px' }}>
-                        {rental.status}
+                        {rental.is_unoccupied ? 'Removed' : rental.status}
                       </Tag>
                       {(rental.monthly_balances?.[new Date().getMonth()]?.balance || 0) > 0 && (
                         <Text type="secondary" style={{ fontSize: '12px' }}>
@@ -1970,11 +2108,104 @@ const VendorPaymentManagement = () => {
         </Form>
       </Modal>
 
+      <Modal
+        title={
+          <div className="vendor-modal-title">
+            <DollarOutlined />
+            <span>Pay Removed Rental Balance</span>
+          </div>
+        }
+        open={unoccupiedPaymentModal}
+        onCancel={() => {
+          setUnoccupiedPaymentModal(false);
+          setSelectedUnoccupiedRental(null);
+        }}
+        onOk={handleUnoccupiedPayment}
+        confirmLoading={processingUnoccupiedPayment}
+        okText="Record Payment"
+        okButtonProps={{ disabled: !selectedUnoccupiedRental || Number(unoccupiedPaymentAmount) <= 0 }}
+        destroyOnClose
+        centered
+        width={560}
+        closeIcon={<CloseOutlined />}
+        className="vendor-modal removed-payment-modal"
+      >
+        {selectedVendor && (
+          <Space direction="vertical" size="middle" className="removed-payment-form">
+            <div style={{ width: '100%' }}>
+              <Text strong style={{ display: 'block', marginBottom: 6 }}>Section & Stall</Text>
+              <Select
+                aria-label="Select removed section and stall to pay"
+                placeholder="Select a removed stall with a balance"
+                value={selectedUnoccupiedRental?.key}
+                loading={unoccupiedBalanceLoading}
+                disabled={unoccupiedBalanceLoading}
+                options={getUnoccupiedRentalGroups(selectedVendor).map(rentalGroup => ({
+                    value: rentalGroup.key,
+                    label: `${rentalGroup.section_name} - ${rentalGroup.stall_number} · ${fmtMoney(rentalGroup.remaining_balance)} due`,
+                  }))}
+                style={{ width: '100%' }}
+                onChange={(rentalGroupKey) => {
+                  const rentalGroup = getUnoccupiedRentalGroups(selectedVendor)
+                    .find(group => group.key === rentalGroupKey);
+                  setSelectedUnoccupiedRental(rentalGroup || null);
+                  setUnoccupiedPaymentAmount(Number(rentalGroup?.remaining_balance) || 0);
+                }}
+              />
+            </div>
+            {selectedUnoccupiedRental && (
+              <>
+                <Alert
+                  type="info"
+                  showIcon
+                  message={`Remaining balance: ${fmtMoney(selectedUnoccupiedRental.remaining_balance)}`}
+                  description="This payment will be recorded against the removed rental. Its exit date and stall status will not change."
+                />
+            <div>
+              <Text strong style={{ display: 'block', marginBottom: 6 }}>Amount</Text>
+              <InputNumber
+                aria-label="Removed rental payment amount"
+                min={0.01}
+                max={Number(selectedUnoccupiedRental.remaining_balance)}
+                precision={2}
+                value={unoccupiedPaymentAmount}
+                onChange={(value) => setUnoccupiedPaymentAmount(value ?? 0)}
+                formatter={(value) => `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={(value) => value.replace(/₱\s?|(,*)/g, '')}
+                style={{ width: '100%' }}
+              />
+            </div>
+            <div>
+              <Text strong style={{ display: 'block', marginBottom: 6 }}>Payment Date</Text>
+              <DatePicker
+                value={unoccupiedPaymentDate}
+                onChange={setUnoccupiedPaymentDate}
+                format="MMMM D, YYYY"
+                disabledDate={(current) => current && current > dayjs().endOf('day')}
+                style={{ width: '100%' }}
+              />
+            </div>
+            <div>
+              <Text strong style={{ display: 'block', marginBottom: 6 }}>OR Number (optional)</Text>
+              <Input
+                inputMode="numeric"
+                value={unoccupiedOrNumber}
+                onChange={(event) => setUnoccupiedOrNumber(event.target.value.replace(/\D/g, ''))}
+                maxLength={19}
+                placeholder="Enter receipt number"
+              />
+            </div>
+              </>
+            )}
+          </Space>
+        )}
+      </Modal>
+
       {/* Monthly Breakdown Modal */}
       <Modal
         title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CalendarOutlined style={{ color: '#52c41a' }} />
+          <div className="vendor-modal-title">
+            <CalendarOutlined />
             <span>Monthly Balance Breakdown - {selectedVendorForBreakdown?.name}</span>
           </div>
         }
@@ -1986,16 +2217,26 @@ const VendorPaymentManagement = () => {
           </Button>
         ]}
         width={1000}
+        centered
+        closeIcon={<CloseOutlined />}
+        styles={{
+          mask: {
+            backgroundColor: 'rgba(20, 33, 61, 0.58)',
+            backdropFilter: 'blur(6px)',
+          },
+        }}
+        className="vendor-modal monthly-breakdown-modal"
       >
         {selectedVendorForBreakdown && (
           <div>
-            <div style={{ marginBottom: '16px' }}>
+            <div className="modal-intro">
               <Text type="secondary">
                 Monthly balance calculation: (Daily Rent × Days in Month) - Payments Made
               </Text>
             </div>
             
             <Table
+              className="modal-data-table"
               dataSource={selectedVendorForBreakdown.monthly_balances || []}
               rowKey={(record, index) => index}
               columns={[
@@ -2135,8 +2376,8 @@ const VendorPaymentManagement = () => {
       {/* Month Selection Modal */}
       <Modal
         title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CalendarTwoTone style={{ color: '#52c41a' }} />
+          <div className="vendor-modal-title">
+            <CalendarTwoTone />
             <span>Select Months to Pay - {selectedVendorForMonthPayment?.name}</span>
           </div>
         }
@@ -2157,19 +2398,28 @@ const VendorPaymentManagement = () => {
           </Button>
         ]}
         width={900}
+        centered
+        closeIcon={<CloseOutlined />}
+        styles={{
+          mask: {
+            backgroundColor: 'rgba(20, 33, 61, 0.58)',
+            backdropFilter: 'blur(6px)',
+          },
+        }}
+        className="vendor-modal month-selection-modal"
       >
         {selectedVendorForMonthPayment && (
-          <div>
-            <div style={{ marginBottom: '16px' }}>
+          <div className="month-selection-content">
+            <div className="modal-intro">
               <Text type="secondary">
                 Select the months you want to pay the balance for. You can choose multiple months.
               </Text>
             </div>
             
             {/* OR Number, Payment Date, and Custom Amount */}
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-              <div style={{ flex: 1 }}>
-                <Text strong style={{ marginBottom: '8px', display: 'block' }}>OR Number *</Text>
+            <div className="payment-meta-grid">
+              <div>
+                <Text strong className="vendor-modal-field-label">OR Number *</Text>
                 <Input
                   placeholder="Enter Official Receipt Number"
                   value={orNumber}
@@ -2177,8 +2427,8 @@ const VendorPaymentManagement = () => {
                   maxLength={50}
                 />
               </div>
-              <div style={{ flex: 1 }}>
-                <Text strong style={{ marginBottom: '8px', display: 'block' }}>Payment Date *</Text>
+              <div>
+                <Text strong className="vendor-modal-field-label">Payment Date *</Text>
                 <DatePicker
                   value={paymentDate}
                   onChange={(date) => setPaymentDate(date)}
@@ -2190,8 +2440,8 @@ const VendorPaymentManagement = () => {
               </div>
             </div>
             
-            <div style={{ marginBottom: '16px' }}>
-              <Text strong style={{ marginBottom: '8px', display: 'block' }}>Custom Payment Amount (Optional)</Text>
+            <div className="custom-payment-amount-field">
+              <Text strong className="vendor-modal-field-label">Custom Payment Amount (Optional)</Text>
               <Input
                 placeholder="Enter custom amount or leave empty to pay total balance"
                 value={customPaymentAmount}
@@ -2204,7 +2454,7 @@ const VendorPaymentManagement = () => {
               </Text>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+            <div className="month-selection-grid">
               {selectedVendorForMonthPayment.monthly_balances?.map((monthData, index) => {
                 const currentMonth = new Date().getMonth();
                 const isPastMonth = index < currentMonth;
@@ -2216,16 +2466,18 @@ const VendorPaymentManagement = () => {
                 return (
                   <div
                     key={index}
-                    style={{
-                      padding: '12px',
-                      border: `2px solid ${isSelected ? '#1890ff' : hasBalance ? '#ff4d4f' : '#d9d9d9'}`,
-                      borderRadius: '8px',
-                      backgroundColor: isSelected ? '#f6ffed' : hasBalance ? '#fff2f0' : '#fafafa',
-                      cursor: hasBalance ? 'pointer' : 'not-allowed',
-                      opacity: hasBalance ? 1 : 0.6,
-                      transition: 'all 0.3s ease'
-                    }}
+                    className={`month-selection-option${isSelected ? ' is-selected' : ''}${hasBalance ? ' has-balance' : ' no-balance'}`}
+                    role="checkbox"
+                    tabIndex={hasBalance ? 0 : -1}
+                    aria-checked={isSelected}
+                    aria-disabled={!hasBalance}
                     onClick={() => hasBalance && handleMonthSelection(index)}
+                    onKeyDown={(event) => {
+                      if (hasBalance && (event.key === 'Enter' || event.key === ' ')) {
+                        event.preventDefault();
+                        handleMonthSelection(index);
+                      }
+                    }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                       <Tag 
@@ -2270,7 +2522,7 @@ const VendorPaymentManagement = () => {
               })}
             </div>
             
-            <div style={{ marginTop: '16px', padding: '12px', background: '#f0f9ff', borderRadius: '6px' }}>
+            <div className="month-selection-summary">
               <Text strong style={{ color: '#1890ff' }}>
                 📋 Selected Summary: {selectedMonths.length} month(s) selected
               </Text>
@@ -2315,7 +2567,12 @@ const VendorPaymentManagement = () => {
 
       {/* Payment Confirmation Modal */}
       <Modal
-        title="Confirm Payment"
+        title={
+          <div className="vendor-modal-title">
+            <CheckCircleOutlined />
+            <span>Confirm Payment</span>
+          </div>
+        }
         open={confirmationModal}
         onCancel={() => {
           setConfirmationModal(false);
@@ -2338,19 +2595,26 @@ const VendorPaymentManagement = () => {
           </Button>
         ]}
         width={600}
+        centered
+        closeIcon={<CloseOutlined />}
+        styles={{
+          mask: {
+            backgroundColor: 'rgba(20, 33, 61, 0.58)',
+            backdropFilter: 'blur(6px)',
+          },
+        }}
+        className="vendor-modal payment-confirmation-modal"
       >
         {pendingPaymentData && (
-          <div>
-            <div style={{ marginBottom: '16px' }}>
-              <Text strong>Payment Details:</Text>
-            </div>
+          <div className="payment-confirmation-content">
+            <Text strong className="modal-section-heading">Payment details</Text>
             
-            <div style={{ background: '#f5f5f5', padding: '16px', borderRadius: '6px', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div className="confirmation-summary">
+              <div className="confirmation-summary-row">
                 <Text>OR Number:</Text>
                 <Text strong>{pendingPaymentData.or_number}</Text>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <div className="confirmation-summary-row">
                 <Text>Payment Date:</Text>
                 <Text strong>
                   {pendingPaymentData.payment_date ? 
@@ -2363,38 +2627,30 @@ const VendorPaymentManagement = () => {
                   }
                 </Text>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <div className="confirmation-summary-row">
                 <Text>Number of Stalls:</Text>
                 <Text strong>{pendingPaymentData.rental_ids.length}</Text>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div className="confirmation-summary-row">
                 <Text>Total Amount:</Text>
                 <Text strong>{fmtMoney(pendingPaymentData.amounts.reduce((sum, amount) => sum + amount, 0))}</Text>
               </div>
             </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              <Text strong>Stall Details:</Text>
-            </div>
+            <Text strong className="modal-section-heading">Stall details</Text>
             
-            <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+            <div className="confirmation-stall-list">
               {pendingPaymentData.rental_ids.map((rentalId, index) => {
                 const rental = selectedVendor?.rentals?.find(r => r.rental_id === rentalId);
                 if (!rental) return null;
                 
                 return (
-                  <div key={rentalId} style={{ 
-                    padding: '8px', 
-                    marginBottom: '4px', 
-                    background: '#fafafa', 
-                    borderRadius: '4px',
-                    fontSize: '12px'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div key={rentalId} className="confirmation-stall-item">
+                    <div className="confirmation-summary-row">
                       <Text>{rental.section_name} - {rental.stall_number}</Text>
                       <Text strong>{fmtMoney(pendingPaymentData.amounts[index])}</Text>
                     </div>
-                    <div style={{ color: '#666', marginTop: '2px' }}>
+                    <div className="confirmation-stall-type">
                       Type: {pendingPaymentData.payment_types[index]}
                     </div>
                   </div>
@@ -2415,8 +2671,8 @@ const VendorPaymentManagement = () => {
       {/* Deposit Consumption Modal */}
       <Modal
         title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <MoneyCollectOutlined style={{ color: '#52c41a' }} />
+          <div className="vendor-modal-title">
+            <MoneyCollectOutlined />
             <span>Consume Deposit - {selectedVendor?.name}</span>
           </div>
         }
@@ -2540,23 +2796,32 @@ const VendorPaymentManagement = () => {
           </Button>
         ]}
         width={800}
+        centered
+        closeIcon={<CloseOutlined />}
+        styles={{
+          mask: {
+            backgroundColor: 'rgba(20, 33, 61, 0.58)',
+            backdropFilter: 'blur(6px)',
+          },
+        }}
+        className="vendor-modal deposit-consumption-modal"
       >
         {selectedVendor && (
-          <div>
-            <div style={{ marginBottom: '16px' }}>
+          <div className="deposit-consumption-content">
+            <div className="modal-intro">
               <Text type="secondary">
                 Select a month with available deposit to consume. The deposit amount will be used to pay for current or future payments.
               </Text>
             </div>
 
-            <div style={{ marginBottom: '16px', padding: '16px', backgroundColor: '#f6ffed', borderRadius: '8px' }}>
+            <div className="deposit-total-panel">
               <Text strong style={{ color: '#52c41a', fontSize: '16px' }}>
                 Total Available Deposit: {fmtMoney(getTotalDepositAmount(selectedVendor))}
               </Text>
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <Text strong style={{ marginBottom: '8px', display: 'block' }}>Select Month with Deposit:</Text>
+              <Text strong className="vendor-modal-field-label">Select month with deposit</Text>
               <Select
                 style={{ width: '100%' }}
                 placeholder="Select a month"
@@ -2571,8 +2836,7 @@ const VendorPaymentManagement = () => {
                   <Option key={month.monthIndex} value={month.monthIndex} >
                     <div style={{ 
                       padding: '8px 0',
-                      lineHeight: '1.4',
-                      minWidth: '350px'
+                      lineHeight: '1.4'
                     }}>
                       <div style={{ marginBottom: '4px' }}>
                         <Text strong style={{ fontSize: '14px', color: '#52c41a' }}>
@@ -2601,7 +2865,7 @@ const VendorPaymentManagement = () => {
             </div>
 
             {selectedMonthForDeposit && (
-              <div style={{ padding: '16px', backgroundColor: '#e6f7ff', borderRadius: '8px' }}>
+              <div className="deposit-details-panel">
                 <div style={{ marginBottom: '8px' }}>
                   <Text strong>Selected Month Details:</Text>
                 </div>
@@ -2621,9 +2885,9 @@ const VendorPaymentManagement = () => {
 
             {/* Custom Deposit Amount Input */}
             {selectedMonthForDeposit && (
-              <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fff7e6', borderRadius: '8px' }}>
+              <div className="deposit-amount-panel">
                 <div style={{ marginBottom: '8px' }}>
-                  <Text strong>Deposit Amount to Consume:</Text>
+                  <Text strong>Amount to use</Text>
                 </div>
                 <div style={{ marginBottom: '12px' }}>
                   <Radio.Group 
@@ -2666,14 +2930,14 @@ const VendorPaymentManagement = () => {
 
             {/* OR Number and Payment Date Input */}
             {selectedMonthForDeposit && (
-              <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
+              <div className="deposit-payment-details">
                 <div style={{ marginBottom: '16px' }}>
                   <Text strong>Payment Details for Deposit Consumption:</Text>
                 </div>
                 
-                <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                  <div style={{ flex: 1 }}>
-                    <Text strong style={{ marginBottom: '8px', display: 'block' }}>OR Number *</Text>
+                <div className="payment-meta-grid">
+                  <div>
+                    <Text strong className="vendor-modal-field-label">OR Number *</Text>
                     <Input
                       placeholder="Enter Official Receipt Number"
                       value={orNumber}
@@ -2681,8 +2945,8 @@ const VendorPaymentManagement = () => {
                       maxLength={50}
                     />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <Text strong style={{ marginBottom: '8px', display: 'block' }}>Payment Date *</Text>
+                  <div>
+                    <Text strong className="vendor-modal-field-label">Payment Date *</Text>
                     <DatePicker
                       value={paymentDate}
                       onChange={(date) => setPaymentDate(date)}
@@ -2695,16 +2959,10 @@ const VendorPaymentManagement = () => {
                 </div>
 
                 <div style={{ marginBottom: '16px' }}>
-                  <Text strong style={{ marginBottom: '8px', display: 'block' }}>Select Stalls to Pay:</Text>
-                  <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #d9d9d9', borderRadius: '6px', padding: '8px' }}>
+                  <Text strong className="vendor-modal-field-label">Stalls to apply deposit to</Text>
+                  <div className="deposit-stall-list">
                     {selectedVendor.rentals?.map((rental) => (
-                      <div key={rental.rental_id} style={{ 
-                        padding: '8px', 
-                        marginBottom: '4px', 
-                        backgroundColor: '#fff', 
-                        borderRadius: '4px',
-                        border: '1px solid #f0f0f0'
-                      }}>
+                      <div key={rental.rental_id} className="deposit-stall-item">
                         <Checkbox
                           checked={selectedRentals.includes(rental.rental_id)}
                           onChange={(e) => handleRentalSelection(rental.rental_id, e.target.checked)}

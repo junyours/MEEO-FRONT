@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Card, Row, Col, Tabs, Typography, Spin, Alert, Button, Space, Statistic, Progress, DatePicker, Select, Empty, Table, Tag } from "antd";
+import { Card, Row, Col, Tabs, Typography, Alert, Button, Space, Progress, Empty } from "antd";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ReferenceLine, PieChart, Pie, Cell } from "recharts";
-import { FiTrendingUp, FiDollarSign, FiBarChart2, FiCalendar, FiDownload, FiFileText, FiTrendingDown } from "react-icons/fi";
+import { FiTrendingUp, FiDollarSign, FiBarChart2, FiCalendar, FiRefreshCw, FiPrinter } from "react-icons/fi";
 import api from "../Api";
 import LoadingOverlay from "./Loading";
+import "./css/ExpectedCollectionAnalysis.css";
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -43,7 +44,7 @@ const styles = {
     transform: "translateY(-2px)"
   },
   primaryMetricCard: {
-    background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+    background: "linear-gradient(135deg, #164e63 0%, #1b6572 100%)",
     border: "none",
     color: "#ffffff"
   },
@@ -85,20 +86,20 @@ const styles = {
   textMetricWhite: {
     fontSize: "32px",
     fontWeight: "700",
-    color: "#000000ff",
+    color: "#ffffff",
     fontVariantNumeric: "tabular-nums"
   },
   textMetricLabelWhite: {
     fontSize: "14px",
-    color: "rgba(0, 0, 0, 0.8)",
+    color: "rgba(255, 255, 255, 0.82)",
     fontWeight: "500"
   }
 };
 
 // Color palette
 const colors = {
-  primary: "#4f46e5",
-  secondary: "#7c3aed",
+  primary: "#1b6572",
+  secondary: "#2868a6",
   success: "#10b981",
   warning: "#f59e0b",
   danger: "#ef4444",
@@ -108,14 +109,12 @@ const colors = {
   border: "#e5e7eb"
 };
 
-const CHART_COLORS = ['#4f46e5', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#f97316'];
+const CHART_COLORS = ['#1b6572', '#2f7d70', '#d28a2e', '#2868a6', '#ba5b50', '#687c45', '#8b6d4e', '#398c91'];
 
 const ExpectedCollectionAnalysis = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-  const [dateRange, setDateRange] = useState(null);
-  const [areaFilter, setAreaFilter] = useState('all');
 
   useEffect(() => {
     fetchExpectedCollectionData();
@@ -140,62 +139,12 @@ const ExpectedCollectionAnalysis = () => {
     }
   };
 
-  const formatCurrency = (value) => `₱${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formatCurrency = (value) => `₱${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const exportToPDF = () => {
     // PDF export functionality
     window.print();
   };
-
-  // Table columns for sections breakdown
-  const sectionColumns = [
-    {
-      title: 'Section Name',
-      dataIndex: 'section_name',
-      key: 'section_name',
-      render: (text) => <Text strong>{text}</Text>,
-    },
-    {
-      title: 'Area',
-      dataIndex: 'area_name',
-      key: 'area_name',
-      render: (text) => <Tag color="blue">{text}</Tag>,
-    },
-    {
-      title: 'Daily Rate',
-      dataIndex: 'total_daily',
-      key: 'total_daily',
-      render: (value) => <Text style={{ color: '#667eea' }}>{formatCurrency(value)}</Text>,
-      sorter: (a, b) => a.total_daily - b.total_daily,
-    },
-    {
-      title: 'Monthly Rate',
-      dataIndex: 'total_monthly',
-      key: 'total_monthly',
-      render: (value) => <Text style={{ color: '#f093fb' }}>{formatCurrency(value)}</Text>,
-      sorter: (a, b) => a.total_monthly - b.total_monthly,
-    },
-    {
-      title: 'Stalls',
-      dataIndex: 'stalls',
-      key: 'stalls',
-      render: (stalls) => (
-        <div>
-          {stalls.map((stall, index) => (
-            <div key={index} style={{ marginBottom: 4, padding: 8, background: '#f8f9fa', borderRadius: 4 }}>
-              <Text strong>Stall {stall.stall_number}</Text>
-              <div style={{ fontSize: 12, color: '#718096' }}>
-                Daily: {formatCurrency(stall.daily_rate)} | Monthly: {formatCurrency(stall.monthly_rate)}
-              </div>
-              <div style={{ fontSize: 12, color: '#718096' }}>
-                Vendor: {stall.vendor_name} | Status: <Tag color="green">{stall.status}</Tag>
-              </div>
-            </div>
-          ))}
-        </div>
-      ),
-    },
-  ];
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -251,13 +200,54 @@ const ExpectedCollectionAnalysis = () => {
     );
   }
 
-  const { current_collections, monthly_trend, market_sections, open_space_sections, comparison } = data;
+  const current_collections = {
+    market_daily: Number(data.current_collections?.market_daily || 0),
+    market_monthly: Number(data.current_collections?.market_monthly || 0),
+    open_space_daily: Number(data.current_collections?.open_space_daily || 0),
+    open_space_monthly: Number(data.current_collections?.open_space_monthly || 0),
+    taboc_gym_daily: Number(data.current_collections?.taboc_gym_daily || 0),
+    taboc_gym_monthly: Number(data.current_collections?.taboc_gym_monthly || 0),
+  };
+  const monthly_trend = Array.isArray(data.monthly_trend) ? data.monthly_trend : [];
+  const normalizeSection = (section) => {
+    const totalStalls = Number(section.total_stalls || 0);
+    const occupiedStalls = Number(section.occupied_stalls || 0);
+
+    return {
+      ...section,
+      section_name: section.section_name || 'Unnamed section',
+      area_name: section.area_name || 'Unknown area',
+      total_stalls: totalStalls,
+      occupied_stalls: occupiedStalls,
+      available_stalls: Number(section.available_stalls ?? Math.max(0, totalStalls - occupiedStalls)),
+    };
+  };
+  const market_sections = Array.isArray(data.market_sections)
+    ? data.market_sections.map(normalizeSection)
+    : [];
+  const open_space_sections = Array.isArray(data.open_space_sections)
+    ? data.open_space_sections.map(normalizeSection)
+    : [];
+  const totalDailyCollections = current_collections.market_daily
+    + current_collections.open_space_daily
+    + current_collections.taboc_gym_daily;
+  const comparison = {
+    market_percentage: totalDailyCollections > 0
+      ? Number(((current_collections.market_daily / totalDailyCollections) * 100).toFixed(2))
+      : 0,
+    open_space_percentage: totalDailyCollections > 0
+      ? Number(((current_collections.open_space_daily / totalDailyCollections) * 100).toFixed(2))
+      : 0,
+    taboc_gym_percentage: totalDailyCollections > 0
+      ? Number(((current_collections.taboc_gym_daily / totalDailyCollections) * 100).toFixed(2))
+      : 0,
+  };
 
   // Prepare pie chart data for market sections only
   const prepareMarketPieData = () => {
     return market_sections.map(section => {
-      const totalStalls = section.total_stalls || section.stalls?.length || 0;
-      const occupiedStalls = section.occupied_stalls || 0;
+      const totalStalls = section.total_stalls;
+      const occupiedStalls = section.occupied_stalls;
       const occupancyPercentage = totalStalls > 0 ? ((occupiedStalls / totalStalls) * 100).toFixed(1) : 0;
       
       return {
@@ -273,86 +263,72 @@ const ExpectedCollectionAnalysis = () => {
 
   // Prepare section data grouped by area type
   const prepareSectionDataByArea = () => {
-    const marketSections = market_sections.filter(section => 
-      section.area_name.toLowerCase().includes('wet') || 
-      section.area_name.toLowerCase().includes('dry')
-    ).map(section => ({
-      ...section,
-      total_stalls: section.total_stalls || section.stalls?.length || 0,
-      occupied_stalls: section.occupied_stalls || 0,
-      available_stalls: section.available_stalls || (section.total_stalls || section.stalls?.length || 0) - (section.occupied_stalls || 0)
-    }));
-    
-    const openSpaceSections = open_space_sections.filter(section => 
-      !section.area_name.toLowerCase().includes('wet') && 
-      !section.area_name.toLowerCase().includes('dry')
-    ).map(section => ({
-      ...section,
-      total_stalls: section.total_stalls || section.stalls?.length || 0,
-      occupied_stalls: section.occupied_stalls || 0,
-      available_stalls: section.available_stalls || (section.total_stalls || section.stalls?.length || 0) - (section.occupied_stalls || 0)
-    }));
-
     return {
-      market: marketSections,
-      openSpace: openSpaceSections
+      market: market_sections,
+      openSpace: open_space_sections
     };
   };
 
-  // Calculate additional metrics for better understanding
-  const calculateTotalStalls = () => {
-    const allSections = [...market_sections, ...open_space_sections];
-    return allSections.reduce((total, section) => total + section.stalls.length, 0);
-  };
+  const allSections = [...market_sections, ...open_space_sections];
+  const totalStalls = allSections.reduce((total, section) => total + section.total_stalls, 0);
+  const totalOccupiedStalls = allSections.reduce((total, section) => total + section.occupied_stalls, 0);
+  const occupancyRate = totalStalls > 0 ? ((totalOccupiedStalls / totalStalls) * 100).toFixed(1) : 0;
 
-  const calculateOccupancyRate = () => {
-    const allSections = [...market_sections, ...open_space_sections];
-    const totalStalls = allSections.reduce((total, section) => total + section.stalls.length, 0);
-    const occupiedStalls = allSections.reduce((total, section) => total + (section.occupied_stalls || 0), 0);
-    return totalStalls > 0 ? ((occupiedStalls / totalStalls) * 100).toFixed(1) : 0;
-  };
-
-  // Prepare pie chart data for open space sections
   const prepareOpenSpacePieData = () => {
     return open_space_sections.map(section => {
-      const totalStalls = section.total_stalls || section.stalls?.length || 0;
-      const occupiedStalls = section.occupied_stalls || 0;
+      const totalStalls = section.total_stalls;
+      const occupiedStalls = section.occupied_stalls;
       const occupancyPercentage = totalStalls > 0 ? ((occupiedStalls / totalStalls) * 100).toFixed(1) : 0;
-      
       return {
         name: section.section_name,
         value: parseFloat(occupancyPercentage),
         displayValue: `${occupiedStalls}/${totalStalls}`,
         area: section.area_name,
-        totalStalls: totalStalls,
-        occupiedStalls: occupiedStalls
+        totalStalls,
+        occupiedStalls
       };
     }).sort((a, b) => b.value - a.value);
   };
 
-  const totalStalls = calculateTotalStalls();
-  const occupancyRate = calculateOccupancyRate();
   const marketPieData = prepareMarketPieData();
   const sectionDataByArea = prepareSectionDataByArea();
   const openSpacePieData = prepareOpenSpacePieData();
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <Title level={1} style={styles.title}>
-          Expected Collection Analysis
-        </Title>
-        <Text style={styles.subtitle}>
-          Comprehensive overview of market and open space revenue projections
-        </Text>
-      </div>
+    <div className="expected-collection-screen" style={styles.container}>
+      <Card className="collection-report-header" bordered={false}>
+        <div className="collection-report-layout">
+          <div className="collection-report-identity">
+            <div className="collection-report-mark"><FiBarChart2 /></div>
+            <div className="collection-report-copy">
+              <Text className="collection-report-eyebrow">REVENUE & OCCUPANCY</Text>
+              <Title level={2} className="collection-report-title">
+                Expected Collection Analysis
+              </Title>
+              <Text type="secondary" className="collection-report-subtitle">
+                Current rental rates, collection trends, and stall occupancy by area.
+              </Text>
+            </div>
+          </div>
+          <Space className="collection-report-actions" wrap>
+            <Button icon={<FiPrinter />} onClick={exportToPDF}>Print report</Button>
+            <Button
+              type="primary"
+              icon={<FiRefreshCw />}
+              loading={loading}
+              onClick={fetchExpectedCollectionData}
+            >
+              Refresh data
+            </Button>
+          </Space>
+        </div>
+      </Card>
 
       {/* KPI Metrics */}
-      <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
+      <Row className="collection-overview-metrics" gutter={[24, 24]} style={{ marginBottom: "32px" }}>
         <Col xs={24} sm={12} lg={6}>
           <Card 
-            style={{ ...styles.primaryMetricCard, ...styles.metricCard }}
+            style={{ ...styles.metricCard, ...styles.primaryMetricCard }}
             bodyStyle={{ padding: "24px" }}
           >
             <div style={{ textAlign: "center" }}>
@@ -371,9 +347,9 @@ const ExpectedCollectionAnalysis = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card 
             style={{ 
-              ...styles.primaryMetricCard, 
-              background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-              ...styles.metricCard 
+              ...styles.metricCard,
+              ...styles.primaryMetricCard,
+              background: "linear-gradient(135deg, #267a60 0%, #17654d 100%)",
             }}
             bodyStyle={{ padding: "24px" }}
           >
@@ -382,7 +358,7 @@ const ExpectedCollectionAnalysis = () => {
                 Total Expected Monthly
               </Text>
               <div style={styles.textMetricWhite}>
-                {formatCurrency(current_collections.market_monthly + current_collections.open_space_monthly)}
+                {formatCurrency(current_collections.market_monthly + current_collections.open_space_monthly + current_collections.taboc_gym_monthly)}
               </div>
               <Text style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.7)", marginTop: "8px", display: "block" }}>
                 Combined monthly revenue from all stalls
@@ -394,62 +370,13 @@ const ExpectedCollectionAnalysis = () => {
           <Card style={styles.metricCard} bodyStyle={{ padding: "24px" }}>
             <div style={{ textAlign: "center" }}>
               <Text style={styles.textMetricLabel}>
-                Market Efficiency
+                Stall Occupancy
               </Text>
               <div style={{ ...styles.textMetric, color: colors.primary }}>
-                {comparison.market_percentage}%
-              </div>
-              <Text style={{ fontSize: "12px", color: colors.gray, marginTop: "8px", display: "block" }}>
-                Market's share of total revenue
-              </Text>
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card style={styles.metricCard} bodyStyle={{ padding: "24px" }}>
-            <div style={{ textAlign: "center" }}>
-              <Text style={styles.textMetricLabel}>
-                Open Space Efficiency
-              </Text>
-              <div style={{ ...styles.textMetric, color: colors.success }}>
-                {comparison.open_space_percentage}%
-              </div>
-              <Text style={{ fontSize: "12px", color: colors.gray, marginTop: "8px", display: "block" }}>
-                Open space's share of total revenue
-              </Text>
-            </div>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Additional Metrics */}
-      <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card style={styles.metricCard} bodyStyle={{ padding: "24px" }}>
-            <div style={{ textAlign: "center" }}>
-              <Text style={styles.textMetricLabel}>
-                Total Stalls
-              </Text>
-              <div style={styles.textMetric}>
-                {totalStalls}
-              </div>
-              <Text style={{ fontSize: "12px", color: colors.gray, marginTop: "8px", display: "block" }}>
-                Total number of stalls across all sections
-              </Text>
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card style={styles.metricCard} bodyStyle={{ padding: "24px" }}>
-            <div style={{ textAlign: "center" }}>
-              <Text style={styles.textMetricLabel}>
-                Occupancy Rate
-              </Text>
-              <div style={{ ...styles.textMetric, color: colors.info }}>
                 {occupancyRate}%
               </div>
               <Text style={{ fontSize: "12px", color: colors.gray, marginTop: "8px", display: "block" }}>
-                Percentage of occupied stalls
+                {totalOccupiedStalls.toLocaleString()} of {totalStalls.toLocaleString()} stalls occupied
               </Text>
             </div>
           </Card>
@@ -457,39 +384,29 @@ const ExpectedCollectionAnalysis = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card style={styles.metricCard} bodyStyle={{ padding: "24px" }}>
             <div style={{ textAlign: "center" }}>
-              <Text style={styles.textMetricLabel}>
-                Market Sections
-              </Text>
-              <div style={styles.textMetric}>
-                {market_sections.length}
+              <Text style={styles.textMetricLabel}>Available Stalls</Text>
+              <div style={{ ...styles.textMetric, color: colors.success }}>
+                {Math.max(0, totalStalls - totalOccupiedStalls).toLocaleString()}
               </div>
               <Text style={{ fontSize: "12px", color: colors.gray, marginTop: "8px", display: "block" }}>
-                Number of market area sections
-              </Text>
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card style={styles.metricCard} bodyStyle={{ padding: "24px" }}>
-            <div style={{ textAlign: "center" }}>
-              <Text style={styles.textMetricLabel}>
-                Open Space Sections
-              </Text>
-              <div style={styles.textMetric}>
-                {open_space_sections.length}
-              </div>
-              <Text style={{ fontSize: "12px", color: colors.gray, marginTop: "8px", display: "block" }}>
-                Number of open space sections
+                Across {market_sections.length + open_space_sections.length} sections
               </Text>
             </div>
           </Card>
         </Col>
       </Row>
 
+      <div className="collection-section-heading">
+        <div>
+          <Text className="collection-section-eyebrow">STALL OCCUPANCY</Text>
+          <Title level={3}>Occupancy by service area</Title>
+        </div>
+        <Text type="secondary">Compare occupied and available stalls by section.</Text>
+      </div>
       {/* Market Areas - Dedicated Section */}
       <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
         <Col xs={24}>
-          <Card style={styles.chartCard}>
+          <Card className="occupancy-analysis-card" style={styles.chartCard}>
             <Title level={3} style={{ marginBottom: "16px", textAlign: "center", color: "#1a1d23" }}>
               Market Areas - Occupancy Analysis
             </Title>
@@ -623,7 +540,7 @@ const ExpectedCollectionAnalysis = () => {
       {/* Open Space Areas - Dedicated Section */}
       <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
         <Col xs={24}>
-          <Card style={styles.chartCard}>
+          <Card className="occupancy-analysis-card" style={styles.chartCard}>
             <Title level={3} style={{ marginBottom: "16px", textAlign: "center", color: "#1a1d23" }}>
               Open Space Areas - Occupancy Analysis
             </Title>
@@ -754,10 +671,17 @@ const ExpectedCollectionAnalysis = () => {
         </Col>
       </Row>
 
-      {/* Current Collections Summary */}
-      <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
-        <Col xs={24} sm={12} lg={6}>
+      <div className="collection-section-heading collection-rates-heading">
+        <div>
+          <Text className="collection-section-eyebrow">RATE SUMMARY</Text>
+          <Title level={3}>Expected collections by service area</Title>
+        </div>
+        <Text type="secondary">Daily and monthly rental totals.</Text>
+      </div>
+      <Row className="collection-rate-grid" gutter={[16, 16]} style={{ marginBottom: "32px" }}>
+        <Col xs={24} sm={12} lg={8}>
           <Card
+            className="collection-rate-card"
             style={styles.metricCard}
             bodyStyle={{ padding: "24px" }}
           >
@@ -779,8 +703,9 @@ const ExpectedCollectionAnalysis = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card
+            className="collection-rate-card"
             style={styles.metricCard}
             bodyStyle={{ padding: "24px" }}
           >
@@ -802,8 +727,9 @@ const ExpectedCollectionAnalysis = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card
+            className="collection-rate-card"
             style={styles.metricCard}
             bodyStyle={{ padding: "24px" }}
           >
@@ -825,8 +751,9 @@ const ExpectedCollectionAnalysis = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card
+            className="collection-rate-card"
             style={styles.metricCard}
             bodyStyle={{ padding: "24px" }}
           >
@@ -848,8 +775,9 @@ const ExpectedCollectionAnalysis = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card
+            className="collection-rate-card"
             style={styles.metricCard}
             bodyStyle={{ padding: "24px" }}
           >
@@ -871,8 +799,9 @@ const ExpectedCollectionAnalysis = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card
+            className="collection-rate-card"
             style={styles.metricCard}
             bodyStyle={{ padding: "24px" }}
           >
@@ -899,7 +828,7 @@ const ExpectedCollectionAnalysis = () => {
       {/* Charts Section */}
       <Row gutter={[24, 24]}>
         <Col xs={24}>
-          <Card style={styles.chartCard}>
+          <Card className="collection-trend-card" style={styles.chartCard}>
             <Tabs defaultActiveKey="monthly-trend" size="large" tabBarStyle={{ marginBottom: "24px" }}>
               <TabPane 
                 tab={

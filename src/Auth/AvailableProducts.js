@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Card, Row, Col, Button, Badge, Typography, Spin, message } from "antd";
+import { Card, Row, Col, Button, Badge, Typography, Spin } from "antd";
 import { 
   FaCarrot, 
   FaFish, 
@@ -21,41 +21,8 @@ const { Title, Text } = Typography;
 const AvailableProducts = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Custom API method for AvailableProducts screen
-  const availableProductsApi = {
-    getCategories: async () => {
-      try {
-        const response = await api.get('/public/categories');
-        return response.data;
-      } catch (error) {
-        message.error('Failed to fetch categories');
-        throw error;
-      }
-    },
-    
-    getProducts: async () => {
-      try {
-        const response = await api.get('/public/products');
-        return response.data;
-      } catch (error) {
-        message.error('Failed to fetch products');
-        throw error;
-      }
-    },
-    
-    getAvailableProducts: async () => {
-      try {
-        const response = await api.get('/public/products/available');
-        return response.data;
-      } catch (error) {
-        message.error('Failed to fetch available products');
-        throw error;
-      }
-    }
-  };
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     fetchAvailableData();
@@ -63,15 +30,13 @@ const AvailableProducts = () => {
 
   const fetchAvailableData = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
-      const [categoriesData, productsData] = await Promise.all([
-        availableProductsApi.getCategories(),
-        availableProductsApi.getProducts()
-      ]);
-      setCategories(categoriesData);
-      setProducts(productsData);
+      const response = await api.get('/public/product-catalog');
+      setCategories(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching available products data:', error);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -103,22 +68,15 @@ const AvailableProducts = () => {
       color: category.color || '#1890ff',
       description: category.description || '',
       image: category.image,
-      products: products
-        .filter(product => {
-          // Handle different data types and structures for category_id
-          const productCategoryId = product.category_id || product.category?.id;
-          const categoryId = category.id;
-          return productCategoryId == categoryId && product.available;
-        })
-        .map(product => ({
-          name: product.name,
-          price: `₱${product.price}/${product.unit}`,
-          available: product.available,
-          icon: getIconComponent(product.category?.icon) || <FaShoppingBag />,
-          image: product.image
-        }))
+      products: (category.products || []).map(product => ({
+        id: product.id,
+        name: product.name,
+        price: `₱${product.price}/${product.unit}`,
+        available: product.available,
+        image: product.image
+      }))
     }));
-  }, [categories, products]);
+  }, [categories]);
 
   // Memoized filtered categories for performance
   const filteredCategories = useMemo(() => {
@@ -129,13 +87,18 @@ const AvailableProducts = () => {
 
   if (loading) {
     return (
-      <div className="available-products-loading" style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh' 
-      }}>
+      <div className="available-products-loading" role="status" aria-live="polite">
         <Spin size="large" />
+        <span>Loading available products...</span>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="available-products-load-error" role="alert">
+        <p>Products could not be loaded right now.</p>
+        <Button onClick={fetchAvailableData} loading={loading}>Try again</Button>
       </div>
     );
   }
@@ -403,10 +366,12 @@ const AvailableProducts = () => {
       {/* Navigation Bar */}
       <nav className="available-products-nav" style={styles.nav.wrapper}>
         <div className="available-products-nav-container" style={styles.nav.container}>
-          <div className="available-products-category-grid" style={styles.nav.itemGrid}>
+          <div className="available-products-category-grid" style={styles.nav.itemGrid} role="group" aria-label="Product categories">
             {transformedCategories.map((category) => (
-              <div
+              <button
+                type="button"
                 className={`available-products-category ${selectedCategory === category.id ? 'active' : ''}`}
+                aria-pressed={selectedCategory === category.id}
                 key={category.id}
                 style={{
                   ...styles.nav.item,
@@ -433,7 +398,7 @@ const AvailableProducts = () => {
                   {category.icon}
                 </div>
                 <div style={styles.nav.text}>{category.name}</div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -445,55 +410,63 @@ const AvailableProducts = () => {
           {!selectedCategory ? (
             // Category Overview
             <div className="available-products-content">
-              <header className="available-products-header" style={styles.main.header}>
-                <h1 style={styles.main.title}>Available Products</h1>
-                <p style={styles.main.subtitle}>
-                  Browse through our wide selection of fresh products available at the market. 
-                  From farm-fresh vegetables to local delicacies, we have everything you need for your daily needs.
-                </p>
-              </header>
-              
-              <Row gutter={["clamp(12px, 3vw, 24px)", "clamp(12px, 3vw, 24px)"]}>
-                {filteredCategories.map((category) => (
-                  <Col xs={24} sm={12} md={8} lg={6} key={category.id}>
-                    <Card
-                      className="available-product-card category-card"
-                      hoverable
-                      style={styles.card.base}
-                      onClick={() => setSelectedCategory(category.id)}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = styles.card.hover.transform;
-                        e.currentTarget.style.boxShadow = styles.card.hover.boxShadow;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.1)";
-                      }}
-                    >
-                      <div style={{
-                        ...styles.card.categoryHeader,
-                        backgroundImage: category.image ? `url(${category.image})` : "none",
-                        backgroundColor: category.color
-                      }}>
-                        <div className="available-products-category-overlay" style={styles.card.categoryOverlay}>
-                          <div style={{ ...styles.card.icon, color: category.color }}>
-                            {category.icon}
+              {transformedCategories.length === 0 ? (
+                <div className="available-products-empty" role="status">
+                  <h2>No product categories are available right now.</h2>
+                  <p>Please check back later for current market products.</p>
+                </div>
+              ) : (
+                <>
+                  <header className="available-products-header" style={styles.main.header}>
+                    <h1 style={styles.main.title}>Available Products</h1>
+                    <p style={styles.main.subtitle}>
+                      Browse available products by category.
+                    </p>
+                  </header>
+
+                  <Row gutter={["clamp(12px, 3vw, 24px)", "clamp(12px, 3vw, 24px)"]}>
+                    {filteredCategories.map((category) => (
+                      <Col xs={24} sm={12} md={8} lg={6} key={category.id}>
+                        <Card
+                          className="available-product-card category-card"
+                          hoverable
+                          style={styles.card.base}
+                          onClick={() => setSelectedCategory(category.id)}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = styles.card.hover.transform;
+                            e.currentTarget.style.boxShadow = styles.card.hover.boxShadow;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.1)";
+                          }}
+                        >
+                          <div style={{
+                            ...styles.card.categoryHeader,
+                            backgroundImage: category.image ? `url(${category.image})` : "none",
+                            backgroundColor: category.color
+                          }}>
+                            <div className="available-products-category-overlay" style={styles.card.categoryOverlay}>
+                              <div style={{ ...styles.card.icon, color: category.color }}>
+                                {category.icon}
+                              </div>
+                              <h3 style={styles.card.title}>{category.name}</h3>
+                              <p style={styles.card.description}>{category.description}</p>
+                            </div>
                           </div>
-                          <h3 style={styles.card.title}>{category.name}</h3>
-                          <p style={styles.card.description}>{category.description}</p>
-                        </div>
-                      </div>
-                      <div style={styles.card.content}>
-                        <div style={{ textAlign: "center" }}>
-                          <Text strong style={{ fontSize: 16, color: "#2c3e50" }}>
-                            {category.products.length} Products Available
-                          </Text>
-                        </div>
-                      </div>
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
+                          <div style={styles.card.content}>
+                            <div style={{ textAlign: "center" }}>
+                              <Text strong style={{ fontSize: 16, color: "#2c3e50" }}>
+                                {category.products.length} Products Available
+                              </Text>
+                            </div>
+                          </div>
+                        </Card>
+                      </Col>
+                    ))}
+                  </Row>
+                </>
+              )}
             </div>
           ) : (
             // Selected Category Details
@@ -523,8 +496,8 @@ const AvailableProducts = () => {
                   
                   <Row gutter={["clamp(12px, 3vw, 24px)", "clamp(12px, 3vw, 24px)"]}>
                     {category.products.length > 0 ? (
-                      category.products.map((product, index) => (
-                        <Col xs={24} sm={12} md={8} lg={6} key={index}>
+                      category.products.map((product) => (
+                        <Col xs={24} sm={12} md={8} lg={6} key={product.id}>
                           <Card
                             className="available-product-card product-card"
                             hoverable

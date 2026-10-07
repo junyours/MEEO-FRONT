@@ -14,22 +14,17 @@ import {
   Statistic,
   Row,
   Col,
-  Spin,
   Empty,
   Badge,
   Avatar,
   Divider,
   Alert,
-  Progress,
   Input
 } from 'antd';
 import {
   CalendarOutlined,
   DollarOutlined,
   UserOutlined,
-  EyeOutlined,
-  DownloadOutlined,
-  FilterOutlined,
   ReloadOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -72,7 +67,6 @@ const VendorPaymentCalendar = () => {
   useEffect(() => {
     if (selectedMonth) {
       fetchVendorCalendar();
-      fetchMonthlyStats();
     }
   }, [selectedMonth]);
 
@@ -99,20 +93,11 @@ const VendorPaymentCalendar = () => {
       
       setVendors(res.data.vendors || []);
       setSummary(res.data.summary);
+      setMonthlyStats(res.data.monthly_stats || null);
     } catch (err) {
       console.error('Error fetching vendor calendar:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchMonthlyStats = async () => {
-    try {
-      const monthStr = selectedMonth ? selectedMonth.format('YYYY-MM') : new Date().toISOString().slice(0, 7);
-      const res = await api.get(`/vendor-payment-calendar/stats?month=${monthStr}`);
-      setMonthlyStats(res.data.stats);
-    } catch (err) {
-      console.error('Error fetching monthly stats:', err);
     }
   };
 
@@ -197,18 +182,6 @@ const VendorPaymentCalendar = () => {
     }).format(amount);
   };
 
-  const getCurrencyLengthClass = (amount) => {
-    const formatted = formatCurrency(amount);
-    const length = formatted.length;
-    
-    if (length <= 8) return 'data-length="1-8"';
-    if (length <= 12) return 'data-length="9-12"';
-    if (length <= 16) return 'data-length="13-16"';
-    if (length <= 20) return 'data-length="17-20"';
-    if (length <= 24) return 'data-length="21-24"';
-    return 'data-length="25+"';
-  };
-
   const getFormattedDate = (dateString) => {
     return dayjs(dateString).format('MMMM DD, YYYY');
   };
@@ -216,6 +189,13 @@ const VendorPaymentCalendar = () => {
   const getDayName = (day) => {
     const date = selectedMonth ? selectedMonth.date(day) : dayjs().date(day);
     return date.format('ddd'); // Mon, Tue, Wed, etc.
+  };
+
+  const handleCalendarCellKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      event.currentTarget.click();
+    }
   };
 
   const generateCalendarColumns = () => {
@@ -226,7 +206,7 @@ const VendorPaymentCalendar = () => {
         dataIndex: ['vendor', 'fullname'],
         key: 'vendor',
         fixed: 'left',
-        width: 200,
+        width: 220,
         render: (text, record) => (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Avatar icon={<UserOutlined />} size="small" />
@@ -243,7 +223,7 @@ const VendorPaymentCalendar = () => {
       {
         title: 'Monthly Total',
         key: 'monthly_total',
-        width: 120,
+        width: 140,
         render: (_, record) => (
           <Text strong style={{ color: '#52c41a' }}>
             {formatCurrency(record.total_monthly_amount)}
@@ -253,7 +233,7 @@ const VendorPaymentCalendar = () => {
       {
         title: 'Payment Days',
         key: 'payment_days',
-        width: 100,
+        width: 105,
         align: 'center',
         
         render: (_, record) => (
@@ -267,7 +247,7 @@ const VendorPaymentCalendar = () => {
       {
         title: 'Advance Covered',
         key: 'advance_covered',
-        width: 100,
+        width: 115,
         align: 'center',
 
         render: (_, record) => (
@@ -284,7 +264,7 @@ const VendorPaymentCalendar = () => {
       columns.push({
         title: `${String(day).padStart(2, '0')}\n${getDayName(day)}`,
         key: `day_${day}`,
-        width: 60,
+        width: 54,
         align: 'center',
         render: (_, record) => {
           const dayPayments = record.payments_by_day[day];
@@ -346,7 +326,11 @@ const VendorPaymentCalendar = () => {
                 mouseEnterDelay={0}
               >
                 <div
-                  className="advance-covered-cell"
+                  className={`advance-covered-cell${uncoveredRentals.length > 0 ? ' has-uncovered' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${getFormattedDate(`${selectedMonth?.year()}-${String(selectedMonth?.month() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`)}: advance covered, ${uncoveredRentals.length} uncovered stalls`}
+                  onKeyDown={handleCalendarCellKeyDown}
                   style={{
                     width: 40,
                     height: 40,
@@ -430,6 +414,10 @@ const VendorPaymentCalendar = () => {
               >
                 <div
                   className="today-unpaid-cell"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${getFormattedDate(todayUnpaidDayInfo.date)}: payment due today`}
+                  onKeyDown={handleCalendarCellKeyDown}
                   style={{
                     width: 40,
                     height: 40,
@@ -490,6 +478,10 @@ const VendorPaymentCalendar = () => {
               >
                 <div
                   className="missed-payment-cell"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${getFormattedDate(missedDayInfo.date)}: missed payment`}
+                  onKeyDown={handleCalendarCellKeyDown}
                   style={{
                     width: 40,
                     height: 40,
@@ -545,6 +537,10 @@ const VendorPaymentCalendar = () => {
             >
               <div
                 className="payment-cell"
+                role="button"
+                tabIndex={0}
+                aria-label={`${selectedMonth.format('MMMM')} ${day}: ${dayPayments.length} payment${dayPayments.length === 1 ? '' : 's'} received`}
+                onKeyDown={handleCalendarCellKeyDown}
                 style={{
                   width: 40,
                   height: 40,
@@ -587,189 +583,129 @@ const VendorPaymentCalendar = () => {
 
   return (
     <div className="vendor-payment-calendar">
-      {loading && <LoadingOverlay message="Loading vendor payment calendar..." />}
+      {loading && vendors.length === 0 && <LoadingOverlay message="Loading vendor payment calendar..." />}
       <Card className="main-card">
-        <div style={{ marginBottom: 32 }}>
-          <Row justify="space-between" align="middle">
-            <Col>
-              <Title level={2} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div className="title-icon">
-                  <CalendarOutlined style={{ fontSize: 28, color: '#1890ff' }} />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 600, color: '#262626' }}>Vendor Payment Calendar</div>
-                  <Text type="secondary" style={{ fontSize: 14, fontWeight: 400 }}>
-                    Track and manage vendor payments with advanced analytics
-                  </Text>
-                </div>
-              </Title>
-            </Col>
-            <Col>
-              <Space size="large">
-                <div className="date-picker-container">
-                  <MonthPicker
-                    placeholder="Select month"
-                    value={selectedMonth}
-                    onChange={setSelectedMonth}
-                    format="MMMM YYYY"
-                    style={{ borderRadius: 10, height: 40 }}
-                    size="large"
-                  />
-                </div>
-                <Button
-                  icon={<ReloadOutlined />}
-                  onClick={fetchVendorCalendar}
-                  loading={loading}
-                  style={{ borderRadius: 10, height: 40 }}
-                  size="large"
-                  type="primary"
-                >
-                  Refresh
-                </Button>
-              </Space>
-            </Col>
-          </Row>
+        <div className="calendar-page-header">
+          <div className="calendar-title-group">
+            <div className="title-icon">
+              <CalendarOutlined />
+            </div>
+            <div>
+              <Title level={2} className="calendar-page-title">Vendor Payment Calendar</Title>
+              <Text className="calendar-page-subtitle">
+                Daily collections, missed payments, and advance coverage
+              </Text>
+            </div>
+          </div>
+          <div className="calendar-header-controls">
+            <MonthPicker
+              aria-label="Select calendar month"
+              placeholder="Select month"
+              value={selectedMonth}
+              onChange={setSelectedMonth}
+              format="MMMM YYYY"
+              size="large"
+            />
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={fetchVendorCalendar}
+              loading={loading}
+              className="calendar-refresh-button"
+            >
+              Refresh calendar
+            </Button>
+          </div>
         </div>
 
         {summary && (
           <div className="stats-section">
-            <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
-              {/* First Column - Number Statistics */}
-              <Col xs={24} lg={12}>
-                <Row gutter={[24, 24]}>
-                  <Col xs={24} sm={12} md={12}>
-                    <Card className="stat-card vendors-card">
-                      <div className="stat-content">
-                        <div className="stat-icon-wrapper vendors-icon">
-                          <UserOutlined />
-                        </div>
-                        <div className="stat-value-container">
-                          <div className="stat-title">Total Vendors</div>
-                          <div className="stat-value" style={{ color: '#1890ff' }}>
-                            {summary.total_vendors}
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={12}>
-                    <Card className="stat-card payment-days-card">
-                      <div className="stat-content">
-                        <div className="stat-icon-wrapper payment-days-icon">
-                          <CalendarOutlined />
-                        </div>
-                        <div className="stat-value-container">
-                          <div className="stat-title">Payment Days</div>
-                          <div className="stat-value" style={{ color: '#722ed1' }}>
-                            {summary.total_payment_days}
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={12}>
-                    <Card className="stat-card missed-days-card">
-                      <div className="stat-content">
-                        <div className="stat-icon-wrapper missed-days-icon">
-                          <ExclamationCircleOutlined />
-                        </div>
-                    
-                      </div>
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={12}>
-                    <Card className="stat-card advance-covered-card">
-                      <div className="stat-content">
-                        <div className="stat-icon-wrapper advance-covered-icon">
-                          <SafetyOutlined />
-                        </div>
-                        <div className="stat-value-container">
-                          <div className="stat-title">Advance Covered</div>
-                          <div className="stat-value" style={{ color: '#52c41a' }}>
-                            {summary.total_advance_covered_days || 0}
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </Col>
-                </Row>
-              </Col>
-              
-              {/* Second Column - Currency Statistics */}
-              <Col xs={24} lg={12}>
-                <Row gutter={[24, 24]}>
-                  <Col xs={24} sm={12} md={12}>
-                    <Card className="stat-card collected-card">
-                      <div className="stat-content">
-                        <div className="stat-icon-wrapper collected-icon">
-                          <DollarOutlined />
-                        </div>
-                        <div className="stat-value-container">
-                          <div className="stat-title">Total Collected</div>
-                          <div className="stat-value currency-value" style={{ fontSize: 'clamp(12px, 2vw, 18px)' }}>
-                            {formatCurrency(summary.total_amount_collected)}
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={12}>
-                    <Card className="stat-card average-card">
-                      <div className="stat-content">
-                        <div className="stat-icon-wrapper average-icon">
-                          <DollarOutlined />
-                        </div>
-                        <div className="stat-value-container">
-                          <div className="stat-title">Avg per Vendor</div>
-                          <div className="stat-value currency-value" style={{ fontSize: 'clamp(12px, 2vw, 18px)' }}>
-                            {formatCurrency(summary.total_vendors > 0 ? summary.total_amount_collected / summary.total_vendors : 0)}
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </Col>
-                </Row>
-              </Col>
-            </Row>
+            <div className="calendar-stat-grid">
+              <Card className="stat-card vendors-card">
+                <div className="stat-content">
+                  <div className="stat-icon-wrapper vendors-icon"><UserOutlined /></div>
+                  <div className="stat-value-container">
+                    <div className="stat-title">Total Vendors</div>
+                    <div className="stat-value" style={{ color: '#1890ff' }}>{summary.total_vendors}</div>
+                  </div>
+                </div>
+              </Card>
+              <Card className="stat-card payment-days-card">
+                <div className="stat-content">
+                  <div className="stat-icon-wrapper payment-days-icon"><CalendarOutlined /></div>
+                  <div className="stat-value-container">
+                    <div className="stat-title">Payment Days</div>
+                    <div className="stat-value" style={{ color: '#722ed1' }}>{summary.total_payment_days}</div>
+                  </div>
+                </div>
+              </Card>
+              <Card className="stat-card missed-days-card">
+                <div className="stat-content">
+                  <div className="stat-icon-wrapper missed-days-icon"><ExclamationCircleOutlined /></div>
+                  <div className="stat-value-container">
+                    <div className="stat-title">Missed Payment Days</div>
+                    <div className="stat-value" style={{ color: '#b4493f' }}>{summary.total_missed_days}</div>
+                  </div>
+                </div>
+              </Card>
+              <Card className="stat-card advance-covered-card">
+                <div className="stat-content">
+                  <div className="stat-icon-wrapper advance-covered-icon"><SafetyOutlined /></div>
+                  <div className="stat-value-container">
+                    <div className="stat-title">Advance Covered</div>
+                    <div className="stat-value" style={{ color: '#52a36b' }}>{summary.total_advance_covered_days || 0}</div>
+                  </div>
+                </div>
+              </Card>
+              <Card className="stat-card collected-card">
+                <div className="stat-content">
+                  <div className="stat-icon-wrapper collected-icon"><DollarOutlined /></div>
+                  <div className="stat-value-container">
+                    <div className="stat-title">Total Collected</div>
+                    <div className="stat-value currency-value">{formatCurrency(summary.total_amount_collected)}</div>
+                  </div>
+                </div>
+              </Card>
+              <Card className="stat-card average-card">
+                <div className="stat-content">
+                  <div className="stat-icon-wrapper average-icon"><DollarOutlined /></div>
+                  <div className="stat-value-container">
+                    <div className="stat-title">Average per Vendor</div>
+                    <div className="stat-value currency-value">
+                      {formatCurrency(summary.total_vendors > 0 ? summary.total_amount_collected / summary.total_vendors : 0)}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </div>
         )}
 
         {monthlyStats && (
-          <Alert
-            message="Monthly Statistics"
-            description={
-              <Row gutter={16}>
-                <Col span={6}>
-                  <Text>Total Payments: <Text strong>{monthlyStats.total_payments}</Text></Text>
-                </Col>
-                <Col span={6}>
-                  <Text>Daily: <Text strong>{monthlyStats.payment_types.daily}</Text></Text>
-                </Col>
-                <Col span={6}>
-                  <Text>Advance: <Text strong>{monthlyStats.payment_types.advance}</Text></Text>
-                </Col>
-                <Col span={6}>
-                  <Text>Partial: <Text strong>{monthlyStats.payment_types.partial}</Text></Text>
-                </Col>
-              </Row>
-            }
-            type="info"
-            showIcon
-            style={{ marginBottom: 24 }}
-          />
+          <div className="calendar-month-statistics" aria-label="Monthly payment statistics">
+            <div className="month-stat-heading">Payment activity</div>
+            <div><span>Total payments</span><strong>{monthlyStats.total_payments}</strong></div>
+            <div><span>Daily</span><strong>{monthlyStats.payment_types.daily}</strong></div>
+            <div><span>Advance</span><strong>{monthlyStats.payment_types.advance}</strong></div>
+            <div><span>Partial</span><strong>{monthlyStats.payment_types.partial}</strong></div>
+          </div>
         )}
 
-        {/* Search Bar */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div className="calendar-table-toolbar">
+          <div className="calendar-legend" aria-label="Calendar markers">
+            <span><i className="legend-marker payment-marker" /> Payment received</span>
+            <span><i className="legend-marker missed-marker" /> Missed payment</span>
+            <span><i className="legend-marker due-marker" /> Due today</span>
+            <span><i className="legend-marker advance-marker" /> Advance covered</span>
+          </div>
           <Input
             className="vendor-search-input"
             placeholder="Search vendor name, contact, or email..."
-            prefix={<SearchOutlined style={{ color: '#667eea' }} />}
+            prefix={<SearchOutlined />}
+            aria-label="Search vendors by name, contact, or email"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             allowClear={true}
-            size="small"
-            style={{ borderRadius: 4, height: 20, width: 120 }}
+            size="middle"
           />
         </div>
 
@@ -778,18 +714,21 @@ const VendorPaymentCalendar = () => {
               columns={generateCalendarColumns()}
               dataSource={filteredVendors}
               rowKey={(record) => record.vendor.id}
-              scroll={{ x: 1500, y: 600 }}
+              scroll={{ x: 540 + (selectedMonth?.daysInMonth() || 31) * 54, y: 600 }}
               pagination={false}
               size="small"
-              bordered
               className="payment-calendar-table"
+              loading={loading}
             />
           ) : (
             <Empty
-              description="No payment data available for the selected month"
+              description={searchText ? 'No vendors match your search.' : 'No vendor payment activity for this month.'}
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
           )}
+        <div className="calendar-result-count">
+          Showing {filteredVendors.length} of {vendors.length} vendors
+        </div>
       </Card>
 
       <Modal
@@ -806,6 +745,7 @@ const VendorPaymentCalendar = () => {
         }
         open={paymentModalVisible}
         onCancel={() => setPaymentModalVisible(false)}
+        rootClassName="vendor-payment-calendar-modal"
         footer={[
           <Button key="close" onClick={() => setPaymentModalVisible(false)}>
             Close
@@ -916,6 +856,7 @@ const VendorPaymentCalendar = () => {
         }
         open={advancePaymentModalVisible}
         onCancel={() => setAdvancePaymentModalVisible(false)}
+        rootClassName="vendor-payment-calendar-modal"
         footer={[
           <Button key="close" onClick={() => setAdvancePaymentModalVisible(false)}>
             Close
@@ -1101,6 +1042,7 @@ const VendorPaymentCalendar = () => {
         }
         open={missedDayModalVisible}
         onCancel={() => setMissedDayModalVisible(false)}
+        rootClassName="vendor-payment-calendar-modal"
         footer={[
           <Button key="close" onClick={() => setMissedDayModalVisible(false)}>
             Close

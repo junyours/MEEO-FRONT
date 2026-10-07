@@ -3,18 +3,13 @@ import api from '../Api';
 import LoadingOverlay from './Loading';
 import dayjs from 'dayjs';
 import {
-  Card,
   Table,
-  Row,
-  Col,
-  Statistic,
   Spin,
   Typography,
   Button,
   message,
   Space,
   Tag,
-  Divider,
   Input,
   Modal,
   Descriptions,
@@ -22,11 +17,11 @@ import {
   DatePicker,
   Form,
   Alert,
+  Empty,
 } from 'antd';
 import {
   DollarOutlined,
   ShopOutlined,
-  PrinterOutlined,
   DownloadOutlined,
   HomeOutlined,
   ReloadOutlined,
@@ -38,6 +33,7 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import letterheadTemplate from '../assets/report_template/letterhead_template.jpg';
+import './RentalReport.css';
 
 const { Title, Text } = Typography;
 
@@ -101,10 +97,12 @@ const RentalReport = () => {
     setSearchTerm(value);
   };
 
-  const fetchVendorDetails = async (vendorName) => {
+  const fetchVendorDetails = async (vendorId) => {
     setDetailsLoading(true);
+    setVendorDetails(null);
+    setDetailsModalVisible(true);
     try {
-      const response = await api.get(`/reports/vendor-details?vendor_name=${encodeURIComponent(vendorName)}`);
+      const response = await api.get(`/reports/vendor-details?vendor_id=${vendorId}`);
       if (response.data.status === 'success') {
         setVendorDetails(response.data.data);
         setDetailsModalVisible(true);
@@ -121,7 +119,7 @@ const RentalReport = () => {
 
   const handleViewDetails = (record) => {
     setSelectedVendor(record);
-    fetchVendorDetails(record.vendor_name);
+    fetchVendorDetails(record.vendor_id);
   };
 
   const handleEditRentedAt = (stallDetail) => {
@@ -151,7 +149,7 @@ const RentalReport = () => {
         setEditingRented(null);
         // Refresh vendor details to show updated data
         if (selectedVendor) {
-          fetchVendorDetails(selectedVendor.vendor_name);
+          fetchVendorDetails(selectedVendor.vendor_id);
         }
       } else {
         message.error('Failed to update rented at date');
@@ -191,7 +189,7 @@ const RentalReport = () => {
         setDeletingRented(null);
         // Refresh vendor details to show updated data
         if (selectedVendor) {
-          fetchVendorDetails(selectedVendor.vendor_name);
+          fetchVendorDetails(selectedVendor.vendor_id);
         }
         // Also refresh the main rental report
         fetchRentalReport();
@@ -223,6 +221,8 @@ const RentalReport = () => {
         return 'blue';
       case 'fully paid':
         return 'purple';
+      case 'unoccupied':
+        return 'default';
       default:
         return 'default';
     }
@@ -234,6 +234,8 @@ const RentalReport = () => {
         return 'Temporarily Closed';
       case 'fully paid':
         return 'Fully Paid';
+      case 'unoccupied':
+        return 'Removed';
       default:
         return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown';
     }
@@ -463,7 +465,7 @@ const RentalReport = () => {
       key: 'vendor_name',
       width: 200,
       render: (text) => (
-        <Text strong style={{ color: '#1f2937' }}>{text}</Text>
+        <Text className="rental-report-vendor-name">{text}</Text>
       ),
     },  
     {
@@ -472,9 +474,11 @@ const RentalReport = () => {
       key: 'section_name',
       width: 150,
       render: (text) => (
-        <Tag color="blue" style={{ borderRadius: 6, fontWeight: 'bold' }}>
-          {text}
-        </Tag>
+        <div className="rental-report-section-tags">
+          {(text || '').split(',').map((section) => section.trim()).filter(Boolean).map((section) => (
+            <Tag key={section} color="blue" className="rental-report-section-tag">{section}</Tag>
+          ))}
+        </div>
       ),
     },
     {
@@ -483,23 +487,34 @@ const RentalReport = () => {
       key: 'stall_numbers',
       width: 200,
       render: (stallNumbers) => (
-        <Space wrap>
+        <div className="rental-report-stall-tags">
           {stallNumbers.map((stall, index) => (
-            <Tag key={index} color="green" style={{ borderRadius: 4, fontSize: '11px' }}>
+            <Tag key={index} color="green" className="rental-stall-tag">
               {stall}
             </Tag>
           ))}
-        </Space>
+        </div>
+      ),
+    },
+    {
+      title: 'Rental Status',
+      dataIndex: 'rental_statuses',
+      key: 'rental_statuses',
+      width: 180,
+      render: (statuses = []) => (
+        <Tag color={getStatusColor(statuses[0])} className="rental-status-tag">
+          {getStatusText(statuses[0])}
+        </Tag>
       ),
     },
     {
       title: 'Daily Rental',
       dataIndex: 'daily_rental_total',
       key: 'daily_rental_total',
-      width: 120,
+      width: 140,
       align: 'right',
       render: (amount) => (
-        <Text strong style={{ color: '#059669' }}>
+        <Text className="rental-amount-daily">
           {formatCurrency(amount)}
         </Text>
       ),
@@ -508,10 +523,10 @@ const RentalReport = () => {
       title: 'Monthly Rental',
       dataIndex: 'monthly_rental_total',
       key: 'monthly_rental_total',
-      width: 130,
+      width: 145,
       align: 'right',
       render: (amount) => (
-        <Text strong style={{ color: '#dc2626' }}>
+        <Text className="rental-amount-monthly">
           {formatCurrency(amount)}
         </Text>
       ),
@@ -519,7 +534,7 @@ const RentalReport = () => {
     {
       title: 'Actions',
       key: 'actions',
-      width: 120,
+      width: 135,
       align: 'center',
       render: (text, record) => (
         <Button
@@ -528,12 +543,7 @@ const RentalReport = () => {
           icon={<EyeOutlined />}
           onClick={() => handleViewDetails(record)}
           className="view-details-btn"
-          style={{ 
-            borderRadius: '6px',
-            backgroundColor: '#ffffff',
-            color: '#000000',
-            borderColor: '#d9d9d9'
-          }}
+          aria-label={`View rental details for ${record.vendor_name}`}
         >
           View Details
         </Button>
@@ -541,200 +551,84 @@ const RentalReport = () => {
     },
   ];
 
-  if (loading) {
+  if (loading && !rentalData) {
     return <LoadingOverlay />;
   }
 
   return (
-    <div style={{ padding: '24px', background: '#f8fafc', minHeight: '100vh' }}>
-      {/* Header */}
-      <div style={{ 
-        background: 'white', 
-        padding: '24px', 
-        borderRadius: '12px', 
-        marginBottom: '24px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }}>
-        <Row justify="space-between" align="middle" style={{ marginBottom: '16px' }}>
-          <Col>
-            <Space align="center">
-              <ShopOutlined style={{ fontSize: '24px', color: '#2563eb' }} />
-              <div>
-                <Title level={3} style={{ margin: 0, color: '#1f2937' }}>
-                  Rental Report
-                </Title>
-                <Text type="secondary">
-                  Vendor rental information by sections and stalls
-                </Text>
-              </div>
-            </Space>
-          </Col>
-          <Col>
-            <Space>
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={fetchRentalReport}
-                size="large"
-                disabled={loading}
-                style={{ 
-                  borderRadius: '8px'
-                }}
-              >
-                Refresh
-              </Button>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={exportToPDF}
-                type="primary"
-                size="large"
-                style={{ 
-                  background: '#2563eb', 
-                  borderColor: '#2563eb',
-                  borderRadius: '8px'
-                }}
-              >
-                Export to PDF
-              </Button>
-            </Space>
-          </Col>
-        </Row>
-        
-        {/* Search Bar */}
-        
-      </div>
+    <main className="rental-report-page">
+      <header className="rental-report-header">
+        <div className="rental-report-heading">
+          <div className="rental-report-heading-icon"><ShopOutlined /></div>
+          <div>
+            <Title level={2}>Rental Report</Title>
+            <Text className="rental-report-subtitle">Vendor occupancy and rental rates by section</Text>
+          </div>
+        </div>
+        <Space className="rental-report-actions" size={8}>
+          <Button icon={<ReloadOutlined />} onClick={fetchRentalReport} loading={loading}>
+            Refresh
+          </Button>
+          <Button type="primary" icon={<DownloadOutlined />} onClick={exportToPDF} disabled={!rentalData?.length}>
+            Export PDF
+          </Button>
+        </Space>
+      </header>
 
-      {/* Summary Cards */}
       {totals && (
-        <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-          <Col xs={24} sm={12} lg={8}>
-            <Card 
-              style={{ 
-                borderRadius: '12px', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                border: '1px solid #e5e7eb'
-              }}
-              bodyStyle={{ padding: '20px' }}
-            >
-              <Statistic
-                title={
-                  <Space>
-                    <DollarOutlined style={{ color: '#059669' }} />
-                    <span style={{ color: '#6b7280', fontWeight: 500 }}>Total Daily Rental</span>
-                  </Space>
-                }
-                value={totals.daily_rental}
-                formatter={(value) => formatCurrency(value)}
-                valueStyle={{ 
-                  color: '#059669', 
-                  fontWeight: 'bold',
-                  fontSize: '24px'
-                }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={8}>
-            <Card 
-              style={{ 
-                borderRadius: '12px', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                border: '1px solid #e5e7eb'
-              }}
-              bodyStyle={{ padding: '20px' }}
-            >
-              <Statistic
-                title={
-                  <Space>
-                    <DollarOutlined style={{ color: '#dc2626' }} />
-                    <span style={{ color: '#6b7280', fontWeight: 500 }}>Total Monthly Rental</span>
-                  </Space>
-                }
-                value={totals.monthly_rental}
-                formatter={(value) => formatCurrency(value)}
-                valueStyle={{ 
-                  color: '#dc2626', 
-                  fontWeight: 'bold',
-                  fontSize: '24px'
-                }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={8}>
-            <Card 
-              style={{ 
-                borderRadius: '12px', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                border: '1px solid #e5e7eb'
-              }}
-              bodyStyle={{ padding: '20px' }}
-            >
-              <Statistic
-                title={
-                  <Space>
-                    <HomeOutlined style={{ color: '#2563eb' }} />
-                    <span style={{ color: '#6b7280', fontWeight: 500 }}>Total Records</span>
-                  </Space>
-                }
-                value={rentalData?.length || 0}
-                valueStyle={{ 
-                  color: '#2563eb', 
-                  fontWeight: 'bold',
-                  fontSize: '24px'
-                }}
-              />
-            </Card>
-          </Col>
-        </Row>
+        <section className="rental-report-metrics" aria-label="Rental totals">
+          <div className="rental-metric rental-metric--daily">
+            <div className="rental-metric-label"><DollarOutlined /> Daily Rental</div>
+            <div className="rental-metric-value">{formatCurrency(totals.daily_rental)}</div>
+          </div>
+          <div className="rental-metric rental-metric--monthly">
+            <div className="rental-metric-label"><DollarOutlined /> Monthly Rental</div>
+            <div className="rental-metric-value">{formatCurrency(totals.monthly_rental)}</div>
+          </div>
+          <div className="rental-metric rental-metric--vendors">
+            <div className="rental-metric-label"><HomeOutlined /> Vendors</div>
+            <div className="rental-metric-value">{rentalData?.length || 0}</div>
+          </div>
+        </section>
       )}
 
-      {/* Main Table */}
-      <Card 
-        style={{ 
-          borderRadius: '12px', 
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          border: '1px solid #e5e7eb'
-        }}
-        bodyStyle={{ padding: '0' }}
-        title={
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <Title level={4} style={{ margin: 0, color: '#1f2937' }}>
-                Detailed Rental Information
-              </Title>
-              <Text type="secondary">
-                Shows each vendor's rental details grouped by section
-              </Text>
-            </div>
-            <Input.Search
-              placeholder="Search vendors..."
-              allowClear
-              enterButton={<SearchOutlined />}
-              size="middle"
-              onSearch={handleSearch}
-              onChange={(e) => handleSearch(e.target.value)}
-              style={{ width: 250 }}
-            />
+      <section className="rental-report-table-shell" aria-label="Vendor rental list">
+        <div className="rental-report-table-toolbar">
+          <div className="rental-report-table-heading">
+            <Title level={3}>Vendor rentals</Title>
+            <Text type="secondary">
+              {filteredData?.length || 0} vendor{filteredData?.length === 1 ? '' : 's'}
+              {searchTerm ? ' matching your search' : ' across all sections'}
+            </Text>
           </div>
-        }
-      >
-        
+          <Input.Search
+            className="rental-report-search"
+            placeholder="Search vendor name"
+            aria-label="Search vendors"
+            allowClear
+            value={searchTerm}
+            onChange={(event) => handleSearch(event.target.value)}
+            onSearch={handleSearch}
+            prefix={<SearchOutlined />}
+          />
+        </div>
         <Table
+          className="rental-report-table"
           columns={columns}
-          dataSource={filteredData || rentalData}
-          rowKey={(record, index) => index}
+          dataSource={filteredData || rentalData || []}
+          loading={loading}
+          rowKey="vendor_id"
+          locale={{ emptyText: <Empty description={searchTerm ? 'No vendors match this search' : 'No rental records'} /> }}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
+            pageSizeOptions: [10, 20, 50],
             showQuickJumper: true,
-            showTotal: (total, range) => 
-              `${range[0]}-${range[1]} of ${total} records`,
-            style: { padding: '16px' }
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} vendors`,
           }}
-          scroll={{ x: 800 }}
-          style={{ 
-            background: 'white'
-          }}
+          scroll={{ x: 1050 }}
         />
-      </Card>
+      </section>
 
       {/* Vendor Details Modal */}
       <Modal
@@ -750,125 +644,156 @@ const RentalReport = () => {
             Close
           </Button>
         ]}
-        width={800}
+        width={1120}
+        className="rental-report-modal"
         destroyOnClose
       >
         <Spin spinning={detailsLoading}>
           {vendorDetails && (
             <div>
-              {/* Vendor Summary */}
-              <Card size="small" style={{ marginBottom: '16px', backgroundColor: '#f8fafc' }}>
+              <div className="rental-detail-summary">
                 <Descriptions column={2} size="small">
                   <Descriptions.Item label="Vendor Name">
                     <Text strong>{vendorDetails.vendor_name}</Text>
                   </Descriptions.Item>
                   <Descriptions.Item label="Total Stalls">
-                    <Badge count={vendorDetails.total_stalls} style={{ backgroundColor: '#52c41a' }} />
+                    <Badge count={vendorDetails.total_stalls} color="#176b66" />
                   </Descriptions.Item>
                   <Descriptions.Item label="Section">
-                    <Tag color="blue">{vendorDetails.section_name}</Tag>
+                    <div className="rental-report-section-tags">
+                      {(vendorDetails.section_name || '').split(',').map((section) => section.trim()).filter(Boolean).map((section) => (
+                        <Tag key={section} color="blue" className="rental-report-section-tag">{section}</Tag>
+                      ))}
+                    </div>
                   </Descriptions.Item>
                   <Descriptions.Item label="Total Daily Rental">
-                    <Text strong style={{ color: '#059669' }}>
+                    <Text className="rental-amount-daily">
                       {formatCurrency(vendorDetails.total_daily_rental)}
                     </Text>
                   </Descriptions.Item>
                   <Descriptions.Item label="Total Monthly Rental">
-                    <Text strong style={{ color: '#dc2626' }}>
+                    <Text className="rental-amount-monthly">
                       {formatCurrency(vendorDetails.total_monthly_rental)}
                     </Text>
                   </Descriptions.Item>
                 </Descriptions>
-              </Card>
+              </div>
 
-              {/* Stall Details */}
-              <Title level={5}>Stall Details</Title>
-              <Table
-                dataSource={vendorDetails.stall_details}
-                rowKey="stall_number"
-                size="small"
-                pagination={false}
-                columns={[
-                  {
-                    title: 'Stall No.',
-                    dataIndex: 'stall_number',
-                    key: 'stall_number',
-                    width: 100,
-                    render: (text) => <Tag color="green">{text}</Tag>,
-                  },
-                  {
-                    title: 'Status',
-                    dataIndex: 'status',
-                    key: 'status',
-                    width: 150,
-                    render: (status) => (
-                      <Badge 
-                        status={getStatusColor(status)} 
-                        text={getStatusText(status)} 
-                      />
-                    ),
-                  },
-                  {
-                    title: 'Daily Rent',
-                    dataIndex: 'daily_rent',
-                    key: 'daily_rent',
-                    align: 'right',
-                    width: 120,
-                    render: (amount) => formatCurrency(amount),
-                  },
-                  {
-                    title: 'Monthly Rent',
-                    dataIndex: 'monthly_rent',
-                    key: 'monthly_rent',
-                    align: 'right',
-                    width: 120,
-                    render: (amount) => formatCurrency(amount),
-                  },
-                  {
-                    title: 'Rented At',
-                    dataIndex: 'created_at',
-                    key: 'created_at',
-                    width: 120,
-                    render: (date) => date ? dayjs(date).format('MMM DD, YYYY') : 'N/A',
-                  },
-                  {
-                    title: 'Last Payment',
-                    dataIndex: 'last_payment_date',
-                    key: 'last_payment_date',
-                    width: 120,
-                    render: (date) => date ? dayjs(date).format('MMM DD, YYYY') : 'Never',
-                  },
-                  {
-                    title: 'Action',
-                    key: 'action',
-                    width: 150,
-                    align: 'center',
-                    render: (text, record) => (
-                      <Space size="small">
-                        <Button
-                          type="link"
-                          size="small"
-                          icon={<EditOutlined />}
-                          onClick={() => handleEditRentedAt(record)}
-                          style={{ color: '#1890ff' }}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          type="link"
-                          size="small"
-                          icon={<DeleteOutlined />}
-                          onClick={() => handleDeleteRented(record)}
-                          style={{ color: '#ff4d4f' }}
-                        >
-                          Delete
-                        </Button>
-                      </Space>
-                    ),
-                  },
-                ]}
-              />
+              {Object.entries(
+                vendorDetails.stall_details.reduce((sections, stallDetail) => {
+                  const sectionName = stallDetail.section_name || 'Other';
+                  sections[sectionName] = sections[sectionName] || [];
+                  sections[sectionName].push(stallDetail);
+                  return sections;
+                }, {})
+              ).map(([sectionName, stallDetails]) => (
+                <section key={sectionName} className="rental-section-block">
+                  <div className="rental-section-heading">
+                    <Title level={4}>{sectionName}</Title>
+                    <Text className="rental-section-count">
+                      {stallDetails.length} rental record{stallDetails.length === 1 ? '' : 's'}
+                    </Text>
+                  </div>
+                  <Table
+                    className="rental-history-table"
+                    dataSource={stallDetails}
+                    rowKey="rented_id"
+                    size="small"
+                    pagination={false}
+                    scroll={{ x: 930 }}
+                    columns={[
+                      {
+                        title: 'Stall No.',
+                        dataIndex: 'stall_number',
+                        key: 'stall_number',
+                        width: 100,
+                        render: (text) => <Tag color="green">{text}</Tag>,
+                      },
+                      {
+                        title: 'Status',
+                        dataIndex: 'status',
+                        key: 'status',
+                        width: 150,
+                        render: (status) => (
+                          <Badge
+                            status={getStatusColor(status)}
+                            text={getStatusText(status)}
+                          />
+                        ),
+                      },
+                      {
+                        title: 'Daily Rent',
+                        dataIndex: 'daily_rent',
+                        key: 'daily_rent',
+                        align: 'right',
+                        width: 120,
+                        render: (amount) => formatCurrency(amount),
+                      },
+                      {
+                        title: 'Monthly Rent',
+                        dataIndex: 'monthly_rent',
+                        key: 'monthly_rent',
+                        align: 'right',
+                        width: 120,
+                        render: (amount) => formatCurrency(amount),
+                      },
+                      {
+                        title: 'Rented At',
+                        dataIndex: 'created_at',
+                        key: 'created_at',
+                        width: 120,
+                        render: (date) => date ? dayjs(date).format('MMM DD, YYYY') : 'N/A',
+                      },
+                      {
+                        title: 'Exit Date',
+                        dataIndex: 'end_date',
+                        key: 'end_date',
+                        width: 120,
+                        render: (date) => date ? dayjs(date).format('MMM DD, YYYY') : '-',
+                      },
+                      {
+                        title: 'Last Payment',
+                        dataIndex: 'last_payment_date',
+                        key: 'last_payment_date',
+                        width: 120,
+                        render: (date) => date ? dayjs(date).format('MMM DD, YYYY') : 'Never',
+                      },
+                      {
+                        title: 'Action',
+                        key: 'action',
+                        width: 150,
+                        align: 'center',
+                        render: (text, record) => (
+                          <Space size="small">
+                            <Button
+                              type="link"
+                              size="small"
+                              icon={<EditOutlined />}
+                              onClick={() => handleEditRentedAt(record)}
+                              style={{ color: '#1890ff' }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              type="link"
+                              size="small"
+                              icon={<DeleteOutlined />}
+                              onClick={() => handleDeleteRented(record)}
+                              style={{ color: '#ff4d4f' }}
+                            >
+                              Delete
+                            </Button>
+                          </Space>
+                        ),
+                      },
+                    ]}
+                  />
+                </section>
+              ))}
             </div>
+          )}
+          {!detailsLoading && !vendorDetails && (
+            <Empty description="Rental details could not be loaded" />
           )}
         </Spin>
       </Modal>
@@ -955,43 +880,7 @@ const RentalReport = () => {
         </div>
       </Modal>
 
-      {/* Custom CSS */}
-      <style>{`
-        .ant-table-thead > tr > th {
-          background: #f8fafc !important;
-          font-weight: 600 !important;
-          color: #374151 !important;
-          border-bottom: 2px solid #e5e7eb !important;
-        }
-        
-        .ant-table-tbody > tr:hover > td {
-          background: #f0f9ff !important;
-        }
-        
-        .ant-table-tbody > tr > td {
-          border-bottom: 1px solid #f3f4f6 !important;
-        }
-        
-        .ant-statistic-title {
-          margin-bottom: 8px !important;
-        }
-        
-        .ant-card {
-          transition: all 0.2s ease !important;
-        }
-        
-        .ant-card:hover {
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
-          transform: translateY(-1px) !important;
-        }
-        
-        .view-details-btn:hover {
-          background-color: #2563eb !important;
-          color: #ffffff !important;
-          border-color: #2563eb !important;
-        }
-      `}</style>
-    </div>
+    </main>
   );
 };
 

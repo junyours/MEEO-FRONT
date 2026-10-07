@@ -4415,6 +4415,66 @@
 	line-height: 1.7;
 }
 
+.market-products-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	align-items: start;
+	gap: 22px;
+	max-width: 1480px;
+	margin: 0 auto;
+	padding: 0 20px;
+}
+
+.market-products-layout > * {
+	min-width: 0;
+}
+
+.market-products-catalog {
+	min-width: 0;
+	overflow: hidden;
+	padding: 32px;
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	background: #ffffff;
+	box-shadow: 0 16px 40px rgba(35, 61, 102, 0.06);
+}
+
+.market-products-column-heading {
+	margin-bottom: 24px;
+}
+
+.market-products-column-kicker {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--blue);
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 1.5px;
+}
+
+.market-products-column-heading h2 {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 10px 0 7px;
+	color: var(--ink);
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-size: 28px;
+	line-height: 1.2;
+}
+
+.market-products-column-heading h2 .anticon {
+	color: var(--blue);
+}
+
+.market-products-column-heading p {
+	margin: 0;
+	color: var(--muted);
+	font-size: 14px;
+	line-height: 1.6;
+}
+
 .market-products-section .available-products-page {
 	min-height: auto;
 	background: transparent;
@@ -4428,11 +4488,31 @@
 
 .market-products-section .available-products-main {
 	min-height: auto !important;
-	padding: 34px 20px 12px !important;
+	padding: 0 !important;
 }
 
 .market-products-section .available-products-header {
 	display: none;
+}
+
+@media (max-width: 800px) {
+	.market-products-catalog {
+		padding: 24px;
+	}
+
+	.market-products-column-heading h2 {
+		font-size: 24px;
+	}
+}
+
+@media (max-width: 600px) {
+	.market-products-catalog {
+		padding: 20px;
+	}
+
+	.market-products-column-heading h2 {
+		font-size: 20px;
+	}
 }
 
 .market-availability-panel-banner {
@@ -4499,3 +4579,71 @@
 }
 
 .market-availability-occupancy-counts span:last-child { color: #d25b43; }
+
+.market-products-section .available-products-loading {
+	min-height: 220px;
+	gap: 12px;
+	color: var(--muted);
+	font-size: 13px;
+}
+
+.market-products-section .available-products-load-error {
+	min-height: 220px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	gap: 10px;
+	color: var(--muted);
+	text-align: center;
+}
+
+.market-products-section .available-products-load-error p {
+	margin: 0;
+}
+
+.market-products-section .available-products-empty {
+	padding: 36px 20px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: #ffffff;
+	text-align: center;
+}
+
+.market-products-section .available-products-empty h2 {
+	margin: 0 0 8px;
+	color: var(--ink);
+	font-family: "Plus Jakarta Sans", sans-serif;
+	font-size: 18px;
+}
+
+.market-products-section .available-products-empty p {
+	margin: 0;
+	color: var(--muted);
+	font-size: 13px;
+}
+
+.market-products-section .available-products-category {
+	min-width: 120px !important;
+	min-height: 72px;
+	border-radius: 8px !important;
+	font-family: inherit;
+	cursor: pointer;
+}
+
+.market-products-section .available-products-category:focus-visible {
+	outline: 3px solid rgba(23, 105, 224, .3);
+	outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+	.market-products-section .available-products-category-grid {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		padding: 4px 4px 8px;
+	}
+
+	.market-products-section .available-products-category {
+		flex: 0 0 116px;
+	}
+}
