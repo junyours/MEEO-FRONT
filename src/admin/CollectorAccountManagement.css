@@ -1,7 +1,15 @@
+
+
 .collector-account-page {
+  min-height: 100%;
   padding: 28px;
   color: #102a43;
+  background: #f7f9fc;
 }
+
+/* =========================================================
+   HEADER
+   ========================================================= */
 
 .collector-account-header,
 .collector-account-header-copy,
@@ -18,13 +26,19 @@
 
 .collector-account-header {
   margin-bottom: 22px;
-  padding: 22px 24px;
-  border: 1px solid #e5eaf0;
-  border-radius: 16px;
+  padding: 24px 26px;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
   background:
-    radial-gradient(ellipse at top right, rgb(219 234 254 / 68%), transparent 48%),
-    #fff;
-  box-shadow: 0 8px 28px rgb(16 42 67 / 5%);
+    radial-gradient(
+      ellipse at top right,
+      rgb(219 234 254 / 72%),
+      transparent 48%
+    ),
+    #ffffff;
+  box-shadow:
+    0 8px 28px rgb(16 42 67 / 5%),
+    0 2px 6px rgb(16 42 67 / 3%);
 }
 
 .collector-account-header-copy {
@@ -40,6 +54,7 @@
 
 .collector-account-header h2.ant-typography {
   margin: 4px 0;
+  color: #102a43;
   font-size: 28px;
   font-weight: 700;
   line-height: 1.2;
@@ -52,53 +67,444 @@
   letter-spacing: 0.12em;
 }
 
+/* Header buttons */
+
+.collector-account-header .ant-btn {
+  height: 40px;
+  border-radius: 9px;
+  font-weight: 600;
+}
+
+.collector-account-header .ant-btn-primary {
+  border-color: #1b4f72;
+  background: #1b4f72;
+  box-shadow: none;
+}
+
+.collector-account-header .ant-btn-primary:hover {
+  border-color: #163f5b !important;
+  background: #163f5b !important;
+}
+
+/* =========================================================
+   INFORMATION ALERT
+   ========================================================= */
+
 .collector-account-note {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   border: 1px solid #bfdbfe;
   border-radius: 12px;
+  background: #eff6ff;
 }
+
+.collector-account-note .ant-alert-message {
+  color: #1e3a5f;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* =========================================================
+   MAIN CARD
+   ========================================================= */
 
 .collector-account-card {
-  border: 1px solid #e5eaf0;
-  border-radius: 16px;
-  box-shadow: 0 8px 28px rgb(16 42 67 / 5%);
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow:
+    0 8px 28px rgb(16 42 67 / 5%),
+    0 2px 6px rgb(16 42 67 / 3%);
 }
 
+.collector-account-card .ant-card-body {
+  padding: 24px;
+}
+
+/* =========================================================
+   LIST HEADER
+   ========================================================= */
+
 .collector-account-list-header {
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 
 .collector-account-list-header h4.ant-typography {
   margin: 0 0 4px;
+  color: #102a43;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.collector-account-list-header .ant-typography-secondary {
+  color: #64748b;
+  font-size: 13px;
 }
 
 .collector-account-search {
-  width: min(310px, 48%);
+  width: min(340px, 48%);
+}
+
+.collector-account-search.ant-input-affix-wrapper {
+  min-height: 40px;
+  border-color: #dbe3ec;
+  border-radius: 9px;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.collector-account-search.ant-input-affix-wrapper:hover,
+.collector-account-search.ant-input-affix-wrapper:focus,
+.collector-account-search.ant-input-affix-wrapper-focused {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px rgb(37 99 235 / 8%);
+}
+
+/* =========================================================
+   ACCOUNT GRID
+   ========================================================= */
+
+.collector-account-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* =========================================================
+   ACCOUNT CARD
+   ========================================================= */
+
+.collector-account-item {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow:
+    0 4px 14px rgb(16 42 67 / 4%),
+    0 1px 3px rgb(16 42 67 / 3%);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.collector-account-item::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: #1b4f72;
+  content: "";
+}
+
+.collector-account-item:hover {
+  border-color: #cbd5e1;
+  box-shadow:
+    0 10px 24px rgb(16 42 67 / 8%),
+    0 2px 5px rgb(16 42 67 / 4%);
+  transform: translateY(-2px);
+}
+
+/* =========================================================
+   ACCOUNT CARD HEADER
+   ========================================================= */
+
+.collector-account-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.collector-account-user {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
 }
 
 .collector-account-avatar {
   display: inline-grid;
-  width: 36px;
-  height: 36px;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
   place-items: center;
-  border-radius: 11px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
   background: #eff6ff;
   color: #2563eb;
+  font-size: 18px;
 }
+
+.collector-account-user-info {
+  min-width: 0;
+}
+
+.collector-account-username {
+  display: block;
+  overflow: hidden;
+  color: #102a43;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collector-account-role {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* =========================================================
+   ROLE BADGE
+   ========================================================= */
+
+.collector-account-role-badge {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   ACCOUNT DETAILS
+   ========================================================= */
+
+.collector-account-details {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid #edf2f7;
+  border-radius: 11px;
+  background: #f8fafc;
+}
+
+.collector-account-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.collector-account-detail-icon {
+  display: inline-flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.collector-account-detail-content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.collector-account-detail-label {
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.collector-account-detail-value {
+  overflow: hidden;
+  color: #334e68;
+  font-size: 13px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   PASSWORD STATUS
+   ========================================================= */
+
+.collector-account-password-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.collector-account-password-status-label {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.collector-account-password-status .ant-tag {
+  margin: 0;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   CARD ACTION
+   ========================================================= */
+
+.collector-account-item-action {
+  margin-top: auto;
+  padding-top: 2px;
+}
+
+.collector-account-item-action .ant-btn {
+  width: 100%;
+  height: 38px;
+  border-radius: 9px;
+  font-weight: 600;
+}
+
+.collector-account-item-action .ant-btn:not(:disabled):hover {
+  border-color: #1b4f72;
+  color: #1b4f72;
+}
+
+/* =========================================================
+   DEFAULT PASSWORD NOTE
+   ========================================================= */
 
 .collector-account-password-note {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 12px;
+  margin-top: 4px;
+  padding: 13px;
+  border: 1px solid #dbeafe;
   border-radius: 10px;
-  background: #f8fafc;
+  background: #eff6ff;
   color: #2563eb;
 }
 
+.collector-account-password-note > .anticon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  font-size: 15px;
+}
+
 .collector-account-password-note .ant-typography {
-  color: #64748b;
+  color: #475569;
   font-size: 13px;
+  line-height: 1.5;
+}
+
+.collector-account-password-note strong {
+  color: #1e3a5f;
+  font-weight: 700;
+}
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.collector-account-empty {
+  display: flex;
+  min-height: 220px;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #64748b;
+  text-align: center;
+}
+
+.collector-account-empty-content {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.collector-account-empty-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 4px;
+  place-items: center;
+  border-radius: 13px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 20px;
+}
+
+/* =========================================================
+   PAGINATION
+   ========================================================= */
+
+.collector-account-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.collector-account-page .ant-modal-content {
+  border-radius: 16px;
+}
+
+.collector-account-page .ant-modal-header {
+  border-radius: 16px 16px 0 0;
+}
+
+.collector-account-page .ant-modal-title {
+  color: #102a43;
+  font-weight: 700;
+}
+
+.collector-account-page .ant-form-item-label > label {
+  color: #334e68;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.collector-account-page .ant-input,
+.collector-account-page .ant-input-affix-wrapper,
+.collector-account-page .ant-select-selector {
+  border-radius: 9px !important;
+}
+
+.collector-account-page .ant-input:focus,
+.collector-account-page .ant-input-affix-wrapper-focused,
+.collector-account-page .ant-select-focused .ant-select-selector {
+  border-color: #93c5fd !important;
+  box-shadow: 0 0 0 2px rgb(37 99 235 / 8%) !important;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+  .collector-account-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 720px) {
@@ -121,7 +527,12 @@
   }
 
   .collector-account-header > .ant-space {
+    width: 100%;
     justify-content: flex-start;
+  }
+
+  .collector-account-header > .ant-space .ant-btn {
+    flex: 1;
   }
 
   .collector-account-search {
@@ -130,5 +541,32 @@
 
   .collector-account-card .ant-card-body {
     padding: 16px;
+  }
+
+  .collector-account-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .collector-account-item {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .collector-account-header > .ant-space {
+    flex-direction: column;
+  }
+
+  .collector-account-header > .ant-space .ant-btn {
+    width: 100%;
+  }
+
+  .collector-account-item-header {
+    align-items: flex-start;
+  }
+
+  .collector-account-role-badge {
+    display: none;
   }
 }
