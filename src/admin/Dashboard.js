@@ -403,6 +403,16 @@ const AdminDashboard = () => {
     </Card>
   );
 
+  const sectionTotals = sectionStats.reduce((totals, section) => ({
+    stalls: totals.stalls + (Number(section.total_stalls) || 0),
+    occupied: totals.occupied + (Number(section.rented_stalls) || 0),
+    available: totals.available + (Number(section.available_stalls) || 0),
+    other: totals.other + (Number(section.other_status_stalls) || 0),
+  }), { stalls: 0, occupied: 0, available: 0, other: 0 });
+  const overallOccupancy = sectionTotals.stalls > 0
+    ? Math.round((sectionTotals.occupied / sectionTotals.stalls) * 1000) / 10
+    : 0;
+
   const renderDashboard = () => (
     <div
       className="admin-overview"
@@ -1406,21 +1416,40 @@ const AdminDashboard = () => {
             }}
             bodyStyle={{ padding: window.innerWidth < 768 ? 12 : 16 }}
           >
-            <div style={{ maxHeight: 400, overflowY: "auto" }}>
-              {sectionStats.map((section, index) => (
+            <div className="section-statistics-summary">
+              <div className="section-statistics-summary-heading">
+                <span>Overall occupancy</span>
+                <strong>{overallOccupancy.toFixed(1)}%</strong>
+              </div>
+              <div className="section-statistics-summary-caption">
+                {sectionStats.length} {sectionStats.length === 1 ? 'section' : 'sections'} · {sectionTotals.occupied} of {sectionTotals.stalls} stalls occupied
+              </div>
+              <div
+                className="section-statistics-summary-track"
+                role="progressbar"
+                aria-label="Overall stall occupancy"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={overallOccupancy}
+              >
+                <span style={{ width: `${overallOccupancy}%` }} />
+              </div>
+              <div className="section-statistics-summary-legend">
+                <span><i className="occupied" />Occupied <strong>{sectionTotals.occupied}</strong></span>
+                <span><i className="available" />Available <strong>{sectionTotals.available}</strong></span>
+                {sectionTotals.other > 0 && (
+                  <span><i className="other" />Other <strong>{sectionTotals.other}</strong></span>
+                )}
+              </div>
+            </div>
+            <div className="section-statistics-list">
+              {sectionStats.length > 0 ? sectionStats.map(section => (
                 <div
                   key={section.id}
                   className="section-stat-item"
-                  style={{
-                    marginBottom: 12,
-                    padding: 12,
-                    background: backgroundColor,
-                    borderRadius: 8,
-                    border: "1px solid #e2e8f0",
-                  }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <Text strong style={{ fontSize: 14, color: textPrimary }}>
+                  <div className="section-stat-item-heading">
+                    <Text strong className="section-stat-name">
                       {section.name}
                     </Text>
                     <div className={`section-occupancy-badge ${section.occupancy_rate >= 80 ? 'high' : section.occupancy_rate >= 50 ? 'medium' : 'low'}`}>
@@ -1428,51 +1457,27 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   
-                  <div className="section-stall-status" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <div>
-                      <Text style={{ fontSize: 12, color: textSecondary }}>
-                        Stall Status
-                      </Text>
-                      <div style={{ marginTop: 2 }}>
-                        <Text style={{ fontSize: 12, color: textPrimary }}>
-                          <span style={{ color: successColor, fontWeight: 600 }}>{section.rented_stalls}</span> occupied / 
-                          <span style={{ color: textSecondary, fontWeight: 600 }}> {section.available_stalls}</span> available
-                          {section.other_status_stalls > 0 && (
-                            <span style={{ color: warningColor, fontWeight: 600 }}> / {section.other_status_stalls} other</span>
-                          )}
-                        </Text>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <Text style={{ fontSize: 12, color: textSecondary }}>
-                        Total Stalls
-                      </Text>
-                      <div style={{ marginTop: 2 }}>
-                        <Text strong style={{ fontSize: 13, color: textPrimary }}>
-                          {section.total_stalls}
-                        </Text>
-                      </div>
-                    </div>
+                  <div className={`section-stat-counts ${section.other_status_stalls > 0 ? 'with-other' : ''}`}>
+                    <div><span>Occupied</span><strong className="occupied">{section.rented_stalls}</strong></div>
+                    <div><span>Available</span><strong>{section.available_stalls}</strong></div>
+                    {section.other_status_stalls > 0 && (
+                      <div><span>Other</span><strong className="other">{section.other_status_stalls}</strong></div>
+                    )}
+                    <div><span>Total stalls</span><strong>{section.total_stalls}</strong></div>
                   </div>
 
-                  <div className="section-occupancy-track" style={{ 
-                    width: "100%", 
-                    height: 4, 
-                    background: "#e2e8f0", 
-                    borderRadius: 2, 
-                    overflow: "hidden",
-                  }}>
+                  <div className="section-occupancy-track">
                     <div
                       className={`section-occupancy-fill ${section.occupancy_rate >= 80 ? 'high' : section.occupancy_rate >= 50 ? 'medium' : 'low'}`}
                       style={{
-                        width: `${section.occupancy_rate}%`,
-                        height: "100%",
-                        borderRadius: 2,
+                        width: `${Math.min(100, Math.max(0, Number(section.occupancy_rate) || 0))}%`,
                       }}
                     />
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="section-statistics-empty">No section statistics available.</div>
+              )}
             </div>
           </Card>
         </Col>

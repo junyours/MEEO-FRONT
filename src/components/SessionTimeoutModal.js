@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Typography, Button, Space, Statistic } from 'antd';
+import { Modal, Typography, Button, Space } from 'antd';
 import { ExclamationCircleOutlined, LogoutOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 import dayjs from 'dayjs';
 import {
@@ -47,6 +47,7 @@ import {
   MoneyCollectOutlined,
   TrophyOutlined,
   CloseOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import api from '../Api';
 import LoadingOverlay from './Loading';
@@ -99,6 +100,14 @@ const VendorPaymentManagement = () => {
   const [processingUnoccupiedPayment, setProcessingUnoccupiedPayment] = useState(false);
   const [unoccupiedBalanceLoading, setUnoccupiedBalanceLoading] = useState(false);
   const [analysisStallBalances, setAnalysisStallBalances] = useState({});
+  const [ledgerModalVisible, setLedgerModalVisible] = useState(false);
+  const [ledgerVendor, setLedgerVendor] = useState(null);
+  const [ledgerFile, setLedgerFile] = useState(null);
+  const [ledgerPreview, setLedgerPreview] = useState('');
+  const [ledgerAnalyzing, setLedgerAnalyzing] = useState(false);
+  const [ledgerRecords, setLedgerRecords] = useState([]);
+  const [ledgerImporting, setLedgerImporting] = useState(false);
+  const ledgerFileInputRef = useRef(null);
 
   useEffect(() => {
     fetchVendors();
@@ -142,7 +151,145 @@ const VendorPaymentManagement = () => {
     }
   };
 
+  const openLedgerUpload = (vendor) => {
+    setLedgerVendor(vendor);
+    setLedgerFile(null);
+    setLedgerPreview('');
+    setLedgerRecords([]);
+    setLedgerModalVisible(true);
+  };
 
+  const resetLedgerModal = () => {
+    setLedgerModalVisible(false);
+    setLedgerVendor(null);
+    setLedgerFile(null);
+    setLedgerRecords([]);
+    setLedgerAnalyzing(false);
+    setLedgerImporting(false);
+    if (ledgerPreview && ledgerPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(ledgerPreview);
+    }
+    setLedgerPreview('');
+  };
+
+  const handleLedgerFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/bmp'];
+    if (!validTypes.includes(file.type)) {
+      message.error('Please upload a JPG, JPEG, PNG, WEBP, or BMP image.');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      message.error('Image must be 10MB or smaller.');
+      return;
+    }
+
+    setLedgerFile(file);
+    setLedgerRecords([]);
+    setLedgerPreview((previous) => {
+      if (previous && previous.startsWith('blob:')) {
+        URL.revokeObjectURL(previous);
+      }
+      return URL.createObjectURL(file);
+    });
+  };
+
+  const updateLedgerRow = (rowId, field, value) => {
+    setLedgerRecords(prev => prev.map(row => {
+      if (row.id !== rowId) return row;
+      return {
+        ...row,
+        [field]: value,
+        uncertain_fields: (row.uncertain_fields || []).filter(uncertainField => uncertainField !== field),
+        validation_status: (() => {
+          const updatedRow = { ...row, [field]: value };
+          if (!updatedRow.payment_date || !updatedRow.or_number || !updatedRow.amount || Number(updatedRow.amount) <= 0) {
+            return 'incomplete';
+          }
+          return (row.uncertain_fields || []).some(uncertainField => uncertainField !== field)
+            ? 'needs review'
+            : 'valid';
+        })(),
+      };
+    }));
+  };
+
+  const handleAnalyzeLedger = async () => {
+    if (!ledgerFile || !ledgerVendor) {
+      message.error('Please select a ledger image first.');
+      return;
+    }
+
+    setLedgerAnalyzing(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', ledgerFile);
+      const response = await api.post('/vendor-payments/ledger/recognize', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const normalized = (response.data?.records || []).map((row, index) => ({
+        id: `gemini-ledger-row-${Date.now()}-${index}`,
+        row_number: index + 1,
+        payment_date: row.payment_date || '',
+        or_number: row.or_number || '',
+        amount: Number(row.amount) || 0,
+        uncertain_fields: row.uncertain_fields || [],
+        validation_status: row.uncertain_fields?.length ? 'needs review' : 'valid',
+      }));
+
+      setLedgerRecords(normalized);
+      if (normalized.length === 0) {
+        message.warning('No payment rows were recognized. Try a sharper, straight-on photo or review the image manually.');
+      } else {
+        message.success(`${normalized.length} rows read by Gemini. Please verify every value before importing.`);
+      }
+    } catch (error) {
+      console.error('Gemini ledger recognition failed:', error);
+      message.error(error.response?.data?.message || 'Could not read the ledger image with Gemini.');
+    } finally {
+      setLedgerAnalyzing(false);
+    }
+  };
+
+  const handleConfirmLedgerImport = async () => {
+    if (!ledgerVendor || ledgerRecords.length === 0) {
+      message.error('No ledger records to import.');
+      return;
+    }
+
+    const cleanRecords = ledgerRecords.map((row, index) => ({
+      row_number: index + 1,
+      payment_date: String(row.payment_date || '').trim(),
+      or_number: String(row.or_number || '').trim(),
+      amount: Number(row.amount || 0),
+    }));
+
+    const hasInvalid = cleanRecords.some(row => !row.payment_date || !row.or_number || Number(row.amount) <= 0);
+    if (hasInvalid) {
+      message.error('Please complete all required date, OR number, and amount fields before importing.');
+      return;
+    }
+
+    setLedgerImporting(true);
+    try {
+      const response = await api.post('/vendor-payments/ledger/import', {
+        vendor_id: ledgerVendor.id,
+        records: cleanRecords,
+      });
+
+      message.success(response.data?.message || 'Historical payment ledger imported successfully.');
+      resetLedgerModal();
+      fetchVendors();
+    } catch (error) {
+      console.error('Ledger import failed:', error);
+      message.error(error.response?.data?.message || 'Failed to import ledger records.');
+    } finally {
+      setLedgerImporting(false);
+    }
+  };
 
   const handlePaySelectedMonths = (vendor) => {
     setSelectedVendorForMonthPayment(vendor);
@@ -1368,11 +1515,19 @@ const VendorPaymentManagement = () => {
           );
         }
 
-        // Check if vendor has any balances (current or past)
         const hasAnyBalance = record.monthly_balances?.some(month => month.balance > 0) || false;
-        
+
         return (
           <Space>
+            <Tooltip title="Upload ledger image for historical vendor payments">
+              <Button
+                className="action-button black"
+                icon={<UploadOutlined />}
+                size="small"
+                aria-label={`Upload ledger for ${record.name || 'vendor'}`}
+                onClick={() => openLedgerUpload(record)}
+              />
+            </Tooltip>
             {showRemovedBalanceAction && (
               <Tooltip title={rentalsWithBalance.length > 0 ? 'Choose a removed section and stall to pay' : 'No removed rental balance is available to pay'}>
                 <Button
@@ -1548,7 +1703,149 @@ const VendorPaymentManagement = () => {
         />
       </div>
 
+      <Modal
+        title={
+          <div className="vendor-modal-title">
+            <UploadOutlined />
+            <span>Upload Ledger · {ledgerVendor?.name || 'Vendor'}</span>
+          </div>
+        }
+        open={ledgerModalVisible}
+        onCancel={resetLedgerModal}
+        footer={null}
+        width={1000}
+        centered
+        closeIcon={<CloseOutlined />}
+        className="vendor-modal ledger-upload-modal"
+      >
+        <div style={{ display: 'grid', gap: 16 }}>
+          <Alert
+            message="The selected image is uploaded to Google Gemini for handwriting recognition. Verify every value before importing."
+            type="info"
+            showIcon
+          />
 
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Button
+              type="primary"
+              icon={<UploadOutlined />}
+              onClick={() => ledgerFileInputRef.current?.click()}
+            >
+              Choose Image
+            </Button>
+            <input
+              ref={ledgerFileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp,image/bmp"
+              hidden
+              onChange={handleLedgerFileChange}
+            />
+            {ledgerFile && (
+              <Text type="secondary">Selected: {ledgerFile.name}</Text>
+            )}
+            {ledgerFile && (
+              <Button danger size="small" onClick={() => setLedgerFile(null)}>
+                Remove Image
+              </Button>
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(260px, 0.8fr)', gap: 16 }}>
+            <div style={{ border: '1px dashed #d9d9d9', borderRadius: 12, padding: 12, minHeight: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafafa' }}>
+              {ledgerPreview ? (
+                <img src={ledgerPreview} alt="Ledger preview" style={{ maxWidth: '100%', maxHeight: 320, objectFit: 'contain', borderRadius: 8 }} />
+              ) : (
+                <div style={{ textAlign: 'center', color: '#8c8c8c' }}>
+                  <UploadOutlined style={{ fontSize: 28, marginBottom: 8, display: 'block' }} />
+                  <div>No image selected yet.</div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gap: 12 }}>
+              <div>
+                <Text strong>Vendor</Text>
+                <div>{ledgerVendor?.name || 'Not selected'}</div>
+              </div>
+
+              <Button
+                type="primary"
+                icon={<UploadOutlined />}
+                loading={ledgerAnalyzing}
+                onClick={handleAnalyzeLedger}
+                disabled={!ledgerFile}
+              >
+                {ledgerAnalyzing ? 'Reading Ledger...' : 'Read Ledger (Gemini Vision)'}
+              </Button>
+            </div>
+          </div>
+
+          {ledgerRecords.length > 0 && (
+            <div style={{ display: 'grid', gap: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                <Title level={5} style={{ margin: 0 }}>Extracted Records</Title>
+                <Tag color="blue">{ledgerRecords.length} records</Tag>
+                <Tag color="green">Total: {fmtMoney(ledgerRecords.reduce((sum, row) => sum + (Number(row.amount) || 0), 0))}</Tag>
+              </div>
+
+              <Table
+                size="small"
+                dataSource={ledgerRecords}
+                pagination={false}
+                rowKey="id"
+                scroll={{ x: 800 }}
+                columns={[
+                  { title: 'Row', dataIndex: 'row_number', key: 'row_number', width: 70, render: (_, __, index) => index + 1 },
+                  { title: 'Payment Date', dataIndex: 'payment_date', key: 'payment_date', render: (value, row) => (
+                    <Input
+                      value={value}
+                      onChange={(e) => updateLedgerRow(row.id, 'payment_date', e.target.value)}
+                      status={!value || row.uncertain_fields?.includes('payment_date') ? 'error' : undefined}
+                    />
+                  )},
+                  { title: 'OR Number', dataIndex: 'or_number', key: 'or_number', render: (value, row) => (
+                    <Input
+                      value={value}
+                      onChange={(e) => updateLedgerRow(row.id, 'or_number', e.target.value)}
+                      status={!value || row.uncertain_fields?.includes('or_number') ? 'error' : undefined}
+                    />
+                  )},
+                  { title: 'Amount', dataIndex: 'amount', key: 'amount', width: 140, render: (value, row) => (
+                    <InputNumber
+                      value={value}
+                      min={0}
+                      precision={2}
+                      style={{ width: '100%' }}
+                      onChange={(newValue) => updateLedgerRow(row.id, 'amount', newValue || 0)}
+                      status={Number(value) <= 0 || row.uncertain_fields?.includes('amount') ? 'error' : undefined}
+                    />
+                  )},
+                  { title: 'Validation', dataIndex: 'validation_status', key: 'validation_status', width: 140, render: (value) => {
+                    const colorMap = { valid: 'green', incomplete: 'orange', duplicate: 'red', 'needs review': 'gold' };
+                    return <Tag color={colorMap[value] || 'default'}>{value || 'valid'}</Tag>;
+                  }},
+                  { title: 'Action', key: 'action', width: 90, render: (_, row) => (
+                    <Button
+                      danger
+                      size="small"
+                      onClick={() => setLedgerRecords(prev => prev.filter(item => item.id !== row.id))}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                ]}
+              />
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <Button onClick={resetLedgerModal}>Cancel</Button>
+                <Button type="primary" loading={ledgerImporting} onClick={handleConfirmLedgerImport}>
+                  Confirm Import
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
 
       {/* Bulk Payment Modal */}
       <Modal

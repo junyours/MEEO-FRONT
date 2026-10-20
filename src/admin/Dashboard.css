@@ -1070,6 +1070,14 @@
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06) !important;
 }
 
+.admin-overview .section-statistics-card {
+  height: auto;
+  max-height: 560px;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+}
+
 .admin-overview .section-statistics-card .ant-card-head,
 .admin-overview .department-income-card .ant-card-head {
   min-height: 54px;
@@ -1089,6 +1097,114 @@
   padding: 12px !important;
 }
 
+.admin-overview .section-statistics-card .ant-card-body {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-statistics-summary {
+  flex: 0 0 auto;
+  padding: 12px;
+  border: 1px solid #e1e9ed;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f7fafb 0%, #f1f7f5 100%);
+}
+
+.section-statistics-summary-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.section-statistics-summary-heading span,
+.section-statistics-summary-caption {
+  color: #65747b;
+  font-size: 11px;
+}
+
+.section-statistics-summary-heading strong {
+  color: #18313b;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.section-statistics-summary-caption {
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.section-statistics-summary-track {
+  height: 6px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dfe8e9;
+}
+
+.section-statistics-summary-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #328253;
+  transition: width 0.25s ease;
+}
+
+.section-statistics-summary-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 10px;
+}
+
+.section-statistics-summary-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #65747b;
+  font-size: 10px;
+}
+
+.section-statistics-summary-legend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9aa8ad;
+}
+
+.section-statistics-summary-legend i.occupied {
+  background: #328253;
+}
+
+.section-statistics-summary-legend i.available {
+  background: #6b9db0;
+}
+
+.section-statistics-summary-legend i.other {
+  background: #c58b24;
+}
+
+.section-statistics-summary-legend strong {
+  color: #243b45;
+  font-variant-numeric: tabular-nums;
+}
+
+.section-statistics-list {
+  max-height: 340px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.section-statistics-empty {
+  padding: 22px 12px;
+  color: #74838a;
+  font-size: 12px;
+  text-align: center;
+}
+
 .section-stat-item,
 .department-income-item {
   margin-bottom: 9px !important;
@@ -1096,6 +1212,75 @@
   border: 1px solid #e5ebee !important;
   border-radius: 7px !important;
   background: #ffffff !important;
+}
+
+.section-stat-item {
+  padding: 11px !important;
+  border-color: #e3eaed !important;
+  border-radius: 8px !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.section-stat-item:hover {
+  border-color: #cbd9de !important;
+  box-shadow: 0 2px 8px rgba(24, 49, 59, 0.06);
+}
+
+.section-stat-item-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.section-stat-item .section-stat-name {
+  min-width: 0;
+  overflow: hidden;
+  color: #243b45;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-stat-counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.section-stat-counts.with-other {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.section-stat-counts > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.section-stat-counts span {
+  overflow: hidden;
+  color: #74838a;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-stat-counts strong {
+  color: #243b45;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.section-stat-counts strong.occupied {
+  color: #287449;
+}
+
+.section-stat-counts strong.other {
+  color: #8c5b0b;
 }
 
 .section-stat-item:last-child,
@@ -1160,8 +1345,15 @@
   background: #e8eef0 !important;
 }
 
+.section-occupancy-track {
+  height: 5px;
+  border-radius: 999px !important;
+}
+
 .section-occupancy-fill,
 .department-progress-fill {
+  height: 100%;
+  border-radius: inherit;
   transition: width 0.25s ease;
 }
 

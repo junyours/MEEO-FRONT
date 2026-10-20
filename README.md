@@ -29,6 +29,10 @@ Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
+## Vendor Ledger OCR
+
+Ledger images are read in the browser using Tesseract.js; no paid AI API key is required, and the image is not uploaded for OCR. The browser may need internet access to download the OCR worker and English language data. Handwritten text can be misread, so review and correct every extracted row before importing.
+
 ### `npm run eject`
 
 **Note: this is a one-way operation. Once you `eject`, you can't go back!**
