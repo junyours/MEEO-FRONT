@@ -56,6 +56,46 @@ import './VendorPaymentManagement.css';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
+const MAX_LEDGER_IMAGE_DIMENSION = 2400;
+const MAX_LEDGER_IMAGE_SIZE = 1.5 * 1024 * 1024;
+
+const optimizeLedgerImage = async (file) => {
+  const image = await createImageBitmap(file);
+  try {
+    const longestDimension = Math.max(image.width, image.height);
+    if (longestDimension <= MAX_LEDGER_IMAGE_DIMENSION && file.size <= MAX_LEDGER_IMAGE_SIZE) {
+      return file;
+    }
+
+    const scale = Math.min(1, MAX_LEDGER_IMAGE_DIMENSION / longestDimension);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Could not prepare the ledger image for recognition.');
+    }
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const optimizedBlob = await new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('Could not prepare the ledger image for recognition.'));
+        }
+      }, 'image/jpeg', 0.88);
+    });
+
+    return new File([optimizedBlob], 'ledger-upload.jpg', {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    });
+  } finally {
+    image.close();
+  }
+};
+
 const VendorPaymentManagement = () => {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -101,7 +141,9 @@ const VendorPaymentManagement = () => {
   const [unoccupiedBalanceLoading, setUnoccupiedBalanceLoading] = useState(false);
   const [analysisStallBalances, setAnalysisStallBalances] = useState({});
   const [ledgerModalVisible, setLedgerModalVisible] = useState(false);
+  const [ledgerConfirmationModalVisible, setLedgerConfirmationModalVisible] = useState(false);
   const [ledgerVendor, setLedgerVendor] = useState(null);
+  const [ledgerRentalIds, setLedgerRentalIds] = useState([]);
   const [ledgerFile, setLedgerFile] = useState(null);
   const [ledgerPreview, setLedgerPreview] = useState('');
   const [ledgerAnalyzing, setLedgerAnalyzing] = useState(false);
@@ -153,6 +195,7 @@ const VendorPaymentManagement = () => {
 
   const openLedgerUpload = (vendor) => {
     setLedgerVendor(vendor);
+    setLedgerRentalIds([]);
     setLedgerFile(null);
     setLedgerPreview('');
     setLedgerRecords([]);
@@ -161,7 +204,9 @@ const VendorPaymentManagement = () => {
 
   const resetLedgerModal = () => {
     setLedgerModalVisible(false);
+    setLedgerConfirmationModalVisible(false);
     setLedgerVendor(null);
+    setLedgerRentalIds([]);
     setLedgerFile(null);
     setLedgerRecords([]);
     setLedgerAnalyzing(false);
@@ -226,12 +271,13 @@ const VendorPaymentManagement = () => {
     setLedgerAnalyzing(true);
     try {
       const formData = new FormData();
-      formData.append('image', ledgerFile);
+      const imageForRecognition = await optimizeLedgerImage(ledgerFile);
+      formData.append('image', imageForRecognition);
       const response = await api.post('/vendor-payments/ledger/recognize', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const normalized = (response.data?.records || []).map((row, index) => ({
-        id: `gemini-ledger-row-${Date.now()}-${index}`,
+        id: `ledger-row-${Date.now()}-${index}`,
         row_number: index + 1,
         payment_date: row.payment_date || '',
         or_number: row.or_number || '',
@@ -244,11 +290,17 @@ const VendorPaymentManagement = () => {
       if (normalized.length === 0) {
         message.warning('No payment rows were recognized. Try a sharper, straight-on photo or review the image manually.');
       } else {
-        message.success(`${normalized.length} rows read by Gemini. Please verify every value before importing.`);
+        message.success(`${normalized.length} ledger entries extracted. Review every value before importing.`);
       }
     } catch (error) {
-      console.error('Gemini ledger recognition failed:', error);
-      message.error(error.response?.data?.message || 'Could not read the ledger image with Gemini.');
+      console.error('Ledger recognition failed:', error);
+      const status = error.response?.status;
+      const errorMessage = error.response?.data?.message || error.message;
+      if (status === 503) {
+        message.warning(errorMessage || 'Gemini is temporarily busy. Please try again in a moment.');
+      } else {
+        message.error(errorMessage || 'Could not read the ledger image.');
+      }
     } finally {
       setLedgerAnalyzing(false);
     }
@@ -260,6 +312,25 @@ const VendorPaymentManagement = () => {
       return;
     }
 
+    const hasInvalid = ledgerRecords.some(row =>
+      !String(row.payment_date || '').trim()
+      || !String(row.or_number || '').trim()
+      || Number(row.amount || 0) <= 0
+    );
+    if (hasInvalid) {
+      message.error('Please complete all required date, OR number, and amount fields before importing.');
+      return;
+    }
+
+    setLedgerConfirmationModalVisible(true);
+  };
+
+  const handleImportLedgerEntries = async () => {
+    if (!ledgerVendor || ledgerRentalIds.length === 0 || ledgerRecords.length === 0) {
+      message.error('Select at least one rented stall before importing the ledger.');
+      return;
+    }
+
     const cleanRecords = ledgerRecords.map((row, index) => ({
       row_number: index + 1,
       payment_date: String(row.payment_date || '').trim(),
@@ -267,16 +338,11 @@ const VendorPaymentManagement = () => {
       amount: Number(row.amount || 0),
     }));
 
-    const hasInvalid = cleanRecords.some(row => !row.payment_date || !row.or_number || Number(row.amount) <= 0);
-    if (hasInvalid) {
-      message.error('Please complete all required date, OR number, and amount fields before importing.');
-      return;
-    }
-
     setLedgerImporting(true);
     try {
       const response = await api.post('/vendor-payments/ledger/import', {
         vendor_id: ledgerVendor.id,
+        rental_ids: ledgerRentalIds,
         records: cleanRecords,
       });
 
@@ -1588,6 +1654,9 @@ const VendorPaymentManagement = () => {
     },
   ];
 
+  const availableLedgerRentals = (ledgerVendor?.rentals || []).filter(rental => rental.status !== 'vacant');
+  const availableLedgerRentalIds = availableLedgerRentals.map(rental => rental.rental_id);
+
   if (initialLoading) {
     return <LoadingOverlay message="Loading vendor payment data..." />;
   }
@@ -1599,6 +1668,7 @@ const VendorPaymentManagement = () => {
         <div className="header-title">
           <BankOutlined className="title-icon" />
           <div>
+            <Text className="vendor-header-eyebrow">Finance workspace</Text>
             <Title level={1} style={{ margin: 0 }}>
               Vendor Payment Management
             </Title>
@@ -1663,7 +1733,7 @@ const VendorPaymentManagement = () => {
               <BankOutlined />
             </div>
             <div className="vendor-table-heading-copy">
-              <div className="vendor-table-title">Vendor Payment Register</div>
+              <div className="vendor-table-title">Vendor Payment </div>
               <Text className="vendor-table-description">
                 Stall assignments, balances, and available deposits
               </Text>
@@ -1718,20 +1788,21 @@ const VendorPaymentManagement = () => {
         closeIcon={<CloseOutlined />}
         className="vendor-modal ledger-upload-modal"
       >
-        <div style={{ display: 'grid', gap: 16 }}>
+        <div className="ledger-upload-content">
           <Alert
-            message="The selected image is uploaded to Google Gemini for handwriting recognition. Verify every value before importing."
+            className="ledger-upload-notice"
+            message="The selected image is sent to Google Gemini for handwriting recognition. Please review all extracted entries before importing."
             type="info"
             showIcon
           />
 
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="ledger-upload-controls">
             <Button
               type="primary"
               icon={<UploadOutlined />}
               onClick={() => ledgerFileInputRef.current?.click()}
             >
-              Choose Image
+              Select Ledger Image
             </Button>
             <input
               ref={ledgerFileInputRef}
@@ -1741,47 +1812,54 @@ const VendorPaymentManagement = () => {
               onChange={handleLedgerFileChange}
             />
             {ledgerFile && (
-              <Text type="secondary">Selected: {ledgerFile.name}</Text>
+              <Text className="ledger-file-name" type="secondary" title={ledgerFile.name}>
+                {ledgerFile.name}
+              </Text>
             )}
             {ledgerFile && (
-              <Button danger size="small" onClick={() => setLedgerFile(null)}>
-                Remove Image
+              <Button type="text" danger size="small" onClick={() => setLedgerFile(null)}>
+                Remove
               </Button>
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(260px, 0.8fr)', gap: 16 }}>
-            <div style={{ border: '1px dashed #d9d9d9', borderRadius: 12, padding: 12, minHeight: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafafa' }}>
+          <div className="ledger-upload-workspace">
+            <div className={`ledger-image-preview${ledgerPreview ? ' has-image' : ''}`}>
               {ledgerPreview ? (
-                <img src={ledgerPreview} alt="Ledger preview" style={{ maxWidth: '100%', maxHeight: 320, objectFit: 'contain', borderRadius: 8 }} />
+                <img src={ledgerPreview} alt="Selected ledger preview" />
               ) : (
-                <div style={{ textAlign: 'center', color: '#8c8c8c' }}>
-                  <UploadOutlined style={{ fontSize: 28, marginBottom: 8, display: 'block' }} />
-                  <div>No image selected yet.</div>
+                <div className="ledger-image-empty-state">
+                  <UploadOutlined />
+                  <Text strong>No ledger image selected</Text>
+                  <Text type="secondary">Choose a clear, well-lit image to get started.</Text>
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'grid', gap: 12 }}>
-              <div>
-                <Text strong>Vendor</Text>
-                <div>{ledgerVendor?.name || 'Not selected'}</div>
+            <div className="ledger-upload-details">
+              <div className="ledger-vendor-summary">
+                <Text className="ledger-detail-label" type="secondary">Vendor</Text>
+                <Text className="ledger-vendor-name">{ledgerVendor?.name || 'Not selected'}</Text>
               </div>
 
               <Button
                 type="primary"
                 icon={<UploadOutlined />}
+                className="ledger-read-button"
                 loading={ledgerAnalyzing}
                 onClick={handleAnalyzeLedger}
                 disabled={!ledgerFile}
               >
-                {ledgerAnalyzing ? 'Reading Ledger...' : 'Read Ledger (Gemini Vision)'}
+                {ledgerAnalyzing ? 'Extracting entries...' : 'Extract Ledger Entries'}
               </Button>
+              <Text className="ledger-review-hint" type="secondary">
+                You can review and correct the extracted details before importing.
+              </Text>
             </div>
           </div>
 
           {ledgerRecords.length > 0 && (
-            <div style={{ display: 'grid', gap: 12 }}>
+            <div className="ledger-extracted-records">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                 <Title level={5} style={{ margin: 0 }}>Extracted Records</Title>
                 <Tag color="blue">{ledgerRecords.length} records</Tag>
@@ -1843,6 +1921,102 @@ const VendorPaymentManagement = () => {
                 </Button>
               </div>
             </div>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        title={
+          <div className="vendor-modal-title">
+            <CheckCircleOutlined />
+            <span>Confirm Ledger Import · {ledgerVendor?.name || 'Vendor'}</span>
+          </div>
+        }
+        open={ledgerConfirmationModalVisible}
+        onCancel={() => setLedgerConfirmationModalVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setLedgerConfirmationModalVisible(false)}>
+            Back
+          </Button>,
+          <Button
+            key="confirm"
+            type="primary"
+            loading={ledgerImporting}
+            disabled={ledgerRentalIds.length === 0}
+            onClick={handleImportLedgerEntries}
+          >
+            Import Ledger
+          </Button>,
+        ]}
+        width={600}
+        centered
+        closeIcon={<CloseOutlined />}
+        className="vendor-modal payment-confirmation-modal"
+      >
+        <div className="payment-confirmation-content">
+          <Text strong className="modal-section-heading">Ledger import details</Text>
+          <div className="confirmation-summary">
+            <div className="confirmation-summary-row">
+              <Text>Vendor:</Text>
+              <Text strong>{ledgerVendor?.name || 'N/A'}</Text>
+            </div>
+            <div className="confirmation-summary-row">
+              <Text>Records:</Text>
+              <Text strong>{ledgerRecords.length}</Text>
+            </div>
+            <div className="confirmation-summary-row">
+              <Text>Total Amount:</Text>
+              <Text strong>
+                {fmtMoney(ledgerRecords.reduce((sum, row) => sum + (Number(row.amount) || 0), 0))}
+              </Text>
+            </div>
+          </div>
+
+          <Text strong className="modal-section-heading">Apply payments to stalls</Text>
+          <Space style={{ display: 'flex', marginTop: 8 }}>
+            <Button
+              size="small"
+              onClick={() => setLedgerRentalIds(availableLedgerRentalIds)}
+              disabled={availableLedgerRentalIds.length === 0 || ledgerRentalIds.length === availableLedgerRentalIds.length}
+            >
+              Select all stalls
+            </Button>
+            <Button
+              size="small"
+              onClick={() => setLedgerRentalIds([])}
+              disabled={ledgerRentalIds.length === 0}
+            >
+              Deselect all
+            </Button>
+          </Space>
+          <Select
+            mode="multiple"
+            aria-label="Select rented stalls for ledger import"
+            placeholder="Select one or more rented stalls"
+            value={ledgerRentalIds}
+            onChange={setLedgerRentalIds}
+            style={{ width: '100%', marginTop: 8 }}
+            options={availableLedgerRentals.map(rental => ({
+              value: rental.rental_id,
+              label: `${rental.section_name} - ${rental.stall_number}${rental.status === 'unoccupied' ? ' (Unoccupied)' : ''}`,
+            }))}
+            notFoundContent="This vendor has no active rented stalls available."
+          />
+
+          {(ledgerVendor?.rentals || []).some(rental => rental.status !== 'vacant') ? (
+            <Alert
+              message="Each ledger payment amount will be divided equally across the selected stalls. Any extra cent will be assigned to the first selected stall."
+              type="warning"
+              showIcon
+              style={{ marginTop: 16 }}
+            />
+          ) : (
+            <Alert
+              message="This vendor has no active rented stalls. Ledger payments cannot be imported."
+              type="error"
+              showIcon
+              style={{ marginTop: 16 }}
+            />
           )}
         </div>
       </Modal>
