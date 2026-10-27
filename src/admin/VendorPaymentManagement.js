@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 import dayjs from 'dayjs';
 import {
@@ -45,9 +45,10 @@ import {
   ReloadOutlined,
   SearchOutlined,
   MoneyCollectOutlined,
+  PlusOutlined,
   TrophyOutlined,
   CloseOutlined,
-  UploadOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import api from '../Api';
 import LoadingOverlay from './Loading';
@@ -55,46 +56,6 @@ import './VendorPaymentManagement.css';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
-
-const MAX_LEDGER_IMAGE_DIMENSION = 2400;
-const MAX_LEDGER_IMAGE_SIZE = 1.5 * 1024 * 1024;
-
-const optimizeLedgerImage = async (file) => {
-  const image = await createImageBitmap(file);
-  try {
-    const longestDimension = Math.max(image.width, image.height);
-    if (longestDimension <= MAX_LEDGER_IMAGE_DIMENSION && file.size <= MAX_LEDGER_IMAGE_SIZE) {
-      return file;
-    }
-
-    const scale = Math.min(1, MAX_LEDGER_IMAGE_DIMENSION / longestDimension);
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(image.width * scale));
-    canvas.height = Math.max(1, Math.round(image.height * scale));
-    const context = canvas.getContext('2d');
-    if (!context) {
-      throw new Error('Could not prepare the ledger image for recognition.');
-    }
-
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    const optimizedBlob = await new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Could not prepare the ledger image for recognition.'));
-        }
-      }, 'image/jpeg', 0.88);
-    });
-
-    return new File([optimizedBlob], 'ledger-upload.jpg', {
-      type: 'image/jpeg',
-      lastModified: Date.now(),
-    });
-  } finally {
-    image.close();
-  }
-};
 
 const VendorPaymentManagement = () => {
   const [vendors, setVendors] = useState([]);
@@ -140,16 +101,12 @@ const VendorPaymentManagement = () => {
   const [processingUnoccupiedPayment, setProcessingUnoccupiedPayment] = useState(false);
   const [unoccupiedBalanceLoading, setUnoccupiedBalanceLoading] = useState(false);
   const [analysisStallBalances, setAnalysisStallBalances] = useState({});
-  const [ledgerModalVisible, setLedgerModalVisible] = useState(false);
-  const [ledgerConfirmationModalVisible, setLedgerConfirmationModalVisible] = useState(false);
-  const [ledgerVendor, setLedgerVendor] = useState(null);
-  const [ledgerRentalIds, setLedgerRentalIds] = useState([]);
-  const [ledgerFile, setLedgerFile] = useState(null);
-  const [ledgerPreview, setLedgerPreview] = useState('');
-  const [ledgerAnalyzing, setLedgerAnalyzing] = useState(false);
-  const [ledgerRecords, setLedgerRecords] = useState([]);
-  const [ledgerImporting, setLedgerImporting] = useState(false);
-  const ledgerFileInputRef = useRef(null);
+  const [multiplePaymentModalVisible, setMultiplePaymentModalVisible] = useState(false);
+  const [multiplePaymentConfirmationVisible, setMultiplePaymentConfirmationVisible] = useState(false);
+  const [multiplePaymentVendor, setMultiplePaymentVendor] = useState(null);
+  const [multiplePaymentRentalIds, setMultiplePaymentRentalIds] = useState([]);
+  const [multiplePaymentRows, setMultiplePaymentRows] = useState([]);
+  const [multiplePaymentSaving, setMultiplePaymentSaving] = useState(false);
 
   useEffect(() => {
     fetchVendors();
@@ -193,167 +150,94 @@ const VendorPaymentManagement = () => {
     }
   };
 
-  const openLedgerUpload = (vendor) => {
-    setLedgerVendor(vendor);
-    setLedgerRentalIds([]);
-    setLedgerFile(null);
-    setLedgerPreview('');
-    setLedgerRecords([]);
-    setLedgerModalVisible(true);
+  const createMultiplePaymentRow = () => ({
+    id: `${Date.now()}-${Math.random()}`,
+    payment_date: dayjs().format('YYYY-MM-DD'),
+    or_number: '',
+    amount: null,
+  });
+
+  const openMultiplePaymentForm = (vendor) => {
+    setMultiplePaymentVendor(vendor);
+    setMultiplePaymentRentalIds([]);
+    setMultiplePaymentRows([createMultiplePaymentRow()]);
+    setMultiplePaymentModalVisible(true);
   };
 
-  const resetLedgerModal = () => {
-    setLedgerModalVisible(false);
-    setLedgerConfirmationModalVisible(false);
-    setLedgerVendor(null);
-    setLedgerRentalIds([]);
-    setLedgerFile(null);
-    setLedgerRecords([]);
-    setLedgerAnalyzing(false);
-    setLedgerImporting(false);
-    if (ledgerPreview && ledgerPreview.startsWith('blob:')) {
-      URL.revokeObjectURL(ledgerPreview);
-    }
-    setLedgerPreview('');
+  const closeMultiplePaymentForm = () => {
+    setMultiplePaymentModalVisible(false);
+    setMultiplePaymentConfirmationVisible(false);
+    setMultiplePaymentVendor(null);
+    setMultiplePaymentRentalIds([]);
+    setMultiplePaymentRows([]);
+    setMultiplePaymentSaving(false);
   };
 
-  const handleLedgerFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const updateMultiplePaymentRow = (rowId, field, value) => {
+    setMultiplePaymentRows(rows => rows.map(row => (
+      row.id === rowId ? { ...row, [field]: value } : row
+    )));
+  };
 
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/bmp'];
-    if (!validTypes.includes(file.type)) {
-      message.error('Please upload a JPG, JPEG, PNG, WEBP, or BMP image.');
+  const handleReviewMultiplePayments = () => {
+    if (!multiplePaymentVendor || multiplePaymentRentalIds.length === 0) {
+      message.error('Please select at least one stall before continuing.');
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      message.error('Image must be 10MB or smaller.');
+    const paymentDates = multiplePaymentRows.map(row => row.payment_date).filter(Boolean);
+    if (new Set(paymentDates).size !== paymentDates.length) {
+      message.error('Each payment must have a different payment date.');
       return;
     }
 
-    setLedgerFile(file);
-    setLedgerRecords([]);
-    setLedgerPreview((previous) => {
-      if (previous && previous.startsWith('blob:')) {
-        URL.revokeObjectURL(previous);
-      }
-      return URL.createObjectURL(file);
-    });
-  };
-
-  const updateLedgerRow = (rowId, field, value) => {
-    setLedgerRecords(prev => prev.map(row => {
-      if (row.id !== rowId) return row;
-      return {
-        ...row,
-        [field]: value,
-        uncertain_fields: (row.uncertain_fields || []).filter(uncertainField => uncertainField !== field),
-        validation_status: (() => {
-          const updatedRow = { ...row, [field]: value };
-          if (!updatedRow.payment_date || !updatedRow.or_number || !updatedRow.amount || Number(updatedRow.amount) <= 0) {
-            return 'incomplete';
-          }
-          return (row.uncertain_fields || []).some(uncertainField => uncertainField !== field)
-            ? 'needs review'
-            : 'valid';
-        })(),
-      };
-    }));
-  };
-
-  const handleAnalyzeLedger = async () => {
-    if (!ledgerFile || !ledgerVendor) {
-      message.error('Please select a ledger image first.');
+    const tomorrow = dayjs().add(1, 'day').format('YYYY-MM-DD');
+    if (multiplePaymentRows.some(row => row.payment_date >= tomorrow)) {
+      message.error('Payment dates cannot be later than today.');
       return;
     }
 
-    setLedgerAnalyzing(true);
-    try {
-      const formData = new FormData();
-      const imageForRecognition = await optimizeLedgerImage(ledgerFile);
-      formData.append('image', imageForRecognition);
-      const response = await api.post('/vendor-payments/ledger/recognize', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      const normalized = (response.data?.records || []).map((row, index) => ({
-        id: `ledger-row-${Date.now()}-${index}`,
-        row_number: index + 1,
-        payment_date: row.payment_date || '',
-        or_number: row.or_number || '',
-        amount: Number(row.amount) || 0,
-        uncertain_fields: row.uncertain_fields || [],
-        validation_status: row.uncertain_fields?.length ? 'needs review' : 'valid',
-      }));
-
-      setLedgerRecords(normalized);
-      if (normalized.length === 0) {
-        message.warning('No payment rows were recognized. Try a sharper, straight-on photo or review the image manually.');
-      } else {
-        message.success(`${normalized.length} ledger entries extracted. Review every value before importing.`);
-      }
-    } catch (error) {
-      console.error('Ledger recognition failed:', error);
-      const status = error.response?.status;
-      const errorMessage = error.response?.data?.message || error.message;
-      if (status === 503) {
-        message.warning(errorMessage || 'Gemini is temporarily busy. Please try again in a moment.');
-      } else {
-        message.error(errorMessage || 'Could not read the ledger image.');
-      }
-    } finally {
-      setLedgerAnalyzing(false);
-    }
-  };
-
-  const handleConfirmLedgerImport = async () => {
-    if (!ledgerVendor || ledgerRecords.length === 0) {
-      message.error('No ledger records to import.');
-      return;
-    }
-
-    const hasInvalid = ledgerRecords.some(row =>
+    const hasInvalid = multiplePaymentRows.some(row =>
       !String(row.payment_date || '').trim()
       || !String(row.or_number || '').trim()
       || Number(row.amount || 0) <= 0
     );
-    if (hasInvalid) {
-      message.error('Please complete all required date, OR number, and amount fields before importing.');
+    if (multiplePaymentRows.length === 0 || hasInvalid) {
+      message.error('Complete the date, OR number, and amount for every payment row.');
       return;
     }
 
-    setLedgerConfirmationModalVisible(true);
+    setMultiplePaymentConfirmationVisible(true);
   };
 
-  const handleImportLedgerEntries = async () => {
-    if (!ledgerVendor || ledgerRentalIds.length === 0 || ledgerRecords.length === 0) {
-      message.error('Select at least one rented stall before importing the ledger.');
+  const handleSaveMultiplePayments = async () => {
+    if (!multiplePaymentVendor || multiplePaymentRentalIds.length === 0 || multiplePaymentRows.length === 0) {
+      message.error('Select at least one stall and add a payment row.');
       return;
     }
 
-    const cleanRecords = ledgerRecords.map((row, index) => ({
-      row_number: index + 1,
-      payment_date: String(row.payment_date || '').trim(),
-      or_number: String(row.or_number || '').trim(),
-      amount: Number(row.amount || 0),
-    }));
-
-    setLedgerImporting(true);
+    setMultiplePaymentSaving(true);
     try {
-      const response = await api.post('/vendor-payments/ledger/import', {
-        vendor_id: ledgerVendor.id,
-        rental_ids: ledgerRentalIds,
-        records: cleanRecords,
+      const response = await api.post('/vendor-payments/multiple', {
+        vendor_id: multiplePaymentVendor.id,
+        rental_ids: multiplePaymentRentalIds,
+        payments: multiplePaymentRows.map(row => ({
+          payment_date: row.payment_date,
+          or_number: String(row.or_number).trim(),
+          amount: Number(row.amount),
+        })),
       });
 
-      message.success(response.data?.message || 'Historical payment ledger imported successfully.');
-      resetLedgerModal();
+      const imported = response.data?.summary?.imported ?? 0;
+      const skipped = response.data?.summary?.skipped_duplicates ?? 0;
+      message.success(`${imported} payment${imported === 1 ? '' : 's'} saved${skipped ? `; ${skipped} duplicate${skipped === 1 ? '' : 's'} skipped` : ''}.`);
+      closeMultiplePaymentForm();
       fetchVendors();
     } catch (error) {
-      console.error('Ledger import failed:', error);
-      message.error(error.response?.data?.message || 'Failed to import ledger records.');
+      console.error('Saving multiple payments failed:', error);
+      message.error(error.response?.data?.message || 'Failed to save payments.');
     } finally {
-      setLedgerImporting(false);
+      setMultiplePaymentSaving(false);
     }
   };
 
@@ -1585,13 +1469,13 @@ const VendorPaymentManagement = () => {
 
         return (
           <Space>
-            <Tooltip title="Upload ledger image for historical vendor payments">
+            <Tooltip title="Add multiple payments for a selected stall">
               <Button
                 className="action-button black"
-                icon={<UploadOutlined />}
+                icon={<MoneyCollectOutlined />}
                 size="small"
-                aria-label={`Upload ledger for ${record.name || 'vendor'}`}
-                onClick={() => openLedgerUpload(record)}
+                aria-label={`Add multiple payments for ${record.name || 'vendor'}`}
+                onClick={() => openMultiplePaymentForm(record)}
               />
             </Tooltip>
             {showRemovedBalanceAction && (
@@ -1654,8 +1538,17 @@ const VendorPaymentManagement = () => {
     },
   ];
 
-  const availableLedgerRentals = (ledgerVendor?.rentals || []).filter(rental => rental.status !== 'vacant');
-  const availableLedgerRentalIds = availableLedgerRentals.map(rental => rental.rental_id);
+  const paymentStallOptions = multiplePaymentVendor?.rentals || [];
+  const availablePaymentRentals = paymentStallOptions.filter(
+    rental => !rental.is_unoccupied && !isStallAlreadyPaidWithAdvance(rental)
+  );
+  const selectedPaymentRentals = paymentStallOptions.filter(
+    rental => multiplePaymentRentalIds.includes(rental.rental_id)
+  );
+  const multiplePaymentsTotal = multiplePaymentRows.reduce(
+    (sum, row) => sum + (Number(row.amount) || 0),
+    0
+  );
 
   if (initialLoading) {
     return <LoadingOverlay message="Loading vendor payment data..." />;
@@ -1776,152 +1669,200 @@ const VendorPaymentManagement = () => {
       <Modal
         title={
           <div className="vendor-modal-title">
-            <UploadOutlined />
-            <span>Upload Ledger · {ledgerVendor?.name || 'Vendor'}</span>
+            <MoneyCollectOutlined />
+            <span>Add Multiple Payments · {multiplePaymentVendor?.name || 'Vendor'}</span>
           </div>
         }
-        open={ledgerModalVisible}
-        onCancel={resetLedgerModal}
-        footer={null}
-        width={1000}
+        open={multiplePaymentModalVisible}
+        onCancel={closeMultiplePaymentForm}
+        onOk={handleReviewMultiplePayments}
+        okText="Review Payments"
+        okButtonProps={{ disabled: multiplePaymentRentalIds.length === 0 }}
+        cancelText="Cancel"
+        width={950}
         centered
         closeIcon={<CloseOutlined />}
-        className="vendor-modal ledger-upload-modal"
+        className="vendor-modal multiple-payment-modal"
       >
-        <div className="ledger-upload-content">
+        <div className="multiple-payment-content">
           <Alert
-            className="ledger-upload-notice"
-            message="The selected image is sent to Google Gemini for handwriting recognition. Please review all extracted entries before importing."
+            message="Select stalls, then enter one or more payments. Each payment amount is split evenly across the selected stalls."
             type="info"
             showIcon
           />
 
-          <div className="ledger-upload-controls">
-            <Button
-              type="primary"
-              icon={<UploadOutlined />}
-              onClick={() => ledgerFileInputRef.current?.click()}
-            >
-              Select Ledger Image
-            </Button>
-            <input
-              ref={ledgerFileInputRef}
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/webp,image/bmp"
-              hidden
-              onChange={handleLedgerFileChange}
-            />
-            {ledgerFile && (
-              <Text className="ledger-file-name" type="secondary" title={ledgerFile.name}>
-                {ledgerFile.name}
-              </Text>
-            )}
-            {ledgerFile && (
-              <Button type="text" danger size="small" onClick={() => setLedgerFile(null)}>
-                Remove
-              </Button>
-            )}
-          </div>
+          <div className="multiple-payment-stall-selection">
+            <Text strong className="modal-section-heading">Stall</Text>
+            <div className="multiple-payment-stall-selection-toolbar">
+              <Checkbox
+                checked={availablePaymentRentals.length > 0
+                  && availablePaymentRentals.every(rental => multiplePaymentRentalIds.includes(rental.rental_id))}
+                indeterminate={multiplePaymentRentalIds.some(rentalId =>
+                  availablePaymentRentals.some(rental => rental.rental_id === rentalId)
+                ) && !availablePaymentRentals.every(rental =>
+                  multiplePaymentRentalIds.includes(rental.rental_id)
+                )}
+                onChange={event => setMultiplePaymentRentalIds(
+                  event.target.checked
+                    ? availablePaymentRentals.map(rental => rental.rental_id)
+                    : []
+                )}
+                disabled={availablePaymentRentals.length === 0}
+              >
+                <Text strong>Select All ({multiplePaymentRentalIds.length} selected)</Text>
+              </Checkbox>
+            </div>
+            <div className="multiple-payment-stall-list">
+              {paymentStallOptions.map(rental => {
+                const hasActiveAdvance = isStallAlreadyPaidWithAdvance(rental);
+                const isDisabled = rental.is_unoccupied || hasActiveAdvance;
 
-          <div className="ledger-upload-workspace">
-            <div className={`ledger-image-preview${ledgerPreview ? ' has-image' : ''}`}>
-              {ledgerPreview ? (
-                <img src={ledgerPreview} alt="Selected ledger preview" />
-              ) : (
-                <div className="ledger-image-empty-state">
-                  <UploadOutlined />
-                  <Text strong>No ledger image selected</Text>
-                  <Text type="secondary">Choose a clear, well-lit image to get started.</Text>
-                </div>
+                return (
+                  <div
+                    key={rental.rental_id}
+                    className={`payment-rental-option${multiplePaymentRentalIds.includes(rental.rental_id) ? ' is-selected' : ''}${isDisabled ? ' is-disabled' : ''}`}
+                  >
+                    <div className="multiple-payment-stall-option">
+                      <Checkbox
+                        checked={multiplePaymentRentalIds.includes(rental.rental_id)}
+                        onChange={event => {
+                          const checked = event.target.checked;
+                          setMultiplePaymentRentalIds(ids => (
+                            checked
+                              ? [...ids, rental.rental_id]
+                              : ids.filter(id => id !== rental.rental_id)
+                          ));
+                        }}
+                        disabled={isDisabled}
+                        aria-label={`Select ${rental.section_name} stall ${rental.stall_number}`}
+                      />
+                      <div className="multiple-payment-stall-details">
+                        <Text strong>{rental.section_name} - {rental.stall_number}</Text>
+                        <div className="multiple-payment-stall-meta">
+                          <Tag color={getStatusColor(rental.status)} className="multiple-payment-stall-status">
+                            {rental.is_unoccupied ? 'Removed' : rental.status}
+                          </Tag>
+                          {(rental.monthly_balances?.[new Date().getMonth()]?.balance || 0) > 0 && (
+                            <Text type="secondary">
+                              Balance: {fmtMoney(rental.monthly_balances?.[new Date().getMonth()]?.balance || 0)}
+                            </Text>
+                          )}
+                          {hasActiveAdvance && <Tag color="green">Already paid</Tag>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {paymentStallOptions.length === 0 && (
+                <Alert
+                  message="This vendor has no stalls available."
+                  type="warning"
+                  showIcon
+                />
               )}
             </div>
-
-            <div className="ledger-upload-details">
-              <div className="ledger-vendor-summary">
-                <Text className="ledger-detail-label" type="secondary">Vendor</Text>
-                <Text className="ledger-vendor-name">{ledgerVendor?.name || 'Not selected'}</Text>
-              </div>
-
-              <Button
-                type="primary"
-                icon={<UploadOutlined />}
-                className="ledger-read-button"
-                loading={ledgerAnalyzing}
-                onClick={handleAnalyzeLedger}
-                disabled={!ledgerFile}
-              >
-                {ledgerAnalyzing ? 'Extracting entries...' : 'Extract Ledger Entries'}
-              </Button>
-              <Text className="ledger-review-hint" type="secondary">
-                You can review and correct the extracted details before importing.
-              </Text>
-            </div>
           </div>
 
-          {ledgerRecords.length > 0 && (
-            <div className="ledger-extracted-records">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                <Title level={5} style={{ margin: 0 }}>Extracted Records</Title>
-                <Tag color="blue">{ledgerRecords.length} records</Tag>
-                <Tag color="green">Total: {fmtMoney(ledgerRecords.reduce((sum, row) => sum + (Number(row.amount) || 0), 0))}</Tag>
-              </div>
-
-              <Table
-                size="small"
-                dataSource={ledgerRecords}
-                pagination={false}
-                rowKey="id"
-                scroll={{ x: 800 }}
-                columns={[
-                  { title: 'Row', dataIndex: 'row_number', key: 'row_number', width: 70, render: (_, __, index) => index + 1 },
-                  { title: 'Payment Date', dataIndex: 'payment_date', key: 'payment_date', render: (value, row) => (
-                    <Input
-                      value={value}
-                      onChange={(e) => updateLedgerRow(row.id, 'payment_date', e.target.value)}
-                      status={!value || row.uncertain_fields?.includes('payment_date') ? 'error' : undefined}
-                    />
-                  )},
-                  { title: 'OR Number', dataIndex: 'or_number', key: 'or_number', render: (value, row) => (
-                    <Input
-                      value={value}
-                      onChange={(e) => updateLedgerRow(row.id, 'or_number', e.target.value)}
-                      status={!value || row.uncertain_fields?.includes('or_number') ? 'error' : undefined}
-                    />
-                  )},
-                  { title: 'Amount', dataIndex: 'amount', key: 'amount', width: 140, render: (value, row) => (
-                    <InputNumber
-                      value={value}
-                      min={0}
-                      precision={2}
-                      style={{ width: '100%' }}
-                      onChange={(newValue) => updateLedgerRow(row.id, 'amount', newValue || 0)}
-                      status={Number(value) <= 0 || row.uncertain_fields?.includes('amount') ? 'error' : undefined}
-                    />
-                  )},
-                  { title: 'Validation', dataIndex: 'validation_status', key: 'validation_status', width: 140, render: (value) => {
-                    const colorMap = { valid: 'green', incomplete: 'orange', duplicate: 'red', 'needs review': 'gold' };
-                    return <Tag color={colorMap[value] || 'default'}>{value || 'valid'}</Tag>;
-                  }},
-                  { title: 'Action', key: 'action', width: 90, render: (_, row) => (
-                    <Button
-                      danger
-                      size="small"
-                      onClick={() => setLedgerRecords(prev => prev.filter(item => item.id !== row.id))}
-                    >
-                      Remove
-                    </Button>
-                  )}
-                ]}
-              />
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                <Button onClick={resetLedgerModal}>Cancel</Button>
-                <Button type="primary" loading={ledgerImporting} onClick={handleConfirmLedgerImport}>
-                  Confirm Import
-                </Button>
-              </div>
+          <div className="multiple-payment-rows-header">
+            <div>
+              <Title level={5} style={{ margin: 0 }}>Payment rows</Title>
+              <Text type="secondary">Enter a payment date, receipt number, and amount for each payment.</Text>
             </div>
-          )}
+            <Button
+              icon={<PlusOutlined />}
+              onClick={() => setMultiplePaymentRows(rows => [...rows, createMultiplePaymentRow()])}
+            >
+              Add payment row
+            </Button>
+          </div>
+
+          <Table
+            size="small"
+            dataSource={multiplePaymentRows}
+            pagination={false}
+            rowKey="id"
+            scroll={{ x: 700 }}
+            locale={{ emptyText: 'Add a row to enter a payment.' }}
+            columns={[
+              {
+                title: 'Payment Date',
+                dataIndex: 'payment_date',
+                key: 'payment_date',
+                width: 180,
+                render: (value, row) => (
+                  <DatePicker
+                    value={value ? dayjs(value) : null}
+                    format="MMMM D, YYYY"
+                    placeholder="Select payment date"
+                    disabledDate={current => (
+                      current.isAfter(dayjs(), 'day')
+                      || multiplePaymentRows.some(otherRow => (
+                        otherRow.id !== row.id
+                        && otherRow.payment_date === current.format('YYYY-MM-DD')
+                      ))
+                    )}
+                    onChange={date => updateMultiplePaymentRow(
+                      row.id,
+                      'payment_date',
+                      date ? date.format('YYYY-MM-DD') : ''
+                    )}
+                    aria-label={`Payment date for row ${multiplePaymentRows.indexOf(row) + 1}`}
+                  />
+                ),
+              },
+              {
+                title: 'OR Number',
+                dataIndex: 'or_number',
+                key: 'or_number',
+                render: (value, row) => (
+                  <Input
+                    value={value}
+                    maxLength={50}
+                    placeholder="Enter OR number"
+                    onChange={event => updateMultiplePaymentRow(row.id, 'or_number', event.target.value)}
+                    aria-label={`OR number for row ${multiplePaymentRows.indexOf(row) + 1}`}
+                  />
+                ),
+              },
+              {
+                title: 'Amount',
+                dataIndex: 'amount',
+                key: 'amount',
+                width: 160,
+                render: (value, row) => (
+                  <InputNumber
+                    value={value}
+                    min={0.01}
+                    max={99999999.99}
+                    precision={2}
+                    style={{ width: '100%' }}
+                    placeholder="0.00"
+                    onChange={amount => updateMultiplePaymentRow(row.id, 'amount', amount)}
+                    aria-label={`Amount for row ${multiplePaymentRows.indexOf(row) + 1}`}
+                  />
+                ),
+              },
+              {
+                title: '',
+                key: 'action',
+                width: 60,
+                render: (_, row) => (
+                  <Button
+                    danger
+                    type="text"
+                    icon={<DeleteOutlined />}
+                    aria-label={`Remove payment row ${multiplePaymentRows.indexOf(row) + 1}`}
+                    onClick={() => setMultiplePaymentRows(rows => rows.filter(item => item.id !== row.id))}
+                  />
+                ),
+              },
+            ]}
+          />
+          <div className="multiple-payment-total">
+            <Text type="secondary">{multiplePaymentRows.length} payment row{multiplePaymentRows.length === 1 ? '' : 's'}</Text>
+            <Text strong>Total: {fmtMoney(multiplePaymentsTotal)}</Text>
+          </div>
         </div>
       </Modal>
 
@@ -1929,95 +1870,92 @@ const VendorPaymentManagement = () => {
         title={
           <div className="vendor-modal-title">
             <CheckCircleOutlined />
-            <span>Confirm Ledger Import · {ledgerVendor?.name || 'Vendor'}</span>
+            <span>Confirm Multiple Payments · {multiplePaymentVendor?.name || 'Vendor'}</span>
           </div>
         }
-        open={ledgerConfirmationModalVisible}
-        onCancel={() => setLedgerConfirmationModalVisible(false)}
+        open={multiplePaymentConfirmationVisible}
+        onCancel={() => setMultiplePaymentConfirmationVisible(false)}
         footer={[
-          <Button key="cancel" onClick={() => setLedgerConfirmationModalVisible(false)}>
+          <Button key="cancel" onClick={() => setMultiplePaymentConfirmationVisible(false)}>
             Back
           </Button>,
           <Button
             key="confirm"
             type="primary"
-            loading={ledgerImporting}
-            disabled={ledgerRentalIds.length === 0}
-            onClick={handleImportLedgerEntries}
+            loading={multiplePaymentSaving}
+            disabled={multiplePaymentRentalIds.length === 0 || multiplePaymentRows.length === 0}
+            onClick={handleSaveMultiplePayments}
           >
-            Import Ledger
+            Save Payments
           </Button>,
         ]}
-        width={600}
+        width={680}
         centered
         closeIcon={<CloseOutlined />}
-        className="vendor-modal payment-confirmation-modal"
+        className="vendor-modal payment-confirmation-modal payment-confirmation-layout"
       >
-        <div className="payment-confirmation-content">
-          <Text strong className="modal-section-heading">Ledger import details</Text>
-          <div className="confirmation-summary">
-            <div className="confirmation-summary-row">
-              <Text>Vendor:</Text>
-              <Text strong>{ledgerVendor?.name || 'N/A'}</Text>
+        <div className="payment-confirmation-layout">
+          <div className="payment-confirmation-layout-intro">
+            <Text strong>Review payment details</Text>
+            <Text type="secondary">Confirm the stalls and payment entries before saving.</Text>
+          </div>
+
+          <div className="payment-confirmation-layout-stats">
+            <div className="payment-confirmation-layout-stat">
+              <Text type="secondary">Vendor</Text>
+              <Text strong>{multiplePaymentVendor?.name || 'N/A'}</Text>
             </div>
-            <div className="confirmation-summary-row">
-              <Text>Records:</Text>
-              <Text strong>{ledgerRecords.length}</Text>
+            <div className="payment-confirmation-layout-stat">
+              <Text type="secondary">Stalls selected</Text>
+              <Text strong>{selectedPaymentRentals.length}</Text>
             </div>
-            <div className="confirmation-summary-row">
-              <Text>Total Amount:</Text>
-              <Text strong>
-                {fmtMoney(ledgerRecords.reduce((sum, row) => sum + (Number(row.amount) || 0), 0))}
-              </Text>
+            <div className="payment-confirmation-layout-stat">
+              <Text type="secondary">Payment rows</Text>
+              <Text strong>{multiplePaymentRows.length}</Text>
             </div>
           </div>
 
-          <Text strong className="modal-section-heading">Apply payments to stalls</Text>
-          <Space style={{ display: 'flex', marginTop: 8 }}>
-            <Button
-              size="small"
-              onClick={() => setLedgerRentalIds(availableLedgerRentalIds)}
-              disabled={availableLedgerRentalIds.length === 0 || ledgerRentalIds.length === availableLedgerRentalIds.length}
-            >
-              Select all stalls
-            </Button>
-            <Button
-              size="small"
-              onClick={() => setLedgerRentalIds([])}
-              disabled={ledgerRentalIds.length === 0}
-            >
-              Deselect all
-            </Button>
-          </Space>
-          <Select
-            mode="multiple"
-            aria-label="Select rented stalls for ledger import"
-            placeholder="Select one or more rented stalls"
-            value={ledgerRentalIds}
-            onChange={setLedgerRentalIds}
-            style={{ width: '100%', marginTop: 8 }}
-            options={availableLedgerRentals.map(rental => ({
-              value: rental.rental_id,
-              label: `${rental.section_name} - ${rental.stall_number}${rental.status === 'unoccupied' ? ' (Unoccupied)' : ''}`,
-            }))}
-            notFoundContent="This vendor has no active rented stalls available."
-          />
+          <section className="payment-confirmation-layout-section">
+            <div className="payment-confirmation-layout-section-heading">
+              <ShopOutlined />
+              <Text strong>Selected stalls</Text>
+            </div>
+            <div className="payment-confirmation-layout-stalls">
+              {selectedPaymentRentals.map(rental => (
+                <Tag key={rental.rental_id}>
+                  {rental.section_name} · {rental.stall_number}
+                </Tag>
+              ))}
+            </div>
+          </section>
 
-          {(ledgerVendor?.rentals || []).some(rental => rental.status !== 'vacant') ? (
-            <Alert
-              message="Each ledger payment amount will be divided equally across the selected stalls. Any extra cent will be assigned to the first selected stall."
-              type="warning"
-              showIcon
-              style={{ marginTop: 16 }}
-            />
-          ) : (
-            <Alert
-              message="This vendor has no active rented stalls. Ledger payments cannot be imported."
-              type="error"
-              showIcon
-              style={{ marginTop: 16 }}
-            />
-          )}
+          <section className="payment-confirmation-layout-section">
+            <div className="payment-confirmation-layout-section-heading">
+              <MoneyCollectOutlined />
+              <Text strong>Payments to save</Text>
+            </div>
+            <div className="payment-confirmation-layout-rows">
+              {multiplePaymentRows.map((row, index) => (
+                <div className="payment-confirmation-layout-row" key={row.id}>
+                  <span className="payment-confirmation-layout-row-number">{index + 1}</span>
+                  <div className="payment-confirmation-layout-row-details">
+                    <Text strong>{row.or_number || 'No OR number'}</Text>
+                    <Text type="secondary">
+                      {row.payment_date ? dayjs(row.payment_date).format('MMMM D, YYYY') : 'No payment date'}
+                    </Text>
+                  </div>
+                  <Text strong className="payment-confirmation-layout-row-amount">
+                    {fmtMoney(Number(row.amount) || 0)}
+                  </Text>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div className="payment-confirmation-layout-total">
+            <Text>Total amount</Text>
+            <Text strong>{fmtMoney(multiplePaymentsTotal)}</Text>
+          </div>
         </div>
       </Modal>
 
@@ -3041,7 +2979,7 @@ const VendorPaymentManagement = () => {
         title={
           <div className="vendor-modal-title">
             <CheckCircleOutlined />
-            <span>Confirm Payment</span>
+            <span>Confirm Payment{selectedVendor?.name ? ` · ${selectedVendor.name}` : ''}</span>
           </div>
         }
         open={confirmationModal}
@@ -3054,7 +2992,7 @@ const VendorPaymentManagement = () => {
             setConfirmationModal(false);
             setPendingPaymentData(null);
           }}>
-            Cancel
+            Back
           </Button>,
           <Button
             key="confirm"
@@ -3065,75 +3003,76 @@ const VendorPaymentManagement = () => {
             Confirm Payment
           </Button>
         ]}
-        width={600}
+        width={680}
         centered
         closeIcon={<CloseOutlined />}
-        styles={{
-          mask: {
-            backgroundColor: 'rgba(20, 33, 61, 0.58)',
-            backdropFilter: 'blur(6px)',
-          },
-        }}
-        className="vendor-modal payment-confirmation-modal"
+        className="vendor-modal payment-confirmation-modal payment-confirmation-layout"
       >
         {pendingPaymentData && (
-          <div className="payment-confirmation-content">
-            <Text strong className="modal-section-heading">Payment details</Text>
-            
-            <div className="confirmation-summary">
-              <div className="confirmation-summary-row">
-                <Text>OR Number:</Text>
-                <Text strong>{pendingPaymentData.or_number}</Text>
+          <div className="payment-confirmation-layout">
+            <div className="payment-confirmation-layout-intro">
+              <Text strong>Review payment details</Text>
+              <Text type="secondary">Confirm the receipt, payment date, and stall allocations before saving.</Text>
+            </div>
+
+            <div className="payment-confirmation-layout-stats">
+              <div className="payment-confirmation-layout-stat">
+                <Text type="secondary">Vendor</Text>
+                <Text strong>{selectedVendor?.name || 'N/A'}</Text>
               </div>
-              <div className="confirmation-summary-row">
-                <Text>Payment Date:</Text>
-                <Text strong>
-                  {pendingPaymentData.payment_date ? 
-                    new Date(pendingPaymentData.payment_date).toLocaleDateString('en-US', { 
-                      month: 'long', 
-                      day: 'numeric', 
-                      year: 'numeric' 
-                    }) : 
-                    'N/A'
-                  }
-                </Text>
-              </div>
-              <div className="confirmation-summary-row">
-                <Text>Number of Stalls:</Text>
+              <div className="payment-confirmation-layout-stat">
+                <Text type="secondary">Stalls selected</Text>
                 <Text strong>{pendingPaymentData.rental_ids.length}</Text>
               </div>
-              <div className="confirmation-summary-row">
-                <Text>Total Amount:</Text>
-                <Text strong>{fmtMoney(pendingPaymentData.amounts.reduce((sum, amount) => sum + amount, 0))}</Text>
+              <div className="payment-confirmation-layout-stat">
+                <Text type="secondary">Payment date</Text>
+                <Text strong>
+                  {pendingPaymentData.payment_date
+                    ? dayjs(pendingPaymentData.payment_date).format('MMMM D, YYYY')
+                    : 'N/A'}
+                </Text>
               </div>
             </div>
 
-            <Text strong className="modal-section-heading">Stall details</Text>
-            
-            <div className="confirmation-stall-list">
-              {pendingPaymentData.rental_ids.map((rentalId, index) => {
-                const rental = selectedVendor?.rentals?.find(r => r.rental_id === rentalId);
-                if (!rental) return null;
-                
-                return (
-                  <div key={rentalId} className="confirmation-stall-item">
-                    <div className="confirmation-summary-row">
-                      <Text>{rental.section_name} - {rental.stall_number}</Text>
-                      <Text strong>{fmtMoney(pendingPaymentData.amounts[index])}</Text>
+            <section className="payment-confirmation-layout-section">
+              <div className="payment-confirmation-layout-section-heading">
+                <ShopOutlined />
+                <Text strong>Stall allocations</Text>
+              </div>
+              <div className="payment-confirmation-layout-rows">
+                {pendingPaymentData.rental_ids.map((rentalId, index) => {
+                  const rental = selectedVendor?.rentals?.find(r => r.rental_id === rentalId);
+                  if (!rental) return null;
+
+                  return (
+                    <div className="payment-confirmation-layout-row" key={rentalId}>
+                      <span className="payment-confirmation-layout-row-number">{index + 1}</span>
+                      <div className="payment-confirmation-layout-row-details">
+                        <Text strong>{rental.section_name} · {rental.stall_number}</Text>
+                        <Text type="secondary">
+                          {pendingPaymentData.payment_types[index]} · OR {pendingPaymentData.or_number}
+                        </Text>
+                      </div>
+                      <Text strong className="payment-confirmation-layout-row-amount">
+                        {fmtMoney(pendingPaymentData.amounts[index])}
+                      </Text>
                     </div>
-                    <div className="confirmation-stall-type">
-                      Type: {pendingPaymentData.payment_types[index]}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+            </section>
+
+            <div className="payment-confirmation-layout-total">
+              <Text>Total amount</Text>
+              <Text strong>
+                {fmtMoney(pendingPaymentData.amounts.reduce((sum, amount) => sum + amount, 0))}
+              </Text>
             </div>
 
             <Alert
-              message="Please confirm all payment details are correct before proceeding."
+              message="Please review all payment allocations before confirming."
               type="warning"
               showIcon
-              style={{ marginTop: '16px' }}
             />
           </div>
         )}

@@ -1,14 +1,15 @@
 import React from "react";
-import { Layout, Row, Col, Typography, Space } from "antd";
+import { Layout, Row, Col, Typography } from "antd";
 import {
   MailOutlined,
   PhoneOutlined,
   EnvironmentOutlined,
-  BankOutlined,
   FacebookOutlined,
   GlobalOutlined,
-  HeartOutlined
+  HeartOutlined,
+  ArrowRightOutlined
 } from "@ant-design/icons";
+import OpolBrandingLogo from "../assets/Opol_Branding_Logo.png";
 import "./Footer.css";
 
 const { Footer: AntFooter } = Layout;
@@ -20,27 +21,30 @@ const Footer = () => {
   return (
     <AntFooter className="auth-footer">
       <div className="auth-footer-container">
-        <Row gutter={[32, 32]} align="top">
-          {/* BRAND COLUMN */}
-          <Col xs={24} md={12} lg={8}>
-            <div className="auth-footer-brand">
-              <div className="auth-footer-logo">
-                <BankOutlined />
-                <Title level={4} className="auth-footer-title">
+        <Row gutter={[42, 32]} align="top">
+          <Col xs={24} md={24} lg={8}>
+            <div className="auth-footer-brand-panel">
+            
+
+              <Text className="auth-brand-label">MUNICIPAL ECONOMIC ENTERPRISE OFFICE</Text>
+
+              <div className="auth-brand-title-wrap">
+                <Title level={3} className="auth-footer-title">
                   MEEO System
                 </Title>
               </div>
+
               <Text className="auth-footer-description">
-                Municipal Economic Enterprise Office management platform for efficient public service delivery.
+                A modern public service platform focused on transparent, efficient, and community-centered enterprise support.
               </Text>
             </div>
           </Col>
 
-          {/* CONTACT COLUMN */}
-          <Col xs={24} md={12} lg={8}>
+          <Col xs={24} md={24} lg={8}>
             <Title level={5} className="auth-footer-heading">
               Contact Information
             </Title>
+
             <div className="auth-footer-contact">
               <div className="auth-contact-item">
                 <EnvironmentOutlined className="auth-contact-icon" />
@@ -49,7 +53,7 @@ const Footer = () => {
                   <Text className="auth-contact-subtext">2nd Floor, Opol Public Market, Zone 4, Taboc, Opol, Misamis Oriental</Text>
                 </div>
               </div>
-              
+
               <div className="auth-contact-item">
                 <PhoneOutlined className="auth-contact-icon" />
                 <div>
@@ -59,7 +63,7 @@ const Footer = () => {
                   <Text className="auth-contact-subtext">Mon-Fri: 8:00 AM - 5:00 PM</Text>
                 </div>
               </div>
-              
+
               <div className="auth-contact-item">
                 <MailOutlined className="auth-contact-icon" />
                 <div>
@@ -72,51 +76,57 @@ const Footer = () => {
             </div>
           </Col>
 
-          {/* FACEBOOK COLUMN */}
-          <Col xs={24} md={12} lg={8}>
-            <Title level={5} className="auth-footer-heading">
-              Connect With Us
-            </Title>
-            <div className="auth-facebook-section">
+          <Col xs={24} md={24} lg={8}>
+            <div className="auth-connect-panel">
+              <Title level={5} className="auth-footer-heading">
+                Connect With Us
+              </Title>
+
               <div className="auth-facebook-card">
-                <FacebookOutlined className="auth-facebook-icon" />
+                <div className="auth-facebook-badge">
+                  <FacebookOutlined className="auth-facebook-icon" />
+                </div>
+
                 <div className="auth-facebook-content">
                   <Text className="auth-facebook-title">MEEO Opol Facebook</Text>
                   <Text className="auth-facebook-description">
-                    Follow us for updates, announcements, and community news
+                    Follow us for updates, announcements, and community news.
                   </Text>
-                  <Link 
+
+                  <Link
                     href="https://www.facebook.com/profile.php?id=61560479091650"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="auth-facebook-link"
                   >
                     Visit Our Page
+                    <ArrowRightOutlined className="auth-facebook-arrow" />
                   </Link>
                 </div>
+              </div>
+
+              <div className="auth-opol-logo-wrap">
+                <img
+                  src={OpolBrandingLogo}
+                  alt="OPOL branding logo"
+                  className="auth-opol-logo"
+                />
               </div>
             </div>
           </Col>
         </Row>
 
-        {/* FOOTER BOTTOM */}
         <div className="auth-footer-bottom">
-          <Row justify="space-between" align="middle">
-            <Col xs={24} md={12}>
-              <div className="auth-footer-branding">
-                <GlobalOutlined />
-                <Text className="auth-copyright-text">
-                  © {currentYear} MEEO System. All rights reserved.
-                </Text>
-              </div>
-            </Col>
-           
-          </Row>
-          
+          <div className="auth-footer-branding">
+            <GlobalOutlined />
+            <Text className="auth-copyright-text">
+              © {currentYear} MEEO System. All rights reserved.
+            </Text>
+          </div>
+
           <div className="auth-footer-credits">
             <Text className="auth-credits-text">
-              <HeartOutlined className="auth-heart-icon" />{" "}
-              Developed by{" "}
+              <HeartOutlined className="auth-heart-icon" /> Developed by{" "}
               <Link href="https://www.facebook.com/ronnie1016" target="_blank" rel="noreferrer" className="auth-developer-link">
                 Ronnie Flores
               </Link>
@@ -132,11 +142,9 @@ const Footer = () => {
               <Link href="https://www.facebook.com/dean.franncis.quimanhan" target="_blank" rel="noreferrer" className="auth-developer-link">
                 Dean Francis Quimanhan
               </Link>
-               {" &  "}
-              Special thanks to 
-              {" "}
-                <Link href="https://www.facebook.com/rowin.ranque.25" target="_blank" rel="noreferrer" className="auth-developer-link">
-                Rowin Ranque 
+              {" & Special thanks to "}
+              <Link href="https://www.facebook.com/rowin.ranque.25" target="_blank" rel="noreferrer" className="auth-developer-link">
+                Rowin Ranque
               </Link>
             </Text>
           </div>

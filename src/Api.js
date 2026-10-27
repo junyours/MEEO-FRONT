@@ -6,12 +6,15 @@ const api = axios.create({
    baseURL: "https://meeo.opolmisor.com/api",
 
   headers: {
-    "Content-Type": "application/json",
     Accept: "application/json"
   }
 });
 
 api.interceptors.request.use((config) => {
+  if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+    config.headers.delete("Content-Type");
+  }
+
   const token = localStorage.getItem("authToken");
 
   if (token) {
