@@ -92,7 +92,9 @@ const VendorPaymentManagement = () => {
   const [selectedPaymentForDeposit, setSelectedPaymentForDeposit] = useState(null);
   const [depositConsumptionModal, setDepositConsumptionModal] = useState(false);
   const [customDepositAmount, setCustomDepositAmount] = useState('');
+  const [depositAmountMode, setDepositAmountMode] = useState('full');
   const [selectedMonthForDeposit, setSelectedMonthForDeposit] = useState(null);
+  const [selectedDepositSourceRentalIds, setSelectedDepositSourceRentalIds] = useState([]);
   const [unoccupiedPaymentModal, setUnoccupiedPaymentModal] = useState(false);
   const [selectedUnoccupiedRental, setSelectedUnoccupiedRental] = useState(null);
   const [unoccupiedPaymentAmount, setUnoccupiedPaymentAmount] = useState(0);
@@ -1138,8 +1140,13 @@ const VendorPaymentManagement = () => {
     setDepositConsumptionModal(true);
     setSelectedMonthForDeposit(null);
     setSelectedPaymentForDeposit(null);
+    setSelectedDepositSourceRentalIds([]);
+    setSelectedRentals([]);
+    setOrNumber('');
+    setPaymentDate(dayjs());
     setUseDeposit(true);
     setCustomDepositAmount('');
+    setDepositAmountMode('full');
   };
 
   const getTotalDepositAmount = (vendor) => {
@@ -1173,21 +1180,59 @@ const VendorPaymentManagement = () => {
     return monthsWithDeposits;
   };
 
-  const getAvailablePaymentsForDeposit = (vendor) => {
-    const paymentsByMonth = new Map();
-    vendor.rentals?.forEach(rental => {
-      (rental.monthly_balances || []).forEach((monthBalance, monthIndex) => {
-        if (monthBalance.payment_id && !paymentsByMonth.has(monthIndex)) {
-          paymentsByMonth.set(monthIndex, {
-            payment_id: monthBalance.payment_id,
-            monthIndex,
-          });
-        }
-      });
-    });
+  const getDepositSourcesForMonth = (vendor, monthIndex) => (
+    (vendor?.rentals || [])
+      .map(rental => ({
+        rentalId: rental.rental_id,
+        stallNumber: rental.stall_number,
+        sectionName: rental.section_name || 'Section unavailable',
+        deposit: Number(rental.monthly_balances?.[monthIndex]?.deposit || 0),
+        monthlyRate: Number(rental.monthly_balances?.[monthIndex]?.monthly_rate || 0),
+        totalPayments: Number(rental.monthly_balances?.[monthIndex]?.payment || 0),
+      }))
+      .filter(source => source.deposit > 0)
+  );
 
-    return Array.from(paymentsByMonth.values());
+  const getDepositSourceGroups = (vendor, monthIndex) => {
+    const groups = new Map();
+    getDepositSourcesForMonth(vendor, monthIndex).forEach(source => {
+      const key = source.sectionName.trim().toLocaleLowerCase();
+      const group = groups.get(key) || {
+        sectionName: source.sectionName,
+        sources: [],
+        totalDeposit: 0,
+      };
+      group.sources.push(source);
+      group.totalDeposit += source.deposit;
+      groups.set(key, group);
+    });
+    return Array.from(groups.values());
   };
+
+  const depositSources = selectedMonthForDeposit
+    ? getDepositSourcesForMonth(selectedVendor, selectedMonthForDeposit.monthIndex)
+    : [];
+  const depositSourceGroups = selectedMonthForDeposit
+    ? getDepositSourceGroups(selectedVendor, selectedMonthForDeposit.monthIndex)
+    : [];
+  const selectedDepositSourceAmountCents = depositSources
+    .filter(source => selectedDepositSourceRentalIds.includes(source.rentalId))
+    .reduce((sum, source) => sum + Math.round(source.deposit * 100), 0);
+
+  const getDepositAmountToConsume = () => {
+    if (!selectedMonthForDeposit) return 0;
+    return depositAmountMode === 'custom'
+      ? Number(customDepositAmount)
+      : selectedDepositSourceAmountCents / 100;
+  };
+
+  const depositAmountCents = Math.round(getDepositAmountToConsume() * 100);
+  const availableDepositCents = selectedDepositSourceAmountCents;
+  const isDepositAmountValid = Number.isFinite(depositAmountCents)
+    && depositAmountCents > 0
+    && depositAmountCents <= availableDepositCents
+    && selectedDepositSourceRentalIds.length > 0
+    && (selectedRentals.length === 0 || depositAmountCents >= selectedRentals.length);
 
   // Memoized calculations for better performance
   const filteredVendors = useMemo(() => {
@@ -3083,32 +3128,49 @@ const VendorPaymentManagement = () => {
         title={
           <div className="vendor-modal-title">
             <MoneyCollectOutlined />
-            <span>Consume Deposit - {selectedVendor?.name}</span>
+            <span>Apply Deposit · {selectedVendor?.name}</span>
           </div>
         }
         open={depositConsumptionModal}
         onCancel={() => {
           setDepositConsumptionModal(false);
+          setSelectedMonthForDeposit(null);
           setSelectedPaymentForDeposit(null);
+          setSelectedDepositSourceRentalIds([]);
+          setSelectedRentals([]);
+          setOrNumber('');
           setUseDeposit(false);
+          setCustomDepositAmount('');
+          setDepositAmountMode('full');
         }}
         footer={[
           <Button key="cancel" onClick={() => {
             setDepositConsumptionModal(false);
+            setSelectedMonthForDeposit(null);
             setSelectedPaymentForDeposit(null);
-            setUseDeposit(false);
+            setSelectedDepositSourceRentalIds([]);
             setSelectedRentals([]);
             setOrNumber('');
+            setUseDeposit(false);
+            setCustomDepositAmount('');
+            setDepositAmountMode('full');
           }}>
             Cancel
           </Button>,
           <Button
             key="consume"
             type="primary"
+            icon={<MoneyCollectOutlined />}
             loading={processingPayment}
-            disabled={!selectedMonthForDeposit || !orNumber.trim() || selectedRentals.length === 0}
+            disabled={
+              !selectedMonthForDeposit
+              || !orNumber.trim()
+              || !paymentDate
+              || selectedDepositSourceRentalIds.length === 0
+              || selectedRentals.length === 0
+              || !isDepositAmountValid
+            }
             onClick={async () => {
-         
               if (!selectedMonthForDeposit) {
                 message.error('Please select a month with deposit to consume');
                 return;
@@ -3121,55 +3183,38 @@ const VendorPaymentManagement = () => {
                 message.error('Please select at least one stall to apply deposit to');
                 return;
               }
+              if (selectedDepositSourceRentalIds.length === 0) {
+                message.error('Select at least one source stall or section with an available deposit.');
+                return;
+              }
+              if (!paymentDate) {
+                message.error('Please select a payment date');
+                return;
+              }
+              if (!isDepositAmountValid) {
+                message.error('Enter an amount greater than zero that does not exceed the available deposit.');
+                return;
+              }
 
-              // Process deposit consumption
               setProcessingPayment(true);
               try {
-                
-                // Determine the amount to consume - ensure precise decimal handling
-                const totalAmountToConsume = customDepositAmount ? 
-                  Math.round(parseFloat(customDepositAmount) * 100) / 100 : 
-                  Math.round(selectedMonthForDeposit.totalDeposit * 100) / 100;
-
-                // Divide the amount equally among the selected stalls
-                const amountPerStall = Math.round((totalAmountToConsume / selectedRentals.length) * 100) / 100;
-                
-                console.log('After rounding - totalAmountToConsume:', totalAmountToConsume);
-                console.log('After division - amountPerStall:', amountPerStall);
-                console.log('Number of selected stalls:', selectedRentals.length);
-                console.log('Selected rental IDs:', selectedRentals);
-                console.log('Selected month:', selectedMonthForDeposit.month);
-                console.log('Payment data custom_amount:', totalAmountToConsume);
-                console.log('Payment data amounts array:', selectedRentals.map(() => amountPerStall));
-                
-                // Calculate and log remaining deposit
-                const remainingDeposit = selectedMonthForDeposit.totalDeposit - totalAmountToConsume;
-                console.log('=== DEPOSIT CALCULATION ===');
-                console.log('Original deposit amount:', selectedMonthForDeposit.totalDeposit);
-                console.log('Amount to consume:', totalAmountToConsume);
-                console.log('Expected remaining deposit:', remainingDeposit);
-                console.log('============================');
-                
-
-                // Find a payment from the selected month to use as the source
-                const availablePayments = getAvailablePaymentsForDeposit(selectedVendor);
-                const sourcePayment = availablePayments.find(p => p.monthIndex === selectedMonthForDeposit.monthIndex);
-                
-                if (!sourcePayment) {
-                  message.error('No payment found for selected month');
-                  return;
-                }
-
-                // Create payment data for deposit consumption
+                const totalAmountToConsume = depositAmountCents / 100;
+                const baseAmountCents = Math.floor(depositAmountCents / selectedRentals.length);
+                const remainderCents = depositAmountCents % selectedRentals.length;
+                const amounts = selectedRentals.map((rentalId, index) => (
+                  baseAmountCents + (index < remainderCents ? 1 : 0)
+                ) / 100);
                 const paymentData = {
                   rental_ids: selectedRentals,
-                  amounts: selectedRentals.map(() => amountPerStall),
+                  amounts,
                   payment_types: selectedRentals.map(() => 'partial'),
                   or_number: orNumber.trim(),
                   payment_date: paymentDate.format('YYYY-MM-DD'),
-                  payment_id: sourcePayment.payment_id,
+                  deposit_month: selectedMonthForDeposit.monthIndex,
+                  deposit_year: dayjs().year(),
+                  source_rental_ids: selectedDepositSourceRentalIds,
                   consume_deposit: true,
-                  custom_amount: totalAmountToConsume, // Send total amount for backend calculation
+                  custom_amount: totalAmountToConsume,
                 };
 
                 const response = await api.post(`/vendor-payments/consume-deposit/${selectedVendor.id}`, paymentData);
@@ -3181,11 +3226,13 @@ const VendorPaymentManagement = () => {
                   setDepositConsumptionModal(false);
                   setSelectedMonthForDeposit(null);
                   setSelectedPaymentForDeposit(null);
+                  setSelectedDepositSourceRentalIds([]);
                   setUseDeposit(false);
                   setSelectedRentals([]);
                   setOrNumber('');
                   setPaymentDate(dayjs());
                   setCustomDepositAmount('');
+                  setDepositAmountMode('full');
                   
                   // Force refresh with a small delay to ensure backend has updated
                   setTimeout(() => {
@@ -3202,7 +3249,7 @@ const VendorPaymentManagement = () => {
               }
             }}
           >
-            Consume Deposit
+            Record Payment
           </Button>
         ]}
         width={800}
@@ -3218,220 +3265,281 @@ const VendorPaymentManagement = () => {
       >
         {selectedVendor && (
           <div className="deposit-consumption-content">
-            <div className="modal-intro">
-              <Text type="secondary">
-                Select a month with available deposit to consume. The deposit amount will be used to pay for current or future payments.
-              </Text>
+            <div className="deposit-summary-card">
+              <div className="deposit-summary-copy">
+                <span className="deposit-summary-icon"><MoneyCollectOutlined /></span>
+                <div>
+                  <Text className="deposit-summary-label">Total available deposit</Text>
+                  <Text type="secondary">Across all months with a remaining credit</Text>
+                </div>
+              </div>
+              <Text className="deposit-summary-total">{fmtMoney(getTotalDepositAmount(selectedVendor))}</Text>
             </div>
 
-            <div className="deposit-total-panel">
-              <Text strong style={{ color: '#52c41a', fontSize: '16px' }}>
-                Total Available Deposit: {fmtMoney(getTotalDepositAmount(selectedVendor))}
-              </Text>
-            </div>
+            {getAvailableMonthsForDeposit(selectedVendor).length === 0 ? (
+              <Alert
+                message="No available deposit"
+                description="This vendor has no deposit balance to apply to a payment."
+                type="info"
+                showIcon
+              />
+            ) : (
+              <>
+                <section className="deposit-form-section">
+                  <div className="deposit-section-heading">
+                    <span className="deposit-step">1</span>
+                    <div>
+                      <Text strong>Choose a deposit source</Text>
+                      <Text type="secondary">Select a month in {dayjs().year()} that contains the available credit.</Text>
+                    </div>
+                  </div>
+                  <Select
+                    className="deposit-month-select"
+                    placeholder="Select a month"
+                    value={selectedMonthForDeposit?.monthIndex}
+                    onChange={(monthIndex) => {
+                      const selectedMonth = getAvailableMonthsForDeposit(selectedVendor)
+                        .find(month => month.monthIndex === monthIndex);
+                      setSelectedMonthForDeposit(selectedMonth || null);
+                      setSelectedDepositSourceRentalIds([]);
+                      setCustomDepositAmount('');
+                      setDepositAmountMode('full');
+                    }}
+                  >
+                    {getAvailableMonthsForDeposit(selectedVendor).map(month => (
+                      <Option key={month.monthIndex} value={month.monthIndex}>
+                        <span className="deposit-month-option">
+                          <span>{month.month} {dayjs().year()}</span>
+                          <Text strong>{fmtMoney(month.totalDeposit)}</Text>
+                        </span>
+                      </Option>
+                    ))}
+                  </Select>
 
-            <div style={{ marginBottom: '16px' }}>
-              <Text strong className="vendor-modal-field-label">Select month with deposit</Text>
-              <Select
-                style={{ width: '100%' }}
-                placeholder="Select a month"
-                value={selectedMonthForDeposit ? `${selectedMonthForDeposit.month} - Available Deposit: ${fmtMoney(selectedMonthForDeposit.totalDeposit)}` : undefined}
-                onChange={(monthIndex) => {
-                  const availableMonths = getAvailableMonthsForDeposit(selectedVendor);
-                  const selectedMonth = availableMonths.find(m => m.monthIndex === monthIndex);
-                  setSelectedMonthForDeposit(selectedMonth);
-                }}
-              >
-                {getAvailableMonthsForDeposit(selectedVendor).map((month) => (
-                  <Option key={month.monthIndex} value={month.monthIndex} >
-                    <div style={{ 
-                      padding: '8px 0',
-                      lineHeight: '1.4'
-                    }}>
-                      <div style={{ marginBottom: '4px' }}>
-                        <Text strong style={{ fontSize: '14px', color: '#52c41a' }}>
-                          {month.month}
-                        </Text>
+                  {selectedMonthForDeposit && (
+                    <div className="deposit-source-details">
+                      <div>
+                        <Text type="secondary">Payments received</Text>
+                        <Text strong>{fmtMoney(selectedMonthForDeposit.totalPayments)}</Text>
                       </div>
-                      <div style={{ marginBottom: '4px' }}>
-                        <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
-                          Total Payments: <Text strong>{fmtMoney(month.totalPayments)}</Text>
-                        </Text>
+                      <div>
+                        <Text type="secondary">Monthly rate</Text>
+                        <Text strong>{fmtMoney(selectedMonthForDeposit.monthlyRate)}</Text>
                       </div>
-                      <div style={{ marginBottom: '4px' }}>
-                        <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
-                          Monthly Rate: <Text strong>{fmtMoney(month.monthlyRate)}</Text>
-                        </Text>
+                      <div className="deposit-source-available">
+                        <Text type="secondary">Deposits across stalls</Text>
+                        <Text strong>{fmtMoney(selectedMonthForDeposit.totalDeposit)}</Text>
                       </div>
-                      <div style={{ marginBottom: '4px' }}>
-                        <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
-                          Available Deposit: <Text strong style={{ color: '#52c41a' }}>{fmtMoney(month.totalDeposit)}</Text>
+                    </div>
+                  )}
+                </section>
+
+                {selectedMonthForDeposit && (
+                  <>
+                    <section className="deposit-form-section">
+                      <div className="deposit-section-heading">
+                        <span className="deposit-step">2</span>
+                        <div>
+                          <Text strong>Choose deposit source stalls</Text>
+                          <Text type="secondary">Select specific stalls, or select a whole section to include its stalls.</Text>
+                        </div>
+                      </div>
+                      <div className="deposit-source-selection">
+                        {depositSourceGroups.map(group => {
+                          const groupRentalIds = group.sources.map(source => source.rentalId);
+                          const selectedCount = groupRentalIds.filter(rentalId => (
+                            selectedDepositSourceRentalIds.includes(rentalId)
+                          )).length;
+                          const isGroupSelected = selectedCount === groupRentalIds.length;
+
+                          return (
+                            <div className="deposit-source-group" key={group.sectionName}>
+                              <div className="deposit-source-group-heading">
+                                <Checkbox
+                                  checked={isGroupSelected}
+                                  indeterminate={selectedCount > 0 && !isGroupSelected}
+                                  onChange={(event) => {
+                                    setSelectedDepositSourceRentalIds(previous => (
+                                      event.target.checked
+                                        ? Array.from(new Set([...previous, ...groupRentalIds]))
+                                        : previous.filter(rentalId => !groupRentalIds.includes(rentalId))
+                                    ));
+                                  }}
+                                >
+                                  <Text strong>{group.sectionName}</Text>
+                                </Checkbox>
+                                <Tag color="green">{fmtMoney(group.totalDeposit)}</Tag>
+                              </div>
+                              <div className="deposit-source-stalls">
+                                {group.sources.map(source => (
+                                  <Checkbox
+                                    key={source.rentalId}
+                                    checked={selectedDepositSourceRentalIds.includes(source.rentalId)}
+                                    onChange={(event) => {
+                                      setSelectedDepositSourceRentalIds(previous => (
+                                        event.target.checked
+                                          ? [...previous, source.rentalId]
+                                          : previous.filter(rentalId => rentalId !== source.rentalId)
+                                      ));
+                                    }}
+                                  >
+                                    <span className="deposit-source-stall-label">
+                                      <span>Stall {source.stallNumber || '—'}</span>
+                                      <Text type="secondary">Deposit {fmtMoney(source.deposit)}</Text>
+                                    </span>
+                                  </Checkbox>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {depositSourceGroups.length === 0 && (
+                          <Text type="secondary">No active stall-level deposits are available for this month.</Text>
+                        )}
+                      </div>
+                      <div className="deposit-selected-source-summary">
+                        <Text type="secondary">Selected source deposit</Text>
+                        <Text strong>{fmtMoney(selectedDepositSourceAmountCents / 100)}</Text>
+                      </div>
+                    </section>
+
+                    <section className="deposit-form-section">
+                      <div className="deposit-section-heading">
+                        <span className="deposit-step">3</span>
+                        <div>
+                          <Text strong>Set payment amount</Text>
+                          <Text type="secondary">The amount cannot exceed the deposit in your selected source stalls.</Text>
+                        </div>
+                      </div>
+                      <Radio.Group
+                        className="deposit-amount-options"
+                        value={depositAmountMode}
+                        onChange={(event) => {
+                          setDepositAmountMode(event.target.value);
+                          if (event.target.value === 'custom') setCustomDepositAmount('');
+                        }}
+                      >
+                        <Radio value="full">Use full deposit</Radio>
+                        <Radio value="custom">Enter a custom amount</Radio>
+                      </Radio.Group>
+                      {depositAmountMode === 'custom' && (
+                        <InputNumber
+                          className="deposit-custom-amount"
+                          aria-label="Custom deposit amount"
+                          placeholder="Enter amount"
+                          prefix="₱"
+                          min={Math.max(0.01, selectedRentals.length / 100)}
+                          max={selectedMonthForDeposit.totalDeposit}
+                          precision={2}
+                          value={customDepositAmount === '' ? null : Number(customDepositAmount)}
+                          onChange={(value) => setCustomDepositAmount(value === null ? '' : String(value))}
+                        />
+                      )}
+                      {depositAmountMode === 'custom' && customDepositAmount !== '' && !isDepositAmountValid && (
+                        <Text type="danger" className="deposit-field-error">
+                          Enter an amount up to {fmtMoney(selectedDepositSourceAmountCents / 100)}
+                          {selectedRentals.length > 1 ? ` and at least ${fmtMoney(selectedRentals.length / 100)} for the selected stalls.` : '.'}
+                        </Text>
+                      )}
+                    </section>
+
+                    <section className="deposit-form-section">
+                      <div className="deposit-section-heading">
+                        <span className="deposit-step">4</span>
+                        <div>
+                          <Text strong>Record payment details</Text>
+                          <Text type="secondary">Enter the receipt details and choose where to apply the deposit.</Text>
+                        </div>
+                      </div>
+                      <div className="payment-meta-grid deposit-payment-meta">
+                        <div>
+                          <Text strong className="vendor-modal-field-label">OR number <span>*</span></Text>
+                          <Input
+                            placeholder="Enter official receipt number"
+                            value={orNumber}
+                            onChange={(event) => setOrNumber(event.target.value)}
+                            maxLength={50}
+                          />
+                        </div>
+                        <div>
+                          <Text strong className="vendor-modal-field-label">Payment date <span>*</span></Text>
+                          <DatePicker
+                            value={paymentDate}
+                            onChange={setPaymentDate}
+                            format="MMMM D, YYYY"
+                            placeholder="Select payment date"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="deposit-stall-heading">
+                        <Text strong>Apply payment to stalls</Text>
+                        <Text type="secondary">{selectedRentals.length} selected</Text>
+                      </div>
+                      <div className="deposit-stall-list">
+                        {(selectedVendor.rentals || []).map(rental => {
+                          const disabled = rental.is_unoccupied || isStallAlreadyPaidWithAdvance(rental);
+                          return (
+                            <div
+                              key={rental.rental_id}
+                              className={`deposit-stall-item${selectedRentals.includes(rental.rental_id) ? ' is-selected' : ''}${disabled ? ' is-disabled' : ''}`}
+                            >
+                              <Checkbox
+                                className="deposit-stall-checkbox"
+                                checked={selectedRentals.includes(rental.rental_id)}
+                                disabled={disabled}
+                                onChange={(event) => handleRentalSelection(rental.rental_id, event.target.checked)}
+                              >
+                                <span className="deposit-stall-copy">
+                                  <span className="deposit-stall-primary">
+                                    <span className="deposit-stall-number">
+                                      Stall {rental.stall_number || '—'}
+                                    </span>
+                                    <Text strong>{rental.section_name || 'Section unavailable'}</Text>
+                                  </span>
+                                  <Text type="secondary">
+                                    {rental.is_monthly
+                                      ? `Monthly rate ${fmtMoney(rental.monthly_rent)}`
+                                      : `Daily rent ${fmtMoney(rental.daily_rent)}`}
+                                    {Number(rental.remaining_balance) > 0
+                                      ? ` · Balance ${fmtMoney(rental.remaining_balance)}`
+                                      : ''}
+                                  </Text>
+                                </span>
+                              </Checkbox>
+                              {Number(rental.remaining_balance) > 0 && (
+                                <Tag color="gold">Balance due</Tag>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+
+                    <div className="deposit-payment-summary">
+                      <div>
+                        <Text type="secondary">Payment allocation</Text>
+                        <Text strong>{selectedRentals.length} {selectedRentals.length === 1 ? 'stall' : 'stalls'}</Text>
+                      </div>
+                      <div>
+                        <Text type="secondary">Deposit to apply</Text>
+                        <Text strong>{fmtMoney(depositAmountCents / 100)}</Text>
+                      </div>
+                      <div>
+                        <Text type="secondary">Remaining in source month</Text>
+                        <Text strong>
+                          {fmtMoney(Math.max(0, availableDepositCents - depositAmountCents) / 100)}
                         </Text>
                       </div>
                     </div>
-                  </Option>
-                ))}
-              </Select>
-            </div>
-
-            {selectedMonthForDeposit && (
-              <div className="deposit-details-panel">
-                <div style={{ marginBottom: '8px' }}>
-                  <Text strong>Selected Month Details:</Text>
-                </div>
-                <div>
-                  <Text>Month: <Text strong>{selectedMonthForDeposit.month}</Text></Text>
-                  <br />
-                  <Text>Total Payments: <Text strong>{fmtMoney(selectedMonthForDeposit.totalPayments)}</Text></Text>
-                  <br />
-                  <Text>Monthly Rate: <Text strong>{fmtMoney(selectedMonthForDeposit.monthlyRate)}</Text></Text>
-                  <br />
-                  <Text>Total Available Deposit for {selectedMonthForDeposit.month}: <Text strong style={{ color: '#52c41a' }}>{fmtMoney(selectedMonthForDeposit.totalDeposit)}</Text></Text>
-                  <br />
-                  <Text>Available to consume: <Text strong style={{ color: '#52c41a' }}>{fmtMoney(selectedMonthForDeposit.totalDeposit)}</Text></Text>
-                </div>
-              </div>
-            )}
-
-            {/* Custom Deposit Amount Input */}
-            {selectedMonthForDeposit && (
-              <div className="deposit-amount-panel">
-                <div style={{ marginBottom: '8px' }}>
-                  <Text strong>Amount to use</Text>
-                </div>
-                <div style={{ marginBottom: '12px' }}>
-                  <Radio.Group 
-                    value={customDepositAmount ? 'custom' : 'full'} 
-                    onChange={(e) => {
-                      if (e.target.value === 'full') {
-                        setCustomDepositAmount('');
-                      }
-                    }}
-                  >
-                    <Radio value="full">
-                      <Text>Use Full Deposit ({fmtMoney(selectedMonthForDeposit.totalDeposit)})</Text>
-                    </Radio>
-                    <Radio value="custom">
-                      <Text>Custom Amount</Text>
-                    </Radio>
-                  </Radio.Group>
-                </div>
-                {customDepositAmount !== null && (
-                  <div>
-                    <Input
-                      placeholder="Enter amount to consume"
-                      value={customDepositAmount}
-                      onChange={(e) => setCustomDepositAmount(e.target.value)}
-                      prefix="₱"
-                      type="number"
-                      min={0}
-                      max={selectedMonthForDeposit.totalDeposit}
-                      style={{ width: '100%' }}
+                    <Alert
+                      message="This action records a payment and reduces the selected month's available deposit."
+                      type="info"
+                      showIcon
                     />
-                    {customDepositAmount && parseFloat(customDepositAmount) > selectedMonthForDeposit.totalDeposit && (
-                      <Text type="danger" style={{ fontSize: '12px', display: 'block', marginTop: '4px' }}>
-                        Amount cannot exceed available deposit ({fmtMoney(selectedMonthForDeposit.totalDeposit)})
-                      </Text>
-                    )}
-                  </div>
+                  </>
                 )}
-              </div>
-            )}
-
-            {/* OR Number and Payment Date Input */}
-            {selectedMonthForDeposit && (
-              <div className="deposit-payment-details">
-                <div style={{ marginBottom: '16px' }}>
-                  <Text strong>Payment Details for Deposit Consumption:</Text>
-                </div>
-                
-                <div className="payment-meta-grid">
-                  <div>
-                    <Text strong className="vendor-modal-field-label">OR Number *</Text>
-                    <Input
-                      placeholder="Enter Official Receipt Number"
-                      value={orNumber}
-                      onChange={(e) => setOrNumber(e.target.value)}
-                      maxLength={50}
-                    />
-                  </div>
-                  <div>
-                    <Text strong className="vendor-modal-field-label">Payment Date *</Text>
-                    <DatePicker
-                      value={paymentDate}
-                      onChange={(date) => setPaymentDate(date)}
-                      style={{ width: '100%' }}
-                      format="MMMM D, YYYY"
-                      placeholder="Select payment date"
-                    
-                    />
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '16px' }}>
-                  <Text strong className="vendor-modal-field-label">Stalls to apply deposit to</Text>
-                  <div className="deposit-stall-list">
-                    {selectedVendor.rentals?.map((rental) => (
-                      <div key={rental.rental_id} className="deposit-stall-item">
-                        <Checkbox
-                          checked={selectedRentals.includes(rental.rental_id)}
-                          onChange={(e) => handleRentalSelection(rental.rental_id, e.target.checked)}
-                        >
-                          <div>
-                            <Text strong>{rental.section_name} - {rental.stall_number}</Text>
-                            <br />
-                            <Text type="secondary" style={{ fontSize: '12px' }}>
-                              {rental.is_monthly ? 
-                                `Monthly Rate: ${fmtMoney(rental.monthly_rent)}` : 
-                                `Daily Rent: ${fmtMoney(rental.daily_rent)}`
-                              } | 
-                              Status: {rental.status}
-                              {rental.remaining_balance > 0 && ` | Balance: ${fmtMoney(rental.remaining_balance)}`}
-                            </Text>
-                          </div>
-                        </Checkbox>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {selectedRentals.length > 0 && (
-                  <div style={{ padding: '12px', backgroundColor: '#f6ffed', borderRadius: '6px' }}>
-                    <Text strong>
-                      Selected Stalls: {selectedRentals.length} | 
-                      Deposit to Consume: {fmtMoney(customDepositAmount ? parseFloat(customDepositAmount) : getTotalDepositAmount(selectedVendor))}
-                    </Text>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <Alert
-              message="Deposit Consumption Notice"
-              description="Once you consume a deposit, it will be applied to the selected payment and the deposit amount will be reduced accordingly. This action cannot be undone."
-              type="info"
-              showIcon
-              style={{ marginTop: '16px' }}
-            />
-            
-            {!orNumber.trim() && selectedMonthForDeposit && (
-              <Alert
-                message="OR Number Required"
-                description="Please enter an OR number to proceed with deposit consumption."
-                type="warning"
-                showIcon
-                style={{ marginTop: '16px' }}
-              />
-            )}
-            
-            {selectedRentals.length === 0 && selectedMonthForDeposit && (
-              <Alert
-                message="Select Stalls"
-                description="Please select at least one stall to apply the deposit to."
-                type="warning"
-                showIcon
-                style={{ marginTop: '16px' }}
-              />
+              </>
             )}
           </div>
         )}

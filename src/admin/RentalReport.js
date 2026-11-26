@@ -49,7 +49,7 @@ const RentalReport = () => {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [editingRented, setEditingRented] = useState(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editForm, setEditForm] = useState({ rented_at: '' });
+  const [editForm, setEditForm] = useState({ rented_at: '', exit_date: '' });
   const [updateLoading, setUpdateLoading] = useState(false);
   const [deletingRented, setDeletingRented] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -124,15 +124,21 @@ const RentalReport = () => {
 
   const handleEditRentedAt = (stallDetail) => {
     setEditingRented(stallDetail);
-    setEditForm({ 
-      rented_at: stallDetail.created_at ? dayjs(stallDetail.created_at).format('YYYY-MM-DD') : '' 
+    setEditForm({
+      rented_at: stallDetail.created_at ? dayjs(stallDetail.created_at).format('YYYY-MM-DD') : '',
+      exit_date: stallDetail.end_date ? dayjs(stallDetail.end_date).format('YYYY-MM-DD') : '',
     });
     setEditModalVisible(true);
   };
 
   const handleUpdateRentedAt = async () => {
     if (!editingRented || !editForm.rented_at) {
-      message.error('Please select a valid date');
+      message.error('Please select a valid rented-at date.');
+      return;
+    }
+
+    if (editingRented.status?.toLowerCase() === 'unoccupied' && !editForm.exit_date) {
+      message.error('Please select a valid exit date.');
       return;
     }
 
@@ -140,11 +146,14 @@ const RentalReport = () => {
     try {
       // We'll need to add the rented_id to the stall details
       const response = await api.put(`/rented/${editingRented.rented_id}/update-rented-at`, {
-        rented_at: editForm.rented_at
+        rented_at: editForm.rented_at,
+        ...(editingRented.status?.toLowerCase() === 'unoccupied'
+          ? { exit_date: editForm.exit_date }
+          : {}),
       });
       
       if (response.data.status === 'success') {
-        message.success('Rented at date updated successfully');
+        message.success('Rental dates updated successfully');
         setEditModalVisible(false);
         setEditingRented(null);
         // Refresh vendor details to show updated data
@@ -152,11 +161,11 @@ const RentalReport = () => {
           fetchVendorDetails(selectedVendor.vendor_id);
         }
       } else {
-        message.error('Failed to update rented at date');
+        message.error(response.data.message || 'Failed to update rental dates.');
       }
     } catch (error) {
-      console.error('Error updating rented at date:', error);
-      message.error('Failed to update rented at date');
+      console.error('Error updating rental dates:', error);
+      message.error(error.response?.data?.message || 'Failed to update rental dates');
     } finally {
       setUpdateLoading(false);
     }
@@ -165,7 +174,7 @@ const RentalReport = () => {
   const handleCancelEdit = () => {
     setEditModalVisible(false);
     setEditingRented(null);
-    setEditForm({ rented_at: '' });
+    setEditForm({ rented_at: '', exit_date: '' });
   };
 
   const handleDeleteRented = (stallDetail) => {
@@ -798,9 +807,9 @@ const RentalReport = () => {
         </Spin>
       </Modal>
 
-      {/* Edit Rented At Modal */}
+      {/* Edit Rental Dates Modal */}
       <Modal
-        title="Edit Rented At Date"
+        title="Edit Rental Dates"
         open={editModalVisible}
         onOk={handleUpdateRentedAt}
         onCancel={handleCancelEdit}
@@ -821,7 +830,7 @@ const RentalReport = () => {
           <Form.Item 
             label="New Rented At Date" 
             required
-            help="Select the new rented at date for this stall"
+            help="Select the date this stall rental began."
           >
             <DatePicker
               value={editForm.rented_at ? dayjs(editForm.rented_at) : null}
@@ -836,6 +845,36 @@ const RentalReport = () => {
               placeholder="Select new rented at date"
             />
           </Form.Item>
+          {editingRented?.status?.toLowerCase() === 'unoccupied' && (
+            <>
+              <Form.Item label="Current Exit Date">
+                <Text>
+                  {editingRented.end_date
+                    ? dayjs(editingRented.end_date).format('MMMM DD, YYYY')
+                    : 'Not recorded'}
+                </Text>
+              </Form.Item>
+              <Form.Item
+                label="New Exit Date"
+                required
+                help="Select the date this stall rental ended."
+              >
+                <DatePicker
+                  value={editForm.exit_date ? dayjs(editForm.exit_date) : null}
+                  onChange={(date) => {
+                    setEditForm({
+                      ...editForm,
+                      exit_date: date ? date.format('YYYY-MM-DD') : '',
+                    });
+                  }}
+                  style={{ width: '100%' }}
+                  format="YYYY-MM-DD"
+                  placeholder="Select exit date"
+                  allowClear={false}
+                />
+              </Form.Item>
+            </>
+          )}
         </Form>
       </Modal>
 

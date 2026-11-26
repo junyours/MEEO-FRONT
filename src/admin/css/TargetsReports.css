@@ -224,6 +224,310 @@
   }
 }
 
+.tr-department-chart {
+  display: flex;
+  height: auto;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.tr-pie-wrap {
+  position: relative;
+  width: 100%;
+  height: 275px;
+}
+
+.tr-pie-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #78878d;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+  text-align: center;
+}
+
+.tr-pie-tooltip {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border: 1px solid #dfe8e6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+  color: #52666c;
+  font-size: 11px;
+}
+
+.tr-pie-tooltip strong {
+  color: #18313b;
+  font-size: 12px;
+}
+
+.tr-enterprise-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  padding: 0 4px 2px;
+}
+
+.tr-enterprise-legend-item {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 7px;
+  row-gap: 2px;
+  padding: 8px 9px;
+  border: 1px solid #edf1f0;
+  border-radius: 7px;
+  background: #fbfcfc;
+}
+
+.tr-enterprise-legend-dot {
+  width: 8px;
+  height: 8px;
+  grid-row: span 2;
+  border-radius: 50%;
+}
+
+.tr-enterprise-legend-name {
+  overflow: hidden;
+  color: #40565e;
+  font-size: 10px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tr-enterprise-legend-value {
+  color: #253c45;
+  font-size: 10px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tr-enterprise-legend-share {
+  grid-column: 2 / 4;
+  color: #829096;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 576px) {
+  .tr-pie-wrap {
+    height: 245px;
+  }
+
+  .tr-enterprise-legend {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tr-container {
+  min-height: 100vh;
+  padding: 28px 32px 40px;
+  background:
+    radial-gradient(ellipse at 92% 0%, rgba(216, 240, 237, 0.42), transparent 30rem),
+    #f5f8f8;
+}
+
+.tr-report-shell {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.tr-header {
+  margin-bottom: 22px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(24, 49, 59, 0.045) !important;
+}
+
+.tr-header .ant-card-body {
+  padding: 20px 24px;
+}
+
+.tr-title {
+  letter-spacing: -0.025em;
+}
+
+.tr-header-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px 12px !important;
+}
+
+.tr-year-control {
+  min-width: 230px;
+}
+
+.tr-year-range {
+  width: 100%;
+}
+
+.tr-report-year-card {
+  overflow: hidden;
+  border-radius: 12px !important;
+  box-shadow: 0 5px 18px rgba(24, 49, 59, 0.055) !important;
+}
+
+.tr-report-year-card > .ant-card-head {
+  min-height: 76px;
+  padding: 0 22px;
+}
+
+.tr-report-year-card > .ant-card-head .ant-card-head-title {
+  padding: 16px 0;
+}
+
+.tr-report-heading-copy .tr-title {
+  margin-bottom: 3px !important;
+  font-size: 19px !important;
+}
+
+.tr-report-heading-copy .tr-subtitle {
+  font-size: 11px !important;
+}
+
+.tr-export-column {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.tr-report-year-card > .ant-card-body {
+  padding: 20px 22px 24px;
+}
+
+.tr-chart-panel {
+  height: 100%;
+  overflow: hidden;
+  border-color: #e4ebea !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(24, 49, 59, 0.035) !important;
+}
+
+.tr-chart-panel > .ant-card-head {
+  min-height: 52px;
+  padding: 0 17px;
+  background: #ffffff;
+}
+
+.tr-chart-panel > .ant-card-head .ant-card-head-title {
+  padding: 14px 0;
+  color: #2c4650;
+  font-size: 13px;
+}
+
+.tr-chart-panel > .ant-card-body {
+  padding: 16px;
+}
+
+.tr-department-chart {
+  height: 300px;
+}
+
+.tr-overall-progress {
+  text-align: center;
+}
+
+.tr-overall-progress .ant-card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 338px;
+}
+
+.tr-overall-progress .tr-kpi {
+  width: 100%;
+  margin-top: 16px !important;
+  text-align: left;
+}
+
+.tr-monthly-trends {
+  margin-top: 18px !important;
+}
+
+.tr-monthly-trends .tr-chart {
+  height: 360px;
+}
+
+@media (max-width: 992px) {
+  .tr-container {
+    padding: 22px 20px 32px;
+  }
+
+  .tr-header-actions {
+    justify-content: flex-start;
+  }
+
+  .tr-overall-progress .ant-card-body {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .tr-container {
+    padding: 14px 12px 24px;
+  }
+
+  .tr-header .ant-card-body {
+    padding: 17px;
+  }
+
+  .tr-year-control {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .tr-header-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tr-header-actions > * {
+    width: 100%;
+  }
+
+  .tr-header-actions .ant-btn {
+    width: 100%;
+  }
+
+  .tr-report-year-card > .ant-card-head {
+    padding: 0 15px;
+  }
+
+  .tr-report-heading {
+    align-items: flex-start !important;
+  }
+
+  .tr-export-column {
+    justify-content: flex-start;
+  }
+
+  .tr-report-year-card > .ant-card-body {
+    padding: 14px;
+  }
+
+  .tr-chart-panel > .ant-card-body {
+    padding: 10px;
+  }
+
+  .tr-department-chart {
+    height: 280px;
+  }
+
+  .tr-monthly-trends .tr-chart {
+    height: 300px;
+  }
+}
+
 /* Targets report workspace */
 .tr-container {
   max-width: 1480px;
@@ -472,4 +776,8 @@
   .tr-modal .ant-modal-footer {
     padding: 12px 18px 16px;
   }
+}
+
+.tr-chart-panel .tr-department-chart {
+  height: auto;
 }

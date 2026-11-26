@@ -473,6 +473,7 @@ const Login = () => {
 
     const rolePaths = {
       admin: '/admin/dashboard',
+      staff: '/staff/dashboard',
       vendor: '/vendor/dashboard',
       incharge_collector: '/incharge_collector/dashboard',
       main_collector: '/main_collector/dashboard',
@@ -727,6 +728,7 @@ const Login = () => {
 
     const rolePaths = {
       admin: '/admin/dashboard',
+      staff: '/staff/dashboard',
       vendor: '/vendor/dashboard',
       incharge_collector: '/incharge_collector/dashboard',
       main_collector: '/main_collector/dashboard',

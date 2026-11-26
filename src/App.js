@@ -5,6 +5,7 @@ import { HashRouter  as Router, Routes, Route } from 'react-router-dom';
 import PrivateRoute from './Auth/PrivateRoute';
 import Login from './Auth/Login';
 import AdminDashboard from './admin/Dashboard';
+import StaffDashboard from './staff/StaffDashboard';
 import GetStarted from './Auth/GetStarted';
 import Slaughter from './Auth/Slaughter';
 import Wharf from './Auth/Wharf';
@@ -33,7 +34,15 @@ function App() {
 
           <Route path="/login" element={<Login />} />
 
-        
+          <Route
+            path="/staff/*"
+            element={
+              <PrivateRoute allowedRoles={['staff']}>
+                <StaffDashboard />
+              </PrivateRoute>
+            }
+          />
+
 
           <Route
             path="/admin/dashboard"
@@ -59,6 +68,22 @@ function App() {
               </PrivateRoute>
             }
           />
+                 <Route
+            path="/admin/vendor-other-payment-report"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+                 <Route
+                   path="/admin/walk-in-driver-payment-report"
+                   element={
+                     <PrivateRoute>
+                       <AdminDashboard />
+                     </PrivateRoute>
+                   }
+                 />
           <Route
             path="/admin/collector-accounts"
             element={
@@ -87,6 +112,14 @@ function App() {
             path="/admin/cash-ticket"
             element={
               <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/daily-collections"
+            element={
+              <PrivateRoute allowedRoles={['admin']}>
                 <AdminDashboard />
               </PrivateRoute>
             }
@@ -141,6 +174,14 @@ function App() {
           />
           <Route
             path="/admin/remaining-balance"
+            element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/vendor-monthly-balances"
             element={
               <PrivateRoute>
                 <AdminDashboard />

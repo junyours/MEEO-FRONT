@@ -38,6 +38,7 @@ import Sidebar from "./Sidebar";
 import SectionManager from "./SectionManager";
 import VendorPaymentManagement from "./VendorPaymentManagement";
 import VendorAnalysis from "./VendorAnalysis";
+import VendorMonthlyBalanceReport from "./VendorMonthlyBalanceReport";
 import RentalReport from "./RentalReport";
 import TargetsReports from "./TargetsReports";
 import LoadingOverlay from "./Loading";
@@ -54,12 +55,15 @@ import ProductManagement from "./ProductManagement";
 import AdminProfile from "./AdminProfile";
 import StallRateDashboard from "./StallRateDashboard";
 import PaymentManagement from "./PaymentManagement";
+import DailyCollectionOverview from "./DailyCollectionOverview";
 import EventActivityManagement from "./EventActivityManagement";
 import OfficeActivity from "./OfficeActivity";
 import EventStallManagement from "./EventStallManagement";
 import EventPaymentManagement from "./EventPaymentManagement";
 import EventVendorManagement from "./EventVendorManagement";
 import EventSalesReporting from "./EventSalesReporting";
+import AdminVendorOtherPaymentReport from "./AdminVendorOtherPaymentReport";
+import AdminOtherPaymentReport from "./AdminOtherPaymentReport";
 import SlaughterCollectionManagement from "./SlaughterCollectionManagement";
 import SlaughterReports from "./SlaughterReports";
 import api from "../Api";
@@ -92,6 +96,7 @@ const screenLabels = {
   "product-management": "Product Management",
   "office-activities": "Office Activities",
   "cash-ticket": "Cash Ticket Payments",
+  "daily-collections": "Daily Collection Overview",
   "vendor-payment-calendar": "Payment Schedule",
   "market-section-stalls": "Market Layout Management",
   "stall-rate-dashboard": "Stall Rates",
@@ -99,6 +104,9 @@ const screenLabels = {
   "payment-management": "Payment Management",
   target: "Targets Report",
   "remaining-balance": "Vendor Balances",
+  "vendor-other-payment-report": "Vendor Other Payment Report",
+  "walk-in-driver-payment-report": "Walk-in & Driver Payment Report",
+  "vendor-monthly-balances": "Vendor Monthly Balances",
   "rental-report": "Rental Report",
   estimated_collection: "Estimates Collection",
   "market-open-space-collections": "Collections",
@@ -156,8 +164,10 @@ const AdminDashboard = () => {
       'collector-accounts': 'collector-accounts',
       'product-management': 'product-management',
       'office-activities': 'office-activities',
-
+      'vendor-other-payment-report': 'vendor-other-payment-report',
+      'walk-in-driver-payment-report': 'walk-in-driver-payment-report',
       'cash-ticket': 'cash-ticket',
+      'daily-collections': 'daily-collections',
       'vendor-payment-calendar': 'vendor-payment-calendar',
       'market-section-stalls': 'market-section-stalls',
       'stall-rate-dashboard': 'stall-rate-dashboard',
@@ -165,6 +175,7 @@ const AdminDashboard = () => {
       'payment-management': 'payment-management',
       'target': 'target',
       'remaining-balance': 'remaining-balance',
+      'vendor-monthly-balances': 'vendor-monthly-balances',
       'rental-report': 'rental-report',
       'estimated_collection': 'estimated_collection',
       'market-open-space-collections': 'market-open-space-collections',
@@ -1500,22 +1511,27 @@ case "vendor-management":
 
 case "vendor-qr-codes":
   return <VendorQrCodeManagement />;
-
+case "vendor-other-payment-report":
+  return <AdminVendorOtherPaymentReport />;
+case "walk-in-driver-payment-report":
+  return <AdminOtherPaymentReport />;
 case "collector-accounts":
   return <CollectorAccountManagement />;
    
 case "product-management":
   return <ProductManagement />;
    case "office-activities":
-  return <OfficeActivity />;
+  return <OfficeActivity readOnly />;
 case "cash-ticket":
   return <CashTicketManagement />;
 
 
     case "market-section-stalls":
-      return <SectionManager />;
+      return <SectionManager readOnly />;
 case "remaining-balance":
   return <VendorAnalysis />;
+case "vendor-monthly-balances":
+  return <VendorMonthlyBalanceReport />;
 case "rental-report":
   return <RentalReport />;
 
@@ -1549,6 +1565,9 @@ case "stall-rate-dashboard":
 
 case "payment-management":
   return <PaymentManagement />;
+
+case "daily-collections":
+  return <DailyCollectionOverview />;
 
     // Event Management Screens
     case "event-activities":

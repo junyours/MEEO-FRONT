@@ -100,7 +100,7 @@ const DashboardSourceCollections = memo(function DashboardSourceCollections({ ye
           <Card className="source-collection-card market-source-card">
             <div className="source-collection-label"><FaStore /> Market</div>
             <div className="source-collection-value">{displayedAmount(sourceCollections.market)}</div>
-            <div className="source-collection-note">Payments + Market cash tickets</div>
+            <div className="source-collection-note">Market Collections</div>
           </Card>
         </Col>
         <Col xs={24} sm={8}>

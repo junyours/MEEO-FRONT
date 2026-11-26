@@ -27,6 +27,14 @@ import './CollectorAccountManagement.css';
 
 const { Text, Title } = Typography;
 
+const roleLabels = {
+  collector: 'Collector',
+  staff: 'Staff',
+  Slaughter_Collector: 'Slaughter Collector',
+};
+
+const getRoleLabel = (role) => roleLabels[role] || role || '—';
+
 const CollectorAccountManagement = () => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +86,7 @@ const CollectorAccountManagement = () => {
     return accounts.filter((account) => (
       String(account.username || '').toLowerCase().includes(query) ||
       String(account.email || '').toLowerCase().includes(query) ||
-      String(account.role || '').toLowerCase().includes(query)
+      getRoleLabel(account.role).toLowerCase().includes(query)
     ));
   }, [accounts, searchText]);
 
@@ -198,8 +206,8 @@ const CollectorAccountManagement = () => {
       dataIndex: 'role',
       key: 'role',
       render: (role) => (
-        <Tag color={role === 'collector' ? 'blue' : 'purple'}>
-          {role === 'collector' ? 'Collector' : 'Staff'}
+        <Tag color={role === 'collector' ? 'blue' : role === 'staff' ? 'purple' : 'gold'}>
+          {getRoleLabel(role)}
         </Tag>
       ),
     },
@@ -268,11 +276,11 @@ const CollectorAccountManagement = () => {
           </Text>
 
           <Title level={2}>
-            Collector &amp; Staff Accounts
+            Account Management
           </Title>
 
           <Text type="secondary">
-            Create login accounts and restore the default password when needed.
+            Create accounts, manage access, and reset passwords when needed.
           </Text>
         </div>
 
@@ -299,7 +307,7 @@ const CollectorAccountManagement = () => {
         className="collector-account-note"
         type="info"
         showIcon
-        message="New Collector and Staff accounts use p@ssword123 as their default password. Admins can restore this password when an account holder forgets their password."
+        message="New accounts use the configured default password. Administrators can restore it when needed."
       />
 
       <Card
@@ -309,7 +317,7 @@ const CollectorAccountManagement = () => {
         <div className="collector-account-list-header">
           <div>
             <Title level={4}>
-              Managed accounts
+              Accounts
             </Title>
 
             <Text type="secondary">
@@ -321,7 +329,7 @@ const CollectorAccountManagement = () => {
           <Input
             allowClear
             prefix={<SearchOutlined />}
-            placeholder="Search username, email or role"
+            placeholder="Search accounts"
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
             className="collector-account-search"
@@ -340,13 +348,13 @@ const CollectorAccountManagement = () => {
           locale={{
             emptyText: searchText
               ? 'No accounts match your search.'
-              : 'No collector or staff accounts yet.',
+              : 'No accounts have been created yet.',
           }}
         />
       </Card>
 
       <Modal
-        title="Create collector or staff account"
+        title="Create account"
         open={createModalOpen}
         onCancel={handleCloseCreateModal}
         onOk={() => form.submit()}
@@ -429,6 +437,10 @@ const CollectorAccountManagement = () => {
                 {
                   value: 'staff',
                   label: 'Staff',
+                },
+                {
+                  value: 'Slaughter_Collector',
+                  label: 'Slaughter Collector',
                 },
               ]}
             />

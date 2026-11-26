@@ -32,7 +32,7 @@ import "./StallGrid.css";
 const { Text } = Typography;
 const { TextArea } = Input;
 
-const StallGrid = ({ section, editMode, onAddStall, onRefresh }) => {
+const StallGrid = ({ section, editMode, readOnly = false, onAddStall, onRefresh }) => {
   const [stalls, setStalls] = useState(section?.stalls || []);
   const [modalVendor, setModalVendor] = useState(null);
   const [rentedHistory, setRentedHistory] = useState([]);
@@ -846,7 +846,7 @@ const fetchPaymentDetails = async (rentedId) => {
               title={stallNumber || (editMode && !stall?.id ? "Add Stall" : "")}
             >
               <Card
-                hoverable={!!stall}
+                hoverable={!readOnly && !!stall}
                 className="stall-card"
                 style={{
                   backgroundColor: color,
@@ -855,7 +855,7 @@ const fetchPaymentDetails = async (rentedId) => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  cursor: "pointer",
+                  cursor: readOnly ? "default" : "pointer",
                   border: isSelected ? "3px solid #1890ff" : `2px solid ${stall ? "#ffffff" : "#e2e8f0"}`,
                   fontWeight: "bold",
                   fontSize: shouldDisplayHorizontally ? `${stallSize / 3.5}px` : (isSingleRow ? `${stallSize / 4}px` : `${stallSize / 3.5}px`), // Smaller font for horizontal wet areas
@@ -870,7 +870,7 @@ const fetchPaymentDetails = async (rentedId) => {
                   overflow: "hidden",
                   ...gridPosition,
                 }}
-                onClick={() => handleStallClick(stall || { row, col })}
+                onClick={readOnly ? undefined : () => handleStallClick(stall || { row, col })}
                 bodyStyle={{ 
                   padding: 0, 
                   display: "flex",

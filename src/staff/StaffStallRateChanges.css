@@ -1,0 +1,388 @@
+.staff-rate-history {
+  min-height: calc(100vh - 64px);
+  padding: 28px clamp(16px, 3vw, 36px) 40px;
+  color: #17243b;
+}
+
+.staff-rate-header,
+.staff-rate-heading,
+.staff-rate-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.staff-rate-header {
+  margin-bottom: 20px;
+  padding: 22px 24px;
+  border: 1px solid #e4eaf2;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(27, 45, 70, 0.035);
+}
+
+.staff-rate-heading {
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.staff-rate-heading-icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  place-items: center;
+  border: 1px solid #dbeafe;
+  border-radius: 11px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 19px;
+}
+
+.staff-rate-eyebrow {
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.staff-rate-heading h2.ant-typography {
+  margin: 3px 0 5px;
+  color: #17243b;
+  font-size: clamp(22px, 2vw, 28px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.staff-rate-heading .ant-typography-secondary {
+  display: block;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.staff-rate-header > .ant-btn {
+  height: 38px;
+  border-color: #dce4ef;
+  border-radius: 8px;
+  color: #40516a;
+  font-weight: 600;
+}
+
+.staff-rate-error {
+  margin-bottom: 16px;
+  border-radius: 9px;
+}
+
+.staff-rate-summary {
+  margin-bottom: 20px;
+}
+
+.staff-rate-stat-card,
+.staff-rate-table-card {
+  height: 100%;
+  border: 1px solid #e4eaf2;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(27, 45, 70, 0.035);
+}
+
+.staff-rate-stat-card .ant-card-body {
+  display: flex;
+  min-height: 116px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px 20px;
+}
+
+.staff-rate-stat-card .ant-statistic-title {
+  margin-bottom: 7px;
+  color: #738197;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.staff-rate-stat-card .ant-statistic-content {
+  color: #243650;
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.staff-rate-stat-card .ant-card-body > .ant-typography-secondary {
+  color: #8793a4;
+  font-size: 11px;
+}
+
+.staff-rate-stat-changes {
+  border-top: 3px solid #4d83df;
+}
+
+.staff-rate-stat-stalls {
+  border-top: 3px solid #0f9f78;
+}
+
+.staff-rate-stat-vendors {
+  border-top: 3px solid #7c5bd6;
+}
+
+.staff-rate-table-card .ant-card-body {
+  padding: 21px;
+}
+
+.staff-rate-table-toolbar {
+  margin-bottom: 18px;
+}
+
+.staff-rate-table-toolbar h4.ant-typography {
+  margin: 0 0 4px;
+  color: #1d2b42;
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.staff-rate-table-toolbar .ant-typography-secondary {
+  font-size: 12px;
+}
+
+.staff-rate-year-filter {
+  min-width: 122px;
+}
+
+.staff-rate-search {
+  width: 270px;
+  min-height: 38px;
+  border-color: #dce4ef;
+  border-radius: 8px;
+}
+
+.staff-rate-year-filter .ant-select-selector {
+  min-height: 38px !important;
+  align-items: center;
+  border-color: #dce4ef !important;
+  border-radius: 8px !important;
+}
+
+.staff-rate-table-card .ant-table-container {
+  border: 1px solid #e7ecf3;
+  border-radius: 8px;
+}
+
+.staff-rate-table-card .ant-table-thead > tr > th {
+  height: 44px;
+  border-bottom: 1px solid #e4eaf2;
+  background: #f5f8fc;
+  color: #5b6b81;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.staff-rate-table-card .ant-table-tbody > tr > td {
+  height: 58px;
+  border-bottom: 1px solid #edf1f5;
+  font-size: 12px;
+}
+
+.staff-rate-table-card .ant-table-tbody > tr:nth-child(even) > td {
+  background: #fafbfd;
+}
+
+.staff-rate-table-card .ant-table-tbody > tr:hover > td {
+  background: #f1f6ff !important;
+}
+
+.staff-rate-date,
+.staff-rate-vendor,
+.staff-rate-comparison {
+  display: flex;
+  align-items: center;
+}
+
+.staff-rate-date {
+  gap: 8px;
+  color: #718198;
+}
+
+.staff-rate-date .ant-typography {
+  color: #34445c;
+  font-size: 12px;
+}
+
+.staff-rate-stall {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.staff-rate-stall .ant-avatar {
+  display: grid;
+  place-items: center;
+  border: 1px solid #e4ebf3;
+  background: #f3f6fa;
+  color: #65768d;
+}
+
+.staff-rate-stall > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.staff-rate-stall .ant-typography {
+  color: #2e3e55;
+  font-size: 12px;
+}
+
+.staff-rate-stall .ant-typography-secondary {
+  color: #8793a4;
+  font-size: 10px;
+}
+
+.staff-rate-vendor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.staff-rate-vendor .ant-avatar {
+  background: #edf3fd;
+  color: #4775bb;
+}
+
+.staff-rate-vendor .ant-typography {
+  color: #34445c;
+}
+
+.staff-rate-vacant-tag {
+  margin: 0;
+  border-color: #e6eaf0;
+  border-radius: 5px;
+  background: #f7f8fa;
+  color: #8591a2;
+  font-size: 10px;
+}
+
+.staff-rate-comparison {
+  gap: 9px;
+  white-space: nowrap;
+}
+
+.staff-rate-before,
+.staff-rate-after {
+  color: #66758a;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.staff-rate-before.is-initial {
+  color: #a0a9b5;
+}
+
+.staff-rate-arrow {
+  color: #a0aaba;
+  font-size: 11px;
+}
+
+.staff-rate-after {
+  color: #176f56;
+}
+
+.staff-rate-table-card .ant-table-cell-fix-right {
+  border-left: 1px solid #e8edf3;
+  background: #fff;
+  box-shadow: -5px 0 8px -8px rgba(27, 45, 70, 0.3);
+}
+
+.staff-rate-table-card .ant-table-thead .ant-table-cell-fix-right {
+  background: #f5f8fc;
+}
+
+.staff-rate-table-card .ant-table-tbody > tr:nth-child(even) > .ant-table-cell-fix-right {
+  background: #fafbfd;
+}
+
+.staff-rate-table-card .ant-table-tbody > tr:hover > .ant-table-cell-fix-right {
+  background: #f1f6ff !important;
+}
+
+.staff-rate-table-card .ant-table-cell-fix-right .ant-btn {
+  color: #356db8;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.staff-rate-table-card .ant-table-cell-fix-right .ant-btn:hover {
+  background: #eaf2ff;
+  color: #1d4ed8;
+}
+
+.staff-rate-edit-note {
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+.staff-rate-edit-date,
+.staff-rate-edit-input {
+  width: 100%;
+}
+
+.staff-rate-edit-note,
+.staff-rate-edit-guidance {
+  border-radius: 8px;
+}
+
+.staff-rate-edit-guidance {
+  margin-bottom: 4px;
+  background: #f0f9ff;
+}
+
+.staff-rate-edit-guidance .ant-alert-message {
+  color: #35516c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.staff-rate-edit-guidance .ant-alert-description {
+  color: #647a90;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.staff-rate-table-card .ant-pagination {
+  margin: 17px 0 0;
+}
+
+@media (max-width: 767px) {
+  .staff-rate-history {
+    padding: 18px 12px 30px;
+  }
+
+  .staff-rate-header,
+  .staff-rate-table-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .staff-rate-header {
+    padding: 18px;
+  }
+
+  .staff-rate-filters {
+    width: 100%;
+  }
+
+  .staff-rate-year-filter {
+    flex: 0 0 120px;
+  }
+
+  .staff-rate-search {
+    width: auto;
+    flex: 1;
+  }
+
+  .staff-rate-table-card .ant-card-body {
+    padding: 15px 11px;
+  }
+}

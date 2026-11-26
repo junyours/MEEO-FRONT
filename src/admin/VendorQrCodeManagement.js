@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import QRCode from 'qrcode';
+import jsPDF from 'jspdf';
 import {
   Alert,
   Button,
@@ -15,11 +16,13 @@ import {
 } from 'antd';
 import {
   DownloadOutlined,
+  FilePdfOutlined,
   QrcodeOutlined,
   ReloadOutlined,
   SearchOutlined,
   ShopOutlined,
   UserOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import api from '../Api';
 import './VendorQrCodeManagement.css';
@@ -49,6 +52,7 @@ const VendorQrCodeManagement = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [generatingVendorId, setGeneratingVendorId] = useState(null);
+  const [bulkAction, setBulkAction] = useState(null);
   const [qrPng, setQrPng] = useState('');
 
   const fetchVendors = async (showLoading = true) => {
@@ -128,27 +132,148 @@ const VendorQrCodeManagement = () => {
     };
   }, [selectedToken]);
 
+  const requestQrCode = async (vendor) => {
+    const response = await api.post(`/vendor-qr-codes/${vendor.id}/generate`);
+    const qrCode = response.data?.qr_code;
+    if (!qrCode?.qr_token) {
+      throw new Error(`The server did not return a QR token for ${getVendorName(vendor) || 'a vendor'}.`);
+    }
+
+    const updatedVendor = { ...vendor, qr_code: qrCode };
+    setVendors((currentVendors) => currentVendors.map((item) => (
+      item.id === vendor.id ? updatedVendor : item
+    )));
+    return updatedVendor;
+  };
+
   const handleGenerate = async (vendor) => {
     setSelectedVendorId(vendor.id);
     setGeneratingVendorId(vendor.id);
-
     try {
-      const response = await api.post(`/vendor-qr-codes/${vendor.id}/generate`);
-      const qrCode = response.data?.qr_code;
-      if (!qrCode?.qr_token) {
-        throw new Error('The server did not return a QR token.');
-      }
-
-      setVendors((currentVendors) => currentVendors.map((item) => (
-        item.id === vendor.id
-          ? { ...item, qr_code: qrCode }
-          : item
-      )));
+      await requestQrCode(vendor);
       message.success(`Vendor QR code ready for ${getVendorName(vendor)}.`);
     } catch (error) {
       message.error(error.response?.data?.message || error.message || 'Failed to generate the QR code.');
     } finally {
       setGeneratingVendorId(null);
+    }
+  };
+
+  const ensureAllQrCodes = async () => {
+    let updatedVendors = [...vendors];
+    const missingVendors = updatedVendors.filter((vendor) => !getQrCode(vendor)?.qr_token);
+    if (missingVendors.length === 0) {
+      return updatedVendors;
+    }
+
+    for (const vendor of missingVendors) {
+      try {
+        const updatedVendor = await requestQrCode(vendor);
+        updatedVendors = updatedVendors.map((item) => (
+          item.id === updatedVendor.id ? updatedVendor : item
+        ));
+      } catch (error) {
+        throw new Error(
+          error.response?.data?.message
+            || error.message
+            || `Could not generate a QR code for ${getVendorName(vendor) || 'a vendor'}.`,
+        );
+      }
+    }
+    return updatedVendors;
+  };
+
+  const handleGenerateAll = async () => {
+    setBulkAction('generate');
+    try {
+      const missingCount = vendors.filter((vendor) => !getQrCode(vendor)?.qr_token).length;
+      if (missingCount === 0) {
+        message.info('All vendors already have an active QR code.');
+        return;
+      }
+      await ensureAllQrCodes();
+      message.success(`QR codes are ready for all ${vendors.length} vendors.`);
+    } catch (error) {
+      message.error(error.message || 'Could not generate all vendor QR codes.');
+    } finally {
+      setBulkAction(null);
+    }
+  };
+
+  const handlePrintAll = async () => {
+    if (vendors.length === 0) {
+      message.info('There are no vendors to include in the QR print file.');
+      return;
+    }
+
+    setBulkAction('print');
+    try {
+      const allVendors = await ensureAllQrCodes();
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 12;
+      const columnGap = 6;
+      const rowGap = 6;
+      const columnsPerPage = 2;
+      const rowsPerPage = 3;
+      const cardWidth = (pageWidth - margin * 2 - columnGap) / columnsPerPage;
+      const cardHeight = (pageHeight - margin * 2 - rowGap * (rowsPerPage - 1)) / rowsPerPage;
+      const qrSize = 46;
+
+      for (let index = 0; index < allVendors.length; index += 1) {
+        if (index > 0 && index % (columnsPerPage * rowsPerPage) === 0) {
+          pdf.addPage('a4', 'portrait');
+        }
+
+        const vendor = allVendors[index];
+        const positionOnPage = index % (columnsPerPage * rowsPerPage);
+        const column = positionOnPage % columnsPerPage;
+        const row = Math.floor(positionOnPage / columnsPerPage);
+        const x = margin + column * (cardWidth + columnGap);
+        const y = margin + row * (cardHeight + rowGap);
+        const vendorName = getVendorName(vendor) || 'Unnamed vendor';
+        const qrData = await QRCode.toDataURL(getQrCode(vendor).qr_token, {
+          errorCorrectionLevel: 'H',
+          margin: 2,
+          width: 640,
+          color: { dark: '#102a43', light: '#ffffff' },
+        });
+
+        pdf.setDrawColor(215, 224, 234);
+        pdf.setLineWidth(0.35);
+        pdf.roundedRect(x, y, cardWidth, cardHeight, 3, 3, 'S');
+        pdf.setTextColor(16, 42, 67);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        const nameLines = pdf.splitTextToSize(vendorName, cardWidth - 14).slice(0, 2);
+        pdf.text(nameLines, x + cardWidth / 2, y + 8, { align: 'center' });
+
+        pdf.addImage(
+          qrData,
+          'PNG',
+          x + (cardWidth - qrSize) / 2,
+          y + 18,
+          qrSize,
+          qrSize,
+          undefined,
+          'FAST',
+        );
+
+        pdf.setTextColor(71, 85, 105);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7);
+        pdf.text('Scan to view vendor details', x + cardWidth / 2, y + cardHeight - 7, {
+          align: 'center',
+        });
+      }
+
+      pdf.save('vendor-qr-codes-a4.pdf');
+      message.success(`Printable QR PDF created for ${allVendors.length} vendors.`);
+    } catch (error) {
+      message.error(error.message || 'Could not create the printable vendor QR PDF.');
+    } finally {
+      setBulkAction(null);
     }
   };
 
@@ -269,6 +394,7 @@ const VendorQrCodeManagement = () => {
           type={getQrCode(vendor)?.qr_token ? 'default' : 'primary'}
           icon={<QrcodeOutlined />}
           loading={generatingVendorId === vendor.id}
+          disabled={Boolean(bulkAction)}
           onClick={() => {
             setSelectedVendorId(vendor.id);
             if (getQrCode(vendor)?.qr_token) {
@@ -287,18 +413,49 @@ const VendorQrCodeManagement = () => {
   return (
     <main className="vendor-qr-page">
       <header className="vendor-qr-heading">
-        <div className="vendor-qr-heading-copy">
-          <Text className="vendor-qr-eyebrow">VENDOR TOOLS</Text>
-          <Title level={2}>Vendor QR Codes</Title>
-          <Text type="secondary">Create and download a unique QR code for each vendor.</Text>
+        <div className="vendor-qr-heading-identity">
+          <span className="vendor-qr-heading-icon"><QrcodeOutlined /></span>
+          <div className="vendor-qr-heading-copy">
+            <Text className="vendor-qr-eyebrow">VENDOR TOOLS</Text>
+            <Title level={2}>Vendor QR Codes</Title>
+            <Text type="secondary">
+              Generate vendor codes in bulk or download an A4 print sheet with six QR codes per page.
+            </Text>
+            <span className="vendor-qr-heading-count">
+              <span className="vendor-qr-heading-count-dot" />
+              {vendors.length} active vendor{vendors.length === 1 ? '' : 's'}
+            </span>
+          </div>
         </div>
-        <Button
-          icon={<ReloadOutlined />}
-          loading={refreshing}
-          onClick={() => fetchVendors(false)}
-        >
-          Refresh
-        </Button>
+        <div className="vendor-qr-heading-actions">
+          <Button
+            className="vendor-qr-refresh-btn"
+            icon={<ReloadOutlined />}
+            loading={refreshing}
+            onClick={() => fetchVendors(false)}
+          >
+            Refresh
+          </Button>
+          <Button
+            className="vendor-qr-generate-all-btn"
+            icon={<ThunderboltOutlined />}
+            loading={bulkAction === 'generate'}
+            disabled={Boolean(bulkAction) || loading || vendors.length === 0}
+            onClick={handleGenerateAll}
+          >
+            {bulkAction === 'generate' ? 'Generating QR codes…' : 'Generate all QR'}
+          </Button>
+          <Button
+            className="vendor-qr-print-all-btn"
+            type="primary"
+            icon={<FilePdfOutlined />}
+            loading={bulkAction === 'print'}
+            disabled={Boolean(bulkAction) || loading || vendors.length === 0}
+            onClick={handlePrintAll}
+          >
+            {bulkAction === 'print' ? 'Preparing PDF…' : 'Print all QR'}
+          </Button>
+        </div>
       </header>
 
       <Alert

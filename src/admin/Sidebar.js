@@ -168,14 +168,10 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
       key: "overview",
       label: "Overview",
       children: [
-        {
-          key: "dashboard",
-          icon: <HomeOutlined />,
-          label: "Dashboard",
-        },
-        { key: "product-management", label: "Product Management", icon: <ShoppingOutlined /> },
+        { key: "dashboard", icon: <HomeOutlined />, label: "Dashboard" },
         { key: "collector-accounts", label: "Collector & Staff Accounts", icon: <UserAddOutlined /> },
         { key: "office-activities", label: "Office Activities", icon: <HistoryOutlined /> },
+           { key: "daily-collections", label: "Daily Collection Overview", icon: <DollarOutlined /> },
       ],
     },
 
@@ -188,82 +184,27 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, onMenuClick, activeView }) => {
       label: "Market",
 
       children: [
-
-        { key: "vendor-management", label: "Vendor Management", icon: <UserOutlined /> },
-        { key: "vendor-qr-codes", label: "Vendor QR Codes", icon: <QrcodeOutlined /> },
-
         { key: "market-section-stalls", label: "Market Layout Management", icon: <AppstoreOutlined /> },
-
         { key: "stall-rate-dashboard", label: "Stall Rates", icon: <RiseOutlined /> },
-
       ],
 
     },
-
     {
-
-      key: "payments",
-
-      icon: <DollarCircleOutlined />,
-
-      label: "Payments",
-
-      children: [
-
-        { key: "cash-ticket", label: "Cash Ticket Payments", icon: <CreditCardOutlined /> },
-
-        { key: "vendor-payment-calendar", label: "Payment Schedule", icon: <CalendarOutlined /> },
-
-        { key: "vendor-payment", label: "Payment Settlement", icon: <FileTextOutlined /> },
-
-        { key: "payment-management", label: "Payment Management", icon: <DollarOutlined /> },
-         { key: "slaughter-collections", label: "Slaughter Collections", icon: <MedicineBoxOutlined /> },
-
-      ],
-
-    },
-
-  
-
-    {
-      key: "events",
-      icon: <CalendarOutlined />,
-      label: "Event Management",
-      children: [
-        { key: "event-activities", label: "Activities", icon: <CalendarOutlined /> },
-        { key: "event-stalls", label: "Event Stalls", icon: <ShopOutlined /> },
-        { key: "event-vendors", label: "Event Vendors", icon: <TeamOutlined /> },
-        { key: "event-payments", label: "Event Payments", icon: <DollarCircleOutlined /> },
-        { key: "event-sales-reports", label: "Sales Reports", icon: <BarChartOutlined /> },
-      ],
-    },
-  {
-
       key: "reports",
-
       icon: <FileSearchOutlined />,
-
       label: "Reports",
-
       children: [
-
         { key: "target", label: "Targets Report", icon: <LineChartOutlined /> },
-
         { key: "remaining-balance", label: "Vendor Balances", icon: <BarChartOutlined /> },
-
+        { key: "vendor-monthly-balances", label: "Vendor Monthly Balances", icon: <BarChartOutlined /> },
         { key: "rental-report", label: "Rental Report", icon: <ShopOutlined /> },
-       
         { key: "estimated_collection", label: "Estimates Collection", icon: <LineChartOutlined /> },
-
         { key: "market-open-space-collections", label: "Collections", icon: <ApartmentOutlined /> },
-
-       
         { key: "slaughter-reports", label: "Slaughter Reports", icon: <BarChartOutlined /> },
-
-      
-
+        { key: "event-sales-reports", label: "Sales Report", icon: <BarChartOutlined /> },
+        { key: "vendor-other-payment-report", label: "Vendor Other Payment Report", icon: <BarChartOutlined /> },
+        { key: "walk-in-driver-payment-report", label: "Walk-in & Driver Payment Report", icon: <BarChartOutlined /> },
       ],
-
     },
   ];
 

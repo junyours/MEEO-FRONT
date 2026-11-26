@@ -1,0 +1,465 @@
+.vendor-monthly-report {
+  min-height: calc(100vh - 64px);
+  padding: 28px clamp(18px, 3vw, 40px) 44px;
+  background: #f4f6fa;
+  color: #172033;
+}
+
+.vendor-monthly-header,
+.vendor-monthly-table-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.vendor-monthly-header {
+  margin-bottom: 14px;
+  padding: 22px 24px;
+  border: 1px solid #e3e8f0;
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse at 2% 0%, rgba(37, 99, 235, 0.06), transparent 42%),
+    #fff;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+}
+
+.vendor-monthly-heading {
+  min-width: 0;
+  text-align: left;
+}
+
+.vendor-monthly-title-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 7px;
+  text-align: left;
+}
+
+.vendor-monthly-title-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  border: 1px solid #dbeafe;
+  border-radius: 11px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 19px;
+}
+
+.vendor-monthly-title-copy {
+  min-width: 0;
+  text-align: left;
+}
+
+.vendor-monthly-eyebrow {
+  display: block;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  line-height: 1.4;
+}
+
+.vendor-monthly-heading h2.ant-typography {
+  display: block;
+  margin: 3px 0 0 !important;
+  color: #14213d;
+  font-size: clamp(24px, 2.2vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.vendor-monthly-subtitle {
+  display: block;
+  margin-left: 57px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.vendor-monthly-controls .ant-picker,
+.vendor-monthly-controls .ant-btn {
+  height: 40px;
+  border-color: #dce3ed;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.vendor-monthly-controls .ant-picker {
+  min-width: 112px;
+}
+
+.vendor-monthly-controls .ant-picker:hover,
+.vendor-monthly-controls .ant-picker-focused,
+.vendor-monthly-controls .ant-btn:hover {
+  border-color: #93b4f5;
+}
+
+.vendor-monthly-controls .ant-btn {
+  color: #334155;
+  font-weight: 600;
+}
+
+.vendor-monthly-period {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 2px 16px;
+}
+
+.vendor-monthly-period .ant-tag {
+  margin: 0;
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.vendor-monthly-error {
+  margin-bottom: 16px;
+  border-radius: 9px;
+}
+
+.vendor-monthly-summary {
+  margin-bottom: 20px;
+}
+
+.vendor-monthly-stat-card,
+.vendor-monthly-table-card {
+  height: 100%;
+  border: 1px solid #e3e8f0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.045);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.vendor-monthly-stat-card:hover,
+.vendor-monthly-table-card:hover {
+  box-shadow: 0 7px 20px rgba(15, 23, 42, 0.07);
+}
+
+.vendor-monthly-stat-card .ant-card-body {
+  display: flex;
+  min-height: 126px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  padding: 18px 22px;
+}
+
+.vendor-monthly-stat-outstanding {
+  border-top: 3px solid #d9972f;
+}
+
+.vendor-monthly-stat-vendors {
+  border-top: 3px solid #4d83df;
+}
+
+.vendor-monthly-search-card {
+  border-top: 3px solid #64748b;
+}
+
+.vendor-monthly-stat-card .ant-statistic-title,
+.vendor-monthly-search-label {
+  margin-bottom: 5px;
+  color: #68778c;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.vendor-monthly-stat-card .ant-statistic-content {
+  font-size: clamp(22px, 2vw, 27px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.vendor-monthly-stat-card .ant-card-body > .ant-typography-secondary {
+  color: #7b8798;
+  font-size: 12px;
+}
+
+.vendor-monthly-search-card .ant-card-body {
+  align-items: stretch;
+}
+
+.vendor-monthly-search-card .ant-input-affix-wrapper {
+  min-height: 40px;
+  border-color: #dce3ed;
+  border-radius: 8px;
+}
+
+.vendor-monthly-search-card .ant-input-affix-wrapper:hover,
+.vendor-monthly-search-card .ant-input-affix-wrapper-focused {
+  border-color: #93b4f5;
+}
+
+.vendor-monthly-table-card .ant-card-body {
+  padding: 22px;
+}
+
+.vendor-monthly-table-heading {
+  margin-bottom: 18px;
+}
+
+.vendor-monthly-table-heading h4.ant-typography {
+  margin: 0 0 4px;
+  color: #172033;
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.vendor-monthly-currency-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #64748b;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.vendor-monthly-table-card .ant-table {
+  color: #334155;
+}
+
+.vendor-monthly-table-card .ant-table-container {
+  border: 1px solid #e8edf4;
+  border-radius: 9px;
+}
+
+.vendor-monthly-table-card .ant-table-content {
+  scrollbar-color: #b8c5d6 #f1f4f8;
+  scrollbar-width: thin;
+}
+
+.vendor-monthly-table-card .ant-table-content::-webkit-scrollbar {
+  height: 10px;
+}
+
+.vendor-monthly-table-card .ant-table-content::-webkit-scrollbar-track {
+  border-radius: 8px;
+  background: #f1f4f8;
+}
+
+.vendor-monthly-table-card .ant-table-content::-webkit-scrollbar-thumb {
+  border: 2px solid #f1f4f8;
+  border-radius: 8px;
+  background: #b8c5d6;
+}
+
+.vendor-monthly-table-card .ant-table-thead > tr > th {
+  height: 44px;
+  border-bottom: 1px solid #e3e9f1;
+  background: #f4f7fb;
+  color: #526176;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  white-space: nowrap;
+}
+
+.vendor-monthly-table-card .ant-table-thead > tr > th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.vendor-monthly-table-card .ant-table-thead > tr > th:not(:first-child) {
+  text-align: right;
+}
+
+.vendor-monthly-table-card .ant-table-thead > tr > th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.vendor-monthly-table-card .ant-table-tbody > tr > td {
+  height: 46px;
+  border-bottom: 1px solid #edf0f4;
+  padding-top: 13px;
+  padding-bottom: 13px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.vendor-monthly-table-card .ant-table-tbody > tr:nth-child(even) > td {
+  background: #fafbfd;
+}
+
+.vendor-monthly-table-card .ant-table-tbody > tr:hover > td {
+  background: #f0f6ff !important;
+}
+
+.vendor-monthly-table-card .ant-table-tbody > tr:last-child > td {
+  border-bottom: 0;
+}
+
+.vendor-monthly-table-card .ant-table-cell-fix-left,
+.vendor-monthly-table-card .ant-table-cell-fix-left-last {
+  box-shadow: 5px 0 8px -8px rgba(15, 23, 42, 0.32);
+}
+
+.vendor-monthly-table-card .ant-table-tbody > tr:nth-child(even) > .ant-table-cell-fix-left {
+  background: #fafbfd;
+}
+
+.vendor-monthly-table-card .ant-table-tbody > tr:hover > .ant-table-cell-fix-left {
+  background: #f0f6ff !important;
+}
+
+.vendor-monthly-name {
+  color: #25334b;
+}
+
+.vendor-monthly-amount {
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+
+.vendor-monthly-zero {
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
+
+.vendor-monthly-total {
+  color: #955d08;
+  font-variant-numeric: tabular-nums;
+}
+
+.vendor-monthly-table-card .ant-table-cell-fix-right,
+.vendor-monthly-table-card .ant-table-cell-fix-right-first {
+  border-left: 1px solid #f1e7d2 !important;
+  background: #fffaf1;
+  box-shadow: -5px 0 8px -8px rgba(15, 23, 42, 0.32);
+}
+
+.vendor-monthly-table-card .ant-table-thead .ant-table-cell-fix-right,
+.vendor-monthly-table-card .ant-table-thead .ant-table-cell-fix-right-first {
+  background: #f6f0e3;
+  color: #6f5629;
+}
+
+.vendor-monthly-table-card .ant-table-tbody > tr:nth-child(even) > .ant-table-cell-fix-right {
+  background: #fff8eb;
+}
+
+.vendor-monthly-table-card .ant-table-tbody > tr:hover > .ant-table-cell-fix-right {
+  background: #f0f6ff !important;
+}
+
+.vendor-monthly-table-card .ant-pagination {
+  align-items: center;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding-top: 15px;
+  border-top: 1px solid #edf0f4;
+}
+
+.vendor-monthly-table-card .ant-pagination .ant-pagination-total-text {
+  margin-right: auto;
+  color: #738095;
+  font-size: 12px;
+}
+
+.vendor-monthly-pagination-total strong {
+  color: #334155;
+  font-weight: 650;
+}
+
+.vendor-monthly-table-card .ant-pagination .ant-pagination-item,
+.vendor-monthly-table-card .ant-pagination .ant-pagination-prev,
+.vendor-monthly-table-card .ant-pagination .ant-pagination-next,
+.vendor-monthly-table-card .ant-pagination .ant-select-selector {
+  border-color: #dce3ed;
+  border-radius: 7px;
+}
+
+.vendor-monthly-table-card .ant-pagination .ant-pagination-item-active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.vendor-monthly-table-card .ant-pagination .ant-pagination-item-active a {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.vendor-monthly-table-card .ant-pagination .ant-select-selector {
+  min-width: 104px;
+  color: #475569;
+}
+
+.vendor-monthly-page-size-dropdown {
+  z-index: 1100;
+  padding: 5px !important;
+  border: 1px solid #e3e8f0;
+  border-radius: 9px !important;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+}
+
+.vendor-monthly-page-size-dropdown .ant-select-item {
+  min-height: 34px;
+  border-radius: 6px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.vendor-monthly-page-size-dropdown .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background: #f1f6ff;
+  color: #1d4ed8;
+}
+
+.vendor-monthly-page-size-dropdown .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background: #eaf2ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .vendor-monthly-report {
+    padding: 22px 14px 32px;
+  }
+
+  .vendor-monthly-table-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .vendor-monthly-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 18px;
+  }
+
+  .vendor-monthly-controls {
+    width: 100%;
+  }
+
+  .vendor-monthly-controls .ant-picker {
+    flex: 1;
+  }
+
+  .vendor-monthly-table-card .ant-card-body {
+    padding: 16px 12px;
+  }
+
+  .vendor-monthly-table-card .ant-pagination {
+    justify-content: center;
+  }
+
+  .vendor-monthly-table-card .ant-pagination .ant-pagination-total-text {
+    width: 100%;
+    margin: 0 0 4px;
+    text-align: center;
+  }
+
+  .vendor-monthly-subtitle {
+    margin-left: 0;
+  }
+}

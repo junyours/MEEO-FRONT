@@ -105,12 +105,67 @@ const DEPARTMENT_COLORS = [
   COLORS.neutral[600]
 ];
 
+const COLLECTION_CHART_COLORS = [
+  "#2196f3",
+  "#ffc928",
+  "#d455e8",
+  "#19b77a",
+  "#46566b",
+];
+
 const getDepartmentColor = (departmentName, index) => {
   const name = departmentName.toLowerCase();
   if (name.includes('wharf')) {
     return COLORS.neutral[700];
   }
   return DEPARTMENT_COLORS[index % DEPARTMENT_COLORS.length];
+};
+
+const getCollectionChartColor = (departmentName, index) => {
+  if (departmentName.toLowerCase().includes("wharf")) {
+    return COLLECTION_CHART_COLORS[4];
+  }
+  return COLLECTION_CHART_COLORS[index % COLLECTION_CHART_COLORS.length];
+};
+
+const renderCollectionPieLabel = ({ cx, cy, midAngle, outerRadius, payload }) => {
+  const radians = (-midAngle * Math.PI) / 180;
+  const labelRadius = outerRadius + 20;
+  const x = cx + labelRadius * Math.cos(radians);
+  const y = cy + labelRadius * Math.sin(radians);
+  const anchor = x > cx ? "start" : x < cx ? "end" : "middle";
+  const nameLines = payload.name.match(/.{1,18}(?:\s|$)|\S+/g) || [payload.name];
+  const labelLines = [
+    ...nameLines.map((line) => line.trim()),
+    `₱${payload.collected.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`,
+  ];
+  const firstLineY = y - ((labelLines.length - 1) * 11) / 2;
+
+  return (
+    <text
+      x={x}
+      y={firstLineY}
+      textAnchor={anchor}
+      fill="#40565e"
+      fontSize={10}
+      fontWeight={600}
+    >
+      {labelLines.map((line, index) => (
+        <tspan
+          key={`${payload.name}-${index}`}
+          x={x}
+          dy={index === 0 ? 0 : 11}
+          fill={index === labelLines.length - 1 ? "#18313b" : "#52666c"}
+          fontWeight={index === labelLines.length - 1 ? 700 : 500}
+        >
+          {line}
+        </tspan>
+      ))}
+    </text>
+  );
 };
 
 // Minimalist button styles
@@ -369,7 +424,7 @@ const TargetsReports = () => {
     }}>
       {loading && <LoadingOverlay message="Loading target reports..." />}
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="tr-report-shell">
         {/* Minimalist Header */}
         <Card 
           className={CSS_CLASSES.header}
@@ -382,8 +437,8 @@ const TargetsReports = () => {
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
           }}
         >
-          <Row justify="space-between" align="middle" gutter={[16, 16]}>
-            <Col>
+          <Row justify="space-between" align="middle" gutter={[20, 16]}>
+            <Col xs={24} lg={11}>
               <div>
                 <Title 
                   level={3} 
@@ -409,9 +464,9 @@ const TargetsReports = () => {
                 </Text>
               </div>
             </Col>
-            <Col>
-              <Space size="middle" align="center">
-                <div>
+            <Col xs={24} lg={13}>
+              <Space className="tr-header-actions" size="middle" align="end">
+                <div className="tr-year-control">
                   <Text strong style={{ 
                     display: "block", 
                     marginBottom: 4,
@@ -421,6 +476,7 @@ const TargetsReports = () => {
                     Year Range
                   </Text>
                   <RangePicker
+                    className="tr-year-range"
                     picker="year"
                     onChange={handleYearChange}
                     style={{
@@ -526,17 +582,20 @@ const TargetsReports = () => {
                 ? ((totalCollection / totalTarget) * 100).toFixed(2)
                 : 0;
 
-            const pieData = reportData.map((r) => {
+            const enterpriseCollectionData = reportData.map((r, index) => {
               const target = r.annual_target ?? 0;
-              const value =
-                target > 0 ? Math.min((r.total_collection / target) * 100, 100) : 0;
+              const collected = Math.max(0, Number(r.total_collection) || 0);
               return {
                 name: r.module,
-                value,
-                collected: r.total_collection ?? 0,
+                value: collected,
+                collected,
                 target,
+                color: getCollectionChartColor(r.module, index),
+                achievement: target > 0 ? (collected / target) * 100 : 0,
+                share: totalCollection > 0 ? (collected / totalCollection) * 100 : 0,
               };
             });
+            const chartCollectionData = enterpriseCollectionData.filter((entry) => entry.value > 0);
 
             const columns = [
               {
@@ -937,7 +996,7 @@ const TargetsReports = () => {
                 style={{ marginBottom: '32px' }}
               >
                 <Card
-                  className={CSS_CLASSES.card}
+                  className={`${CSS_CLASSES.card} tr-report-year-card`}
                   bordered={false}
                   style={{
                     borderRadius: '8px',
@@ -946,9 +1005,9 @@ const TargetsReports = () => {
                     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
                   }}
                   title={
-                    <Row justify="space-between" align="middle">
+                    <Row className="tr-report-heading" justify="space-between" align="middle" gutter={[12, 12]}>
                       <Col>
-                        <div>
+                        <div className="tr-report-heading-copy">
                           <Title
                             level={4}
                             className={CSS_CLASSES.title}
@@ -973,7 +1032,7 @@ const TargetsReports = () => {
                           </Text>
                         </div>
                       </Col>
-                      <Col>
+                      <Col className="tr-export-column">
                         <Button
                           icon={<PrinterOutlined />}
                           className={CSS_CLASSES.buttonPrimary}
@@ -989,16 +1048,16 @@ const TargetsReports = () => {
                   <Row gutter={[16, 16]}>
                     <Col xs={24} md={12}>
                       <Card
-                        className={CSS_CLASSES.card}
+                        className={`${CSS_CLASSES.card} tr-chart-panel tr-department-progress`}
                         size="small"
                         bordered={false}
                         title={
-                          <span style={{ 
-                            fontWeight: 600, 
+                          <span style={{
+                            fontWeight: 600,
                             color: COLORS.neutral[700],
                             fontSize: '14px'
                           }}>
-                            Progress per Department
+                            Collection by Enterprise
                           </span>
                         }
                         style={{
@@ -1008,33 +1067,67 @@ const TargetsReports = () => {
                           backgroundColor: COLORS.neutral[50],
                         }}
                       >
-                        <div ref={(el) => (chartRefs.current[year] = el)} className={CSS_CLASSES.chart}>
-                          <ResponsiveContainer width="100%" height={280}>
-                            <PieChart>
-                              <Pie
-                                data={pieData}
-                                dataKey="value"
-                                nameKey="name"
-                                outerRadius={90}
-                                label={(entry) =>
-                                  `${entry.name}: ${entry.value.toFixed(1)}%`
-                                }
-                                style={{ fontSize: '11px' }}
-                              >
-                                {pieData.map((entry, index) => (
-                                  <Cell
-                                    key={`cell-${index}`}
-                                    fill={getDepartmentColor(entry.name, index)}
-                                  />
-                                ))}
-                              </Pie>
-                              <ReTooltip />
-                              <Legend 
-                                wrapperStyle={{ fontSize: '12px' }}
-                                iconType="circle"
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
+                        <div ref={(el) => (chartRefs.current[year] = el)} className={`${CSS_CLASSES.chart} tr-department-chart`}>
+                          <div className="tr-pie-wrap">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={chartCollectionData}
+                                  dataKey="value"
+                                  nameKey="name"
+                                  cx="50%"
+                                  cy="50%"
+                                  outerRadius="70%"
+                                  minAngle={4}
+                                  label={renderCollectionPieLabel}
+                                  labelLine={{ stroke: "#9aa7ad", strokeWidth: 1 }}
+                                  stroke="#ffffff"
+                                  strokeWidth={2}
+                                >
+                                  {chartCollectionData.map((entry, index) => (
+                                    <Cell
+                                      key={`slice-${entry.name}`}
+                                      fill={entry.color}
+                                    />
+                                  ))}
+                                </Pie>
+                                <ReTooltip
+                                  content={({ active, payload }) => {
+                                    if (!active || !payload?.length) return null;
+                                    const entry = payload[0].payload;
+                                    return (
+                                      <div className="tr-pie-tooltip">
+                                        <strong>{entry.name}</strong>
+                                        <span>Collected: ₱{entry.collected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        <span>{entry.share.toFixed(2)}% of total collections</span>
+                                        <span>Target achieved: {entry.achievement.toFixed(2)}%</span>
+                                      </div>
+                                    );
+                                  }}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                            {!chartCollectionData.length && (
+                              <div className="tr-pie-empty">No collections recorded</div>
+                            )}
+                          </div>
+                          <div className="tr-enterprise-legend">
+                            {enterpriseCollectionData.map((entry, index) => (
+                              <div className="tr-enterprise-legend-item" key={entry.name}>
+                                <span
+                                  className="tr-enterprise-legend-dot"
+                                  style={{ backgroundColor: entry.color }}
+                                />
+                                <span className="tr-enterprise-legend-name" title={entry.name}>{entry.name}</span>
+                                <span className="tr-enterprise-legend-value">
+                                  ₱{entry.collected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                                <span className="tr-enterprise-legend-share">
+                                  {entry.share.toFixed(2)}%
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </Card>
                     </Col>
@@ -1043,7 +1136,7 @@ const TargetsReports = () => {
 
                     <Col xs={24} md={12}>
                       <Card
-                        className={CSS_CLASSES.card}
+                        className={`${CSS_CLASSES.card} tr-chart-panel tr-overall-progress`}
                         size="small"
                         bordered={false}
                         title={
@@ -1213,7 +1306,7 @@ const TargetsReports = () => {
 
                   {/* Monthly Collection Trends - Full Width */}
                   <Card
-                    className={CSS_CLASSES.card}
+                    className={`${CSS_CLASSES.card} tr-chart-panel tr-monthly-trends`}
                     bordered={false}
                     style={{
                       marginTop: '20px',

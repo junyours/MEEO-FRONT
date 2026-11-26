@@ -668,8 +668,55 @@
 
 .sidebar-container.ant-layout-sider-collapsed .sidebar-menu .ant-menu-item,
 .sidebar-container.ant-layout-sider-collapsed .sidebar-menu .ant-menu-submenu-title {
+  display: flex !important;
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  align-items: center !important;
   justify-content: center !important;
-  padding: 9px 0 !important;
+  margin: 4px auto !important;
+  padding: 0 !important;
+  background: #ffffff !important;
+  border: 1px solid #e8edf5 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 6px rgba(28, 48, 77, 0.08) !important;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease !important;
+}
+
+.sidebar-container.ant-layout-sider-collapsed .sidebar-menu .ant-menu-item:hover,
+.sidebar-container.ant-layout-sider-collapsed .sidebar-menu .ant-menu-submenu-title:hover {
+  background: #f3f7fd !important;
+  border-color: #d7e5f8 !important;
+  box-shadow: 0 3px 8px rgba(28, 48, 77, 0.1) !important;
+  transform: translateY(-1px);
+}
+
+.sidebar-container.ant-layout-sider-collapsed .sidebar-menu .ant-menu-item-selected,
+.sidebar-container.ant-layout-sider-collapsed .sidebar-menu .ant-menu-submenu-selected > .ant-menu-submenu-title {
+  background: #edf4ff !important;
+  border: 1px solid #d5e5fb !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 7px rgba(37, 99, 180, 0.12) !important;
+}
+
+.sidebar-container.ant-layout-sider-collapsed .sidebar-menu .ant-menu-item-selected .sidebar-item-icon-dashboard { color: #3b82f6 !important; }
+.sidebar-container.ant-layout-sider-collapsed .sidebar-menu .ant-menu-item-selected .sidebar-item-icon-collector-accounts { color: #8b5cf6 !important; }
+.sidebar-container.ant-layout-sider-collapsed .sidebar-menu .ant-menu-item-selected .sidebar-item-icon-office-activities { color: #f59e0b !important; }
+
+.sidebar-container.ant-layout-sider-collapsed .sidebar-menu .ant-menu-item .ant-menu-item-icon,
+.sidebar-container.ant-layout-sider-collapsed .sidebar-menu .ant-menu-submenu-title .ant-menu-item-icon {
+  display: inline-flex !important;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 !important;
+  font-size: 17px !important;
+}
+
+.sidebar-container.ant-layout-sider-collapsed .sidebar-menu .ant-menu-submenu-arrow {
+  display: none !important;
 }
 
 /* Tooltip Customization */

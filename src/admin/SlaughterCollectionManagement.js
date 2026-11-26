@@ -52,6 +52,7 @@ const blankAnimal = () => ({
   hides: 0,
   slaughter_fee: 0,
   coral_fee: 0,
+  permit_to_slh: 0,
 });
 
 const blankCollection = () => ({
@@ -71,7 +72,8 @@ const animalTotal = (animal) =>
       numberValue(animal.post_mortem) +
       numberValue(animal.hides) +
       numberValue(animal.slaughter_fee) +
-      numberValue(animal.coral_fee)
+      numberValue(animal.coral_fee) +
+      numberValue(animal.permit_to_slh)
     ).toFixed(2)
   );
 
@@ -190,6 +192,7 @@ function AnimalCard({
     ["hides", "Hides", "number", 0],
     ["slaughter_fee", "Slaughter Fee", "number", 0],
     ["coral_fee", "Coral Fee", "number", 0],
+    ["permit_to_slh", "Permit to SLH", "number", 0],
   ];
 
   return (
@@ -423,6 +426,7 @@ export default function SlaughterCollectionManagement() {
           hides: numberValue(item.hides),
           slaughter_fee: numberValue(item.slaughter_fee),
           coral_fee: numberValue(item.coral_fee),
+          permit_to_slh: numberValue(item.permit_to_slh),
         })),
       };
 
@@ -875,12 +879,14 @@ export default function SlaughterCollectionManagement() {
                   {[
                     ["Quantity", item.quantity],
                     ["Total Kilos", item.total_kilos],
-                    ["Price / Kilo", money(item.price_kilos)],
+                    ["Individual Weights", (item.animal_weights || []).map((weight) => `${Number(weight).toFixed(3)} kg`).join(", ") || "—"],
+                    ["Kilo charge", money(item.price_kilos)],
                     ["Ante-Mortem", money(item.ante_mortem)],
                     ["Post-Mortem", money(item.post_mortem)],
                     ["Hides", money(item.hides)],
                     ["Slaughter Fee", money(item.slaughter_fee)],
                     ["Coral Fee", money(item.coral_fee)],
+                    ["Permit to SLH", money(item.permit_to_slh)],
                   ].map(([label, value]) => (
                     <div key={label}>
                       <Text type="secondary">{label}</Text>

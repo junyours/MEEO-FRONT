@@ -52,7 +52,7 @@ const activityTypes = [
     "Other",
 ];
 
-const OfficeActivity = () => {
+const OfficeActivity = ({ readOnly = false }) => {
     // =========================================================
     // STATES
     // =========================================================
@@ -636,44 +636,48 @@ const OfficeActivity = () => {
                         />
                     </Tooltip>
 
-                    <Tooltip title="Edit">
-                        <Button
-                            type="text"
-                            icon={
-                                <EditOutlined />
-                            }
-                            onClick={() =>
-                                openEditModal(
-                                    record
-                                )
-                            }
-                        />
-                    </Tooltip>
-
-                    <Popconfirm
-                        title="Delete this activity?"
-                        description="All gallery images will also be deleted."
-                        okText="Delete"
-                        cancelText="Cancel"
-                        okButtonProps={{
-                            danger: true,
-                        }}
-                        onConfirm={() =>
-                            handleDelete(
-                                record
-                            )
-                        }
-                    >
-                        <Tooltip title="Delete">
+                    {!readOnly && (
+                        <>
+                            <Tooltip title="Edit">
                             <Button
                                 type="text"
-                                danger
                                 icon={
-                                    <DeleteOutlined />
+                                    <EditOutlined />
+                                }
+                                onClick={() =>
+                                    openEditModal(
+                                        record
+                                    )
                                 }
                             />
-                        </Tooltip>
-                    </Popconfirm>
+                            </Tooltip>
+
+                            <Popconfirm
+                                title="Delete this activity?"
+                                description="All gallery images will also be deleted."
+                                okText="Delete"
+                                cancelText="Cancel"
+                                okButtonProps={{
+                                    danger: true,
+                                }}
+                                onConfirm={() =>
+                                    handleDelete(
+                                        record
+                                    )
+                                }
+                            >
+                                <Tooltip title="Delete">
+                                    <Button
+                                        type="text"
+                                        danger
+                                        icon={
+                                            <DeleteOutlined />
+                                        }
+                                    />
+                                </Tooltip>
+                            </Popconfirm>
+                        </>
+                    )}
                 </Space>
             ),
         },
@@ -719,18 +723,20 @@ const OfficeActivity = () => {
                         Refresh
                     </Button>
 
-                    <Button
-                        type="primary"
-                        icon={
-                            <PlusOutlined />
-                        }
-                        size="large"
-                        onClick={
-                            openAddModal
-                        }
-                    >
-                        Add Activity
-                    </Button>
+                    {!readOnly && (
+                        <Button
+                            type="primary"
+                            icon={
+                                <PlusOutlined />
+                            }
+                            size="large"
+                            onClick={
+                                openAddModal
+                            }
+                        >
+                            Add Activity
+                        </Button>
+                    )}
                 </Space>
             </div>
 

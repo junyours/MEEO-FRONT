@@ -31,7 +31,7 @@ import "./SectionManager.css";
 
 const { Option } = Select;
 
-const SectionManager = () => {
+const SectionManager = ({ readOnly = false }) => {
   const [areas, setAreas] = useState([]);
   const [editMode, setEditMode] = useState(false);
 
@@ -714,23 +714,24 @@ const handleUpdateSection = async () => {
           >
             Refresh
           </Button>
-          <Button
-            onClick={() => setEditMode(!editMode)}
-            type={editMode ? "default" : "primary"}
-            style={{
-              backgroundColor: editMode ? "#f0f0f0" : "#043e54ff",
-              borderColor: editMode ? "#d9d9d9" : "#0ea5e9",
-              color: editMode ? "#000000" : "#fff",
-              fontWeight: "600",
-              borderRadius: 999,
-              paddingInline: 18,
-              boxShadow: editMode ? "0 2px 8px rgba(0,0,0,0.1)" : "0 4px 12px rgba(4, 62, 84, 0.3)",
-            }}
-          >
-            {editMode ? "Exit Edit Mode" : "Edit Mode"}
-          </Button>
-          {editMode && (
+          {!readOnly && (
             <>
+              <Button
+                onClick={() => setEditMode(!editMode)}
+                type={editMode ? "default" : "primary"}
+                style={{
+                  backgroundColor: editMode ? "#f0f0f0" : "#043e54ff",
+                  borderColor: editMode ? "#d9d9d9" : "#0ea5e9",
+                  color: editMode ? "#000000" : "#fff",
+                  fontWeight: "600",
+                  borderRadius: 999,
+                  paddingInline: 18,
+                  boxShadow: editMode ? "0 2px 8px rgba(0,0,0,0.1)" : "0 4px 12px rgba(4, 62, 84, 0.3)",
+                }}
+              >
+                {editMode ? "Exit Edit Mode" : "Edit Mode"}
+              </Button>
+              {editMode && (
               <Button
                 onClick={() => setShowAddAreaForm(true)}
                 type="primary"
@@ -745,23 +746,24 @@ const handleUpdateSection = async () => {
               >
                 + Add Area
               </Button>
+              )}
+              <Button
+                onClick={openMultiAssignModal}
+                type="primary"
+                icon={<UserOutlined />}
+                style={{
+                  backgroundColor: "#52c41a",
+                  borderColor: "#52c41a",
+                  fontWeight: "600",
+                  borderRadius: 999,
+                  paddingInline: 18,
+                  boxShadow: "0 4px 12px rgba(82, 196, 26, 0.3)",
+                }}
+              >
+                Assign Vendor
+              </Button>
             </>
           )}
-          <Button
-            onClick={openMultiAssignModal}
-            type="primary"
-            icon={<UserOutlined />}
-            style={{
-              backgroundColor: "#52c41a",
-              borderColor: "#52c41a",
-              fontWeight: "600",
-              borderRadius: 999,
-              paddingInline: 18,
-              boxShadow: "0 4px 12px rgba(82, 196, 26, 0.3)",
-            }}
-          >
-            Assign Vendor
-          </Button>
         </div>
       </div>
 
@@ -1217,7 +1219,7 @@ const handleUpdateSection = async () => {
                                 </div>
                               )}
                             </div>
-                            <StallGrid section={vac.section} editMode={editMode} onAddStall={handleAddSingleStall} onRefresh={handleRefresh} />
+                            <StallGrid section={vac.section} editMode={editMode} readOnly={readOnly} onAddStall={handleAddSingleStall} onRefresh={handleRefresh} />
                           </div>
                         ) : (
                           editMode && (
